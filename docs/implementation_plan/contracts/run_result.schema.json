@@ -1,0 +1,476 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/run_result.schema.json",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "backend": {
+      "enum": [
+        "2d",
+        "3d"
+      ]
+    },
+    "clock_mode": {
+      "enum": [
+        "accelerated",
+        "realtime"
+      ]
+    },
+    "rule_profile_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenario_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "asset_manifest_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dependency_lock_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "end_reason": {
+      "enum": [
+        "timeout",
+        "capture",
+        "admin",
+        "no_eligible"
+      ]
+    },
+    "final_match_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "final_report_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "scores": {
+      "type": "object",
+      "properties": {
+        "B-1": {
+          "type": "object",
+          "properties": {
+            "m1": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m2": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m3": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "m4": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m5": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m6": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "alliance_bonus": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "m1",
+            "m2",
+            "m3",
+            "m4",
+            "m5",
+            "m6",
+            "alliance_bonus",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "B-2": {
+          "type": "object",
+          "properties": {
+            "m1": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m2": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m3": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "m4": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m5": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m6": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "alliance_bonus": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "m1",
+            "m2",
+            "m3",
+            "m4",
+            "m5",
+            "m6",
+            "alliance_bonus",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "B-3": {
+          "type": "object",
+          "properties": {
+            "m1": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m2": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m3": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "m4": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m5": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m6": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "alliance_bonus": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "m1",
+            "m2",
+            "m3",
+            "m4",
+            "m5",
+            "m6",
+            "alliance_bonus",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "R-1": {
+          "type": "object",
+          "properties": {
+            "m1": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m2": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m3": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "m4": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m5": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m6": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "alliance_bonus": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "m1",
+            "m2",
+            "m3",
+            "m4",
+            "m5",
+            "m6",
+            "alliance_bonus",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "R-2": {
+          "type": "object",
+          "properties": {
+            "m1": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m2": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m3": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "m4": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m5": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m6": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "alliance_bonus": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "m1",
+            "m2",
+            "m3",
+            "m4",
+            "m5",
+            "m6",
+            "alliance_bonus",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "R-3": {
+          "type": "object",
+          "properties": {
+            "m1": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m2": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m3": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "m4": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "m5": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "m6": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "alliance_bonus": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "m1",
+            "m2",
+            "m3",
+            "m4",
+            "m5",
+            "m6",
+            "alliance_bonus",
+            "total"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "B-1",
+        "B-2",
+        "B-3",
+        "R-1",
+        "R-2",
+        "R-3"
+      ],
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "m3_exact_sectors": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 24
+        },
+        "report_rejections": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "collision_events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "frame_drops": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pose_error_rmse_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "real_time_factor": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "m3_exact_sectors",
+        "report_rejections",
+        "collision_events",
+        "frame_drops",
+        "pose_error_rmse_m",
+        "real_time_factor"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "run_id",
+    "scenario_id",
+    "seed",
+    "backend",
+    "clock_mode",
+    "rule_profile_hash",
+    "scenario_hash",
+    "asset_manifest_hash",
+    "dependency_lock_hash",
+    "end_reason",
+    "final_match_ms",
+    "final_report_ms",
+    "scores",
+    "metrics"
+  ],
+  "additionalProperties": false
+}

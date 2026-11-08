@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/m3.normalized.schema.json",
+  "type": "object",
+  "properties": {
+    "mission_code": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9]{8}$"
+    },
+    "sectors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sector": {
+            "enum": [
+              "B-S1",
+              "B-S2",
+              "B-S3",
+              "CM",
+              "R-S1",
+              "R-S2",
+              "R-S3"
+            ]
+          },
+          "objects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "enum": [
+                    "MILITARY_TRUCK",
+                    "MORTAR",
+                    "TANK",
+                    "MISSILE",
+                    "AMMO_BOX",
+                    "DRUM"
+                  ]
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 99
+                }
+              },
+              "required": [
+                "type",
+                "count"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 6
+          }
+        },
+        "required": [
+          "sector",
+          "objects"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 7
+    }
+  },
+  "required": [
+    "mission_code",
+    "sectors"
+  ],
+  "additionalProperties": false
+}

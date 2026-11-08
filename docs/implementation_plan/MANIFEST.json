@@ -1,0 +1,187 @@
+{
+  "plan_version": "1.0",
+  "source_repository": "https://github.com/jha68/MAICON",
+  "source_branch": "main",
+  "source_commit": "7c414445fcf0302620b2c89f16ce2064f91ca753",
+  "excluded_branch": "archive/competition-workspace-20261101",
+  "entrypoint": "00_START_HERE.md",
+  "note": "Current implementation-plan contracts include documented implementation errata in docs/DECISIONS.md. Original archive manifest preserved at validation/MANIFEST.original.json. These file hashes do not claim simulator acceptance.",
+  "files": [
+    {
+      "path": "00_START_HERE.md",
+      "bytes": 6460,
+      "sha256": "727f44a66da25c77488c3ecbe08ffb8ecdf0efc7ab4b54fe0f9e67ed0190e75a"
+    },
+    {
+      "path": "contracts/admin_configure.schema.json",
+      "bytes": 529,
+      "sha256": "7c5a6510fbaade9f38dbd227564ea1737658fdf8338f3a52104360521a6563d4"
+    },
+    {
+      "path": "contracts/arena.schema.json",
+      "bytes": 4946,
+      "sha256": "736386c2d88fd7c158845d84278d15fc4777bee078ba00f0a96f34fc064ed784"
+    },
+    {
+      "path": "contracts/assets.schema.json",
+      "bytes": 2196,
+      "sha256": "ddf3cc199af996daebc6f2b5dfdaee938258af3a43d69fe89ba1817ad4016b39"
+    },
+    {
+      "path": "contracts/m1.normalized.schema.json",
+      "bytes": 1961,
+      "sha256": "f36a4140bfe6b06014a9e830855218569a8c720c98f7051935ba11553f89b1e7"
+    },
+    {
+      "path": "contracts/m3.normalized.schema.json",
+      "bytes": 1663,
+      "sha256": "fc3eec54239b5dd066c0971368dd7e05f31ad8fe02026fa4fc871247fd310b0e"
+    },
+    {
+      "path": "contracts/m6.normalized.schema.json",
+      "bytes": 629,
+      "sha256": "8c6b6a4e4f3020324066b9be80fbce0d743b433811db00c60b65a5c902ed3df4"
+    },
+    {
+      "path": "contracts/rules.schema.json",
+      "bytes": 5248,
+      "sha256": "d08c436820a531beb5e22efb172c8952b20c46dd7af8cccd7b6ca61bda1ea3ae"
+    },
+    {
+      "path": "contracts/run_result.schema.json",
+      "bytes": 10725,
+      "sha256": "1409b5f36ff2ad6864e0bf1c7e1168f6394091f4b7a2dd28e79d35e55b8fc7c4"
+    },
+    {
+      "path": "contracts/scenario.schema.json",
+      "bytes": 24176,
+      "sha256": "f56d44e871e2874461b1e27d600f428c173240b31417d1431f819fa082668743"
+    },
+    {
+      "path": "contracts/sensor_profile.schema.json",
+      "bytes": 16264,
+      "sha256": "e36dd55e018f62959c4ea1645c6d358353a777911072dd50e710ed79b571374d"
+    },
+    {
+      "path": "docs/01_COMPETITION_RULES.md",
+      "bytes": 36141,
+      "sha256": "b59e8beccae5b58b1338a167e320ccb49345bb62bc64ae9aba84fe74a86ace57"
+    },
+    {
+      "path": "docs/02_ARCHITECTURE_AND_CONTRACTS.md",
+      "bytes": 22020,
+      "sha256": "87e64f3339aba04c1cd87d5f1232d2d04dde6721afa839e7928c5684ab09a0c5"
+    },
+    {
+      "path": "docs/03_PLAN_2D.md",
+      "bytes": 34431,
+      "sha256": "21e0c091a8c820ced6a8668c631adb42b0a9128a4855a25b901a9bd0a8b8d88b"
+    },
+    {
+      "path": "docs/04_PLAN_3D.md",
+      "bytes": 44908,
+      "sha256": "ae0fc97af1408678e48c05242dde7d897750f92de065328d9e666438e4191dfa"
+    },
+    {
+      "path": "docs/05_SERVER_AND_ROBOT_API.md",
+      "bytes": 18680,
+      "sha256": "93bacb3735320f0254e2cc1343c71d251efaf46425b93689832b79b9890b3202"
+    },
+    {
+      "path": "docs/06_SCENARIOS_AND_ASSETS.md",
+      "bytes": 21594,
+      "sha256": "fe664373e93d64e1726dc62ea570140e264dab6b289dfba1f92bcac43fb1001a"
+    },
+    {
+      "path": "docs/07_TESTS_AND_ACCEPTANCE.md",
+      "bytes": 38019,
+      "sha256": "81796afe3fb543c421b585a029bf6a988a228f1711417e3aa2db41eb3a239bd9"
+    },
+    {
+      "path": "docs/08_BUILD_AND_HANDOFF.md",
+      "bytes": 15205,
+      "sha256": "fb29914c89f17cb4b9be78e78fc897b2918ba5afa041684cc6b3089f6346d5c3"
+    },
+    {
+      "path": "docs/09_FIELD_ADAPTER_AND_QUESTIONS.md",
+      "bytes": 8444,
+      "sha256": "ea28054235edf7caf551d8a013c8f8cca4de009bf0e1a283735dcd38db78ab86"
+    },
+    {
+      "path": "docs/10_SOURCE_EXCERPTS.md",
+      "bytes": 73763,
+      "sha256": "7cb3298f874c46d417d557f39c2aff8d6554a55ee6c93c28a65eb807b9ce9491"
+    },
+    {
+      "path": "docs/11_REVIEW_REPORT.md",
+      "bytes": 7336,
+      "sha256": "9ec3759cb2d3a216224e4adafca75b967063e64336e0691e22d3c66729658404"
+    },
+    {
+      "path": "examples/arena_reference.yaml",
+      "bytes": 3216,
+      "sha256": "8cfbb1a2721cde79d60d096badc0aefcdcd2a459fc303230424b10f593745701"
+    },
+    {
+      "path": "examples/assets_synthetic.yaml",
+      "bytes": 3011,
+      "sha256": "d6dcec39fe729941fba3063b9431e1934ce6c530239eaae8ce29930ad953b857"
+    },
+    {
+      "path": "examples/m1_request.json",
+      "bytes": 136,
+      "sha256": "4084442016df81a99d21b0df2110e8461527c918f264f645859e66bd6772cdd0"
+    },
+    {
+      "path": "examples/m3_request.json",
+      "bytes": 649,
+      "sha256": "d769c280736b84d2732a6cd956f00ba818bebbc176326e98148662d6f5d4e1c1"
+    },
+    {
+      "path": "examples/m6_request.json",
+      "bytes": 85,
+      "sha256": "d69ce6079aa13d60593d9de10d39330bdae213fb0d373076e718ccd18d5e3ec4"
+    },
+    {
+      "path": "examples/rules_prestudy.yaml",
+      "bytes": 1190,
+      "sha256": "6767ea195a030d3bd454d2be4820e82b289572c45deb17493c6528306b882ac2"
+    },
+    {
+      "path": "examples/scenario_pause_and_drone_faults.yaml",
+      "bytes": 6026,
+      "sha256": "babec1cddd90bce80fb42eeca2ec24e30c5abf4a4f2fdd44f6fc3e88288dd2aa"
+    },
+    {
+      "path": "examples/scenario_perception_gallery.yaml",
+      "bytes": 5483,
+      "sha256": "2dd561ac9691fa2a238a0ca736705d2879675ad7b75d813febb78d6cd8d65ca9"
+    },
+    {
+      "path": "examples/scenario_smoke_six.yaml",
+      "bytes": 5468,
+      "sha256": "9c8700544c6aa94fb7b3b3754f0cc10c778379a77fa074661baab06a94e34019"
+    },
+    {
+      "path": "examples/sensor_profile_reference.yaml",
+      "bytes": 2737,
+      "sha256": "94bfcd83e3e45efedf1cc0a453cc40204467f2b369ee8e657b33591fba3dfc79"
+    },
+    {
+      "path": "examples/smoke_six_expected.json",
+      "bytes": 1142,
+      "sha256": "817879bb2ddd05861b873d85393c3960754a97a360e0d760498d299e07af5575"
+    },
+    {
+      "path": "validation/MANIFEST.original.json",
+      "bytes": 5904,
+      "sha256": "33dae49aa3c4e0cedbc0861f78af0c3d0740021e74a849e2ca595a657cd2b7bb"
+    },
+    {
+      "path": "validation/plan_validation.json",
+      "bytes": 1157,
+      "sha256": "9a911f0c819012fc70a955db162dd30861ed3d5c7a7f38d621d40999cb4618a5"
+    }
+  ],
+  "original_zip_sha256": "646486b6233af637119600686d9ac110fa89fa73f79d05c0bbcf89a83bcf915f"
+}

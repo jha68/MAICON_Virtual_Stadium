@@ -1,0 +1,75 @@
+name: simulator-validation
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '13 19 * * *'
+
+jobs:
+  core-contracts:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          python-version: '3.10'
+          enable-cache: true
+      - run: uv sync --frozen --extra dev
+      - run: uv run --no-sync python scripts/update_acceptance_manifest.py
+      - run: uv run --no-sync pytest tests/unit tests/contracts -m 'not slow and not render and not hardware and not manual_gui' --junitxml=artifacts/core-contracts.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-contracts-evidence
+          path: artifacts/
+
+  integration-render-wheel:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          python-version: '3.10'
+          enable-cache: true
+      - run: uv sync --frozen --all-extras
+      - run: scripts/doctor.sh
+      - run: uv run --no-sync python scripts/update_acceptance_manifest.py
+      - run: uv run --no-sync pytest -m 'not slow and not performance and not hardware and not manual_gui' --junitxml=artifacts/integration-render.xml
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+      - run: uv build --wheel --out-dir artifacts/dist
+      - name: Validate wheel resource boundary outside checkout
+        run: |
+          uv venv --python 3.10 '/tmp/maicon wheel check/.venv'
+          uv pip install --python '/tmp/maicon wheel check/.venv/bin/python' artifacts/dist/*.whl
+          cd /tmp
+          '/tmp/maicon wheel check/.venv/bin/python' -c "from importlib.resources import files; from maicon_sim.config.loader import load_scenario; c=load_scenario(files('maicon_sim').joinpath('resources/examples/scenario_smoke_six.yaml')); assert len(c.scenario['agents']) == 6"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-render-wheel-evidence
+          path: artifacts/
+
+  real-longpoll:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          python-version: '3.10'
+          enable-cache: true
+      - run: uv sync --frozen --all-extras
+      - run: uv run --no-sync python scripts/update_acceptance_manifest.py
+      - run: uv run --no-sync pytest -m slow --junitxml=artifacts/real-longpoll.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-longpoll-evidence
+          path: artifacts/

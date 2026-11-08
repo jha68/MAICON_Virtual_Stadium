@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/arena.schema.json",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "arena_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assumption_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "bounds": {
+      "type": "object",
+      "properties": {
+        "width_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "wall_height_m": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "width_m",
+        "height_m",
+        "wall_height_m"
+      ],
+      "additionalProperties": false
+    },
+    "sectors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sector_id": {
+            "enum": [
+              "B-S1",
+              "B-S2",
+              "B-S3",
+              "CM",
+              "R-S1",
+              "R-S2",
+              "R-S3"
+            ]
+          },
+          "polygon_xy_m": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "minItems": 3
+          }
+        },
+        "required": [
+          "sector_id",
+          "polygon_xy_m"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 7,
+      "maxItems": 7
+    },
+    "bases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "base_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "code": {
+            "enum": [
+              "BLUE_COMMAND_POST",
+              "BLUE_MAINTENANCE",
+              "BLUE_SUPPLY_DEPOT",
+              "RED_COMMAND_POST",
+              "RED_MAINTENANCE",
+              "RED_SUPPLY_DEPOT"
+            ]
+          },
+          "camp": {
+            "enum": [
+              "BLUE",
+              "RED"
+            ]
+          },
+          "polygon_xy_m": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "minItems": 3
+          },
+          "trigger_segment_xy_m": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "required": [
+          "base_id",
+          "code",
+          "camp",
+          "polygon_xy_m",
+          "trigger_segment_xy_m"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "nominal_starts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "enum": [
+              "B-1",
+              "B-2",
+              "B-3",
+              "R-1",
+              "R-2",
+              "R-3"
+            ]
+          },
+          "pose": {
+            "type": "object",
+            "properties": {
+              "x_m": {
+                "type": "number"
+              },
+              "y_m": {
+                "type": "number"
+              },
+              "yaw_rad": {
+                "type": "number",
+                "minimum": -3.141592653589793,
+                "maximum": 3.141592653589793
+              }
+            },
+            "required": [
+              "x_m",
+              "y_m",
+              "yaw_rad"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "slot",
+          "pose"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "public_prior": {
+      "type": "object",
+      "properties": {
+        "sector_geometry": {
+          "const": true
+        },
+        "base_geometry": {
+          "const": true
+        },
+        "nominal_start_poses": {
+          "const": true
+        },
+        "dynamic_boxes": {
+          "const": false
+        }
+      },
+      "required": [
+        "sector_geometry",
+        "base_geometry",
+        "nominal_start_poses",
+        "dynamic_boxes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "arena_id",
+    "assumption_ids",
+    "bounds",
+    "sectors",
+    "bases",
+    "nominal_starts",
+    "public_prior"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,961 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/scenario.schema.json",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "purpose": {
+      "enum": [
+        "logic",
+        "perception",
+        "integration",
+        "fault",
+        "benchmark"
+      ]
+    },
+    "rules_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "arena_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assets_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "epoch_kst": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+09:00$"
+    },
+    "default_backend": {
+      "enum": [
+        "2d",
+        "3d"
+      ]
+    },
+    "default_clock": {
+      "enum": [
+        "accelerated",
+        "realtime"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "mission",
+        "practice"
+      ]
+    },
+    "noise_profile": {
+      "enum": [
+        "ideal",
+        "stress_v1"
+      ]
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "enum": [
+              "B-1",
+              "B-2",
+              "B-3",
+              "R-1",
+              "R-2",
+              "R-3"
+            ]
+          },
+          "mission_code": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{8}$"
+          },
+          "policy": {
+            "enum": [
+              "idle",
+              "baseline",
+              "patrol",
+              "blocker",
+              "capture_runner"
+            ]
+          },
+          "start_pose": {
+            "type": "object",
+            "properties": {
+              "x_m": {
+                "type": "number"
+              },
+              "y_m": {
+                "type": "number"
+              },
+              "yaw_rad": {
+                "type": "number",
+                "minimum": -3.141592653589793,
+                "maximum": 3.141592653589793
+              }
+            },
+            "required": [
+              "x_m",
+              "y_m",
+              "yaw_rad"
+            ],
+            "additionalProperties": false
+          },
+          "jitter_xy_m": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.5
+          },
+          "jitter_yaw_rad": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 3.141592653589793
+          }
+        },
+        "required": [
+          "slot",
+          "mission_code",
+          "policy",
+          "start_pose",
+          "jitter_xy_m",
+          "jitter_yaw_rad"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "boxes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "box_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sector_id": {
+            "enum": [
+              "B-S1",
+              "B-S2",
+              "B-S3",
+              "CM",
+              "R-S1",
+              "R-S2",
+              "R-S3"
+            ]
+          },
+          "pose": {
+            "type": "object",
+            "properties": {
+              "x_m": {
+                "type": "number"
+              },
+              "y_m": {
+                "type": "number"
+              },
+              "yaw_rad": {
+                "type": "number",
+                "minimum": -3.141592653589793,
+                "maximum": 3.141592653589793
+              }
+            },
+            "required": [
+              "x_m",
+              "y_m",
+              "yaw_rad"
+            ],
+            "additionalProperties": false
+          },
+          "size_m": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0.01
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "faces": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "side": {
+                      "enum": [
+                        "north",
+                        "south",
+                        "east",
+                        "west"
+                      ]
+                    },
+                    "asset_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "const": "object"
+                    },
+                    "object_class": {
+                      "enum": [
+                        "military_truck",
+                        "mortar",
+                        "tank",
+                        "missile",
+                        "ammo_box",
+                        "drum"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "side",
+                    "asset_id",
+                    "kind",
+                    "object_class"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "side": {
+                      "enum": [
+                        "north",
+                        "south",
+                        "east",
+                        "west"
+                      ]
+                    },
+                    "asset_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "const": "facility"
+                    },
+                    "facility_code": {
+                      "enum": [
+                        "BLUE_COMMS",
+                        "BLUE_OUTPOST",
+                        "BLUE_RADAR",
+                        "RED_COMMS",
+                        "RED_OUTPOST",
+                        "RED_RADAR"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "side",
+                    "asset_id",
+                    "kind",
+                    "facility_code"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "side": {
+                      "enum": [
+                        "north",
+                        "south",
+                        "east",
+                        "west"
+                      ]
+                    },
+                    "asset_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "const": "decoy"
+                    }
+                  },
+                  "required": [
+                    "side",
+                    "asset_id",
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "minItems": 0,
+            "maxItems": 4
+          }
+        },
+        "required": [
+          "box_id",
+          "sector_id",
+          "pose",
+          "size_m",
+          "faces"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "orders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "enum": [
+              "B-1",
+              "B-2",
+              "B-3",
+              "R-1",
+              "R-2",
+              "R-3"
+            ]
+          },
+          "tactical_command": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expected_m1": {
+            "type": "object",
+            "properties": {
+              "target": {
+                "enum": [
+                  "BLUE_COMMS",
+                  "BLUE_OUTPOST",
+                  "BLUE_RADAR",
+                  "RED_COMMS",
+                  "RED_OUTPOST",
+                  "RED_RADAR"
+                ]
+              },
+              "search_sectors": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "B-S1",
+                    "B-S2",
+                    "B-S3",
+                    "CM",
+                    "R-S1",
+                    "R-S2",
+                    "R-S3"
+                  ]
+                },
+                "minItems": 0,
+                "maxItems": 7
+              },
+              "base": {
+                "enum": [
+                  "BLUE_COMMAND_POST",
+                  "BLUE_MAINTENANCE",
+                  "BLUE_SUPPLY_DEPOT",
+                  "RED_COMMAND_POST",
+                  "RED_MAINTENANCE",
+                  "RED_SUPPLY_DEPOT"
+                ]
+              }
+            },
+            "required": [
+              "target",
+              "search_sectors",
+              "base"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "slot",
+          "tactical_command",
+          "expected_m1"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "objectives_by_camp": {
+      "type": "object",
+      "properties": {
+        "BLUE": {
+          "enum": [
+            "RED_COMMAND_POST",
+            "RED_MAINTENANCE",
+            "RED_SUPPLY_DEPOT"
+          ]
+        },
+        "RED": {
+          "enum": [
+            "BLUE_COMMAND_POST",
+            "BLUE_MAINTENANCE",
+            "BLUE_SUPPLY_DEPOT"
+          ]
+        }
+      },
+      "required": [
+        "BLUE",
+        "RED"
+      ],
+      "additionalProperties": false
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "pause"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "resume"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "force_reporting"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "start_failure"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "slot": {
+                    "enum": [
+                      "B-1",
+                      "B-2",
+                      "B-3",
+                      "R-1",
+                      "R-2",
+                      "R-3"
+                    ]
+                  }
+                },
+                "required": [
+                  "slot"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "sensor_dropout"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "slot": {
+                    "enum": [
+                      "B-1",
+                      "B-2",
+                      "B-3",
+                      "R-1",
+                      "R-2",
+                      "R-3"
+                    ]
+                  },
+                  "sensor": {
+                    "enum": [
+                      "camera",
+                      "lidar",
+                      "imu",
+                      "odom",
+                      "drone"
+                    ]
+                  },
+                  "duration_ms": {
+                    "type": "integer",
+                    "minimum": 10
+                  }
+                },
+                "required": [
+                  "slot",
+                  "sensor",
+                  "duration_ms"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "http_delay"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "slot": {
+                    "enum": [
+                      "B-1",
+                      "B-2",
+                      "B-3",
+                      "R-1",
+                      "R-2",
+                      "R-3"
+                    ]
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "duration_ms": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "drop_response_after_commit": {
+                    "type": "boolean"
+                  },
+                  "stage": {
+                    "enum": [
+                      "before_ingress",
+                      "after_commit"
+                    ]
+                  },
+                  "match_occurrence": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "slot",
+                  "path",
+                  "duration_ms",
+                  "drop_response_after_commit",
+                  "stage",
+                  "match_occurrence"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "drone_facility_destroyed"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "facility_code": {
+                    "enum": [
+                      "BLUE_COMMS",
+                      "BLUE_OUTPOST",
+                      "BLUE_RADAR",
+                      "RED_COMMS",
+                      "RED_OUTPOST",
+                      "RED_RADAR"
+                    ]
+                  }
+                },
+                "required": [
+                  "facility_code"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "robot_command"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "slot": {
+                    "enum": [
+                      "B-1",
+                      "B-2",
+                      "B-3",
+                      "R-1",
+                      "R-2",
+                      "R-3"
+                    ]
+                  },
+                  "linear_x_mps": {
+                    "type": "number",
+                    "minimum": -0.6,
+                    "maximum": 0.6
+                  },
+                  "angular_z_rps": {
+                    "type": "number",
+                    "minimum": -3,
+                    "maximum": 3
+                  },
+                  "duration_ms": {
+                    "type": "integer",
+                    "minimum": 10
+                  }
+                },
+                "required": [
+                  "slot",
+                  "linear_x_mps",
+                  "angular_z_rps",
+                  "duration_ms"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "clock": {
+                "enum": [
+                  "sim",
+                  "match",
+                  "reporting"
+                ]
+              },
+              "at_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kind": {
+                "const": "robot_state_correction"
+              },
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "slot": {
+                    "enum": [
+                      "B-1",
+                      "B-2",
+                      "B-3",
+                      "R-1",
+                      "R-2",
+                      "R-3"
+                    ]
+                  },
+                  "hp": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  },
+                  "ammo": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 8
+                  }
+                },
+                "required": [
+                  "slot"
+                ],
+                "anyOf": [
+                  {
+                    "required": [
+                      "hp"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "ammo"
+                    ]
+                  }
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "event_id",
+              "clock",
+              "at_ms",
+              "kind",
+              "parameters"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "max_sim_ms": {
+      "type": "integer",
+      "minimum": 10
+    },
+    "requires": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "rgb",
+          "semantic",
+          "lidar",
+          "gui"
+        ]
+      },
+      "minItems": 0
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sensor_profile_file": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "scenario_id",
+    "purpose",
+    "rules_file",
+    "arena_file",
+    "assets_file",
+    "seed",
+    "epoch_kst",
+    "default_backend",
+    "default_clock",
+    "mode",
+    "noise_profile",
+    "agents",
+    "boxes",
+    "orders",
+    "objectives_by_camp",
+    "events",
+    "max_sim_ms",
+    "requires",
+    "description",
+    "sensor_profile_file"
+  ],
+  "additionalProperties": false
+}

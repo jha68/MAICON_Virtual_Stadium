@@ -1,0 +1,123 @@
+schema_version: '1.0'
+manifest_id: synthetic_fixture_v1
+assets:
+- asset_id: object_military_truck
+  kind: object
+  label: military_truck
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_object_military_truck
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: object_mortar
+  kind: object
+  label: mortar
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_object_mortar
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: object_tank
+  kind: object
+  label: tank
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_object_tank
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: object_missile
+  kind: object
+  label: missile
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_object_missile
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: object_ammo_box
+  kind: object
+  label: ammo_box
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_object_ammo_box
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: object_drum
+  kind: object
+  label: drum
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_object_drum
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: facility_COMMS
+  kind: facility
+  label: COMMS
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_facility_COMMS
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: facility_OUTPOST
+  kind: facility
+  label: OUTPOST
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_facility_OUTPOST
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: facility_RADAR
+  kind: facility
+  label: RADAR
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_facility_RADAR
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET
+- asset_id: decoy_wall
+  kind: decoy
+  label: wall
+  generator: procedural_v1
+  path: null
+  sha256: null
+  source: Generated geometric fixture; not an official competition image
+  license: CC0-1.0
+  split_group: synthetic_decoy_wall
+  split: fixture
+  assumption_ids:
+  - SIM-ASSET

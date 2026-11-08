@@ -1,0 +1,259 @@
+schema_version: '1.0'
+scenario_id: smoke_six
+purpose: logic
+rules_file: rules_prestudy.yaml
+arena_file: arena_reference.yaml
+assets_file: assets_synthetic.yaml
+seed: 20261107
+epoch_kst: '2026-11-18T13:00:00+09:00'
+default_backend: 2d
+default_clock: accelerated
+mode: mission
+noise_profile: ideal
+agents:
+- slot: B-1
+  mission_code: SIMB0001
+  policy: idle
+  start_pose:
+    x_m: 0.4
+    y_m: 4.2
+    yaw_rad: 0.0
+  jitter_xy_m: 0.0
+  jitter_yaw_rad: 0.0
+- slot: B-2
+  mission_code: SIMB0002
+  policy: idle
+  start_pose:
+    x_m: 0.4
+    y_m: 2.5
+    yaw_rad: 0.0
+  jitter_xy_m: 0.0
+  jitter_yaw_rad: 0.0
+- slot: B-3
+  mission_code: SIMB0003
+  policy: idle
+  start_pose:
+    x_m: 0.4
+    y_m: 0.8
+    yaw_rad: 0.0
+  jitter_xy_m: 0.0
+  jitter_yaw_rad: 0.0
+- slot: R-1
+  mission_code: SIMR0001
+  policy: idle
+  start_pose:
+    x_m: 5.72
+    y_m: 4.2
+    yaw_rad: 3.141592653589793
+  jitter_xy_m: 0.0
+  jitter_yaw_rad: 0.0
+- slot: R-2
+  mission_code: SIMR0002
+  policy: idle
+  start_pose:
+    x_m: 5.72
+    y_m: 2.5
+    yaw_rad: 3.141592653589793
+  jitter_xy_m: 0.0
+  jitter_yaw_rad: 0.0
+- slot: R-3
+  mission_code: SIMR0003
+  policy: idle
+  start_pose:
+    x_m: 5.72
+    y_m: 0.8
+    yaw_rad: 3.141592653589793
+  jitter_xy_m: 0.0
+  jitter_yaw_rad: 0.0
+boxes:
+- box_id: box_B1
+  sector_id: B-S1
+  pose:
+    x_m: 1.7
+    y_m: 4.2
+    yaw_rad: 0.0
+  size_m:
+  - 0.4
+  - 0.4
+  - 0.4
+  faces:
+  - side: east
+    asset_id: object_tank
+    kind: object
+    object_class: tank
+  - side: west
+    asset_id: facility_RADAR
+    kind: facility
+    facility_code: BLUE_RADAR
+- box_id: box_B2
+  sector_id: B-S2
+  pose:
+    x_m: 1.7
+    y_m: 2.5
+    yaw_rad: 0.0
+  size_m:
+  - 0.4
+  - 0.4
+  - 0.4
+  faces:
+  - side: east
+    asset_id: object_mortar
+    kind: object
+    object_class: mortar
+  - side: west
+    asset_id: facility_COMMS
+    kind: facility
+    facility_code: BLUE_COMMS
+- box_id: box_B3
+  sector_id: B-S3
+  pose:
+    x_m: 1.7
+    y_m: 0.8
+    yaw_rad: 0.0
+  size_m:
+  - 0.4
+  - 0.4
+  - 0.4
+  faces:
+  - side: east
+    asset_id: object_military_truck
+    kind: object
+    object_class: military_truck
+  - side: west
+    asset_id: facility_OUTPOST
+    kind: facility
+    facility_code: BLUE_OUTPOST
+- box_id: box_R1
+  sector_id: R-S1
+  pose:
+    x_m: 4.4
+    y_m: 4.2
+    yaw_rad: 0.0
+  size_m:
+  - 0.4
+  - 0.4
+  - 0.4
+  faces:
+  - side: west
+    asset_id: object_tank
+    kind: object
+    object_class: tank
+  - side: east
+    asset_id: facility_RADAR
+    kind: facility
+    facility_code: RED_RADAR
+- box_id: box_R2
+  sector_id: R-S2
+  pose:
+    x_m: 4.4
+    y_m: 2.5
+    yaw_rad: 0.0
+  size_m:
+  - 0.4
+  - 0.4
+  - 0.4
+  faces:
+  - side: west
+    asset_id: object_missile
+    kind: object
+    object_class: missile
+  - side: east
+    asset_id: facility_COMMS
+    kind: facility
+    facility_code: RED_COMMS
+- box_id: box_R3
+  sector_id: R-S3
+  pose:
+    x_m: 4.4
+    y_m: 0.8
+    yaw_rad: 0.0
+  size_m:
+  - 0.4
+  - 0.4
+  - 0.4
+  faces:
+  - side: west
+    asset_id: object_drum
+    kind: object
+    object_class: drum
+  - side: east
+    asset_id: facility_OUTPOST
+    kind: facility
+    facility_code: RED_OUTPOST
+- box_id: box_CM
+  sector_id: CM
+  pose:
+    x_m: 3.06
+    y_m: 2.5
+    yaw_rad: 0.0
+  size_m:
+  - 0.4
+  - 0.4
+  - 0.4
+  faces:
+  - side: north
+    asset_id: object_ammo_box
+    kind: object
+    object_class: ammo_box
+  - side: south
+    asset_id: object_drum
+    kind: object
+    object_class: drum
+orders:
+- slot: B-1
+  tactical_command: 상대 레이더시설을 타격하라. 상대 첫째 탐색구역과 중앙을 탐색하고 상대 군수보급소를 후속 거점으로 설정하라.
+  expected_m1:
+    target: RED_RADAR
+    search_sectors:
+    - R-S1
+    - CM
+    base: RED_SUPPLY_DEPOT
+- slot: B-2
+  tactical_command: 상대 통신시설을 타격하라. 상대 첫째 탐색구역과 중앙을 탐색하고 상대 군수보급소를 후속 거점으로 설정하라.
+  expected_m1:
+    target: RED_COMMS
+    search_sectors:
+    - R-S1
+    - CM
+    base: RED_SUPPLY_DEPOT
+- slot: B-3
+  tactical_command: 상대 감시초소을 타격하라. 상대 첫째 탐색구역과 중앙을 탐색하고 상대 군수보급소를 후속 거점으로 설정하라.
+  expected_m1:
+    target: RED_OUTPOST
+    search_sectors:
+    - R-S1
+    - CM
+    base: RED_SUPPLY_DEPOT
+- slot: R-1
+  tactical_command: 상대 레이더시설을 타격하라. 상대 첫째 탐색구역과 중앙을 탐색하고 상대 군수보급소를 후속 거점으로 설정하라.
+  expected_m1:
+    target: BLUE_RADAR
+    search_sectors:
+    - B-S1
+    - CM
+    base: BLUE_SUPPLY_DEPOT
+- slot: R-2
+  tactical_command: 상대 통신시설을 타격하라. 상대 첫째 탐색구역과 중앙을 탐색하고 상대 군수보급소를 후속 거점으로 설정하라.
+  expected_m1:
+    target: BLUE_COMMS
+    search_sectors:
+    - B-S1
+    - CM
+    base: BLUE_SUPPLY_DEPOT
+- slot: R-3
+  tactical_command: 상대 감시초소을 타격하라. 상대 첫째 탐색구역과 중앙을 탐색하고 상대 군수보급소를 후속 거점으로 설정하라.
+  expected_m1:
+    target: BLUE_OUTPOST
+    search_sectors:
+    - B-S1
+    - CM
+    base: BLUE_SUPPLY_DEPOT
+objectives_by_camp:
+  BLUE: RED_MAINTENANCE
+  RED: BLUE_MAINTENANCE
+events: []
+max_sim_ms: 360000
+requires: []
+description: Six ready idle participants; no reports or shooting. Rule smoke test
+  expects each total20. Not a navigation/perception success demonstration.
+sensor_profile_file: sensor_profile_reference.yaml

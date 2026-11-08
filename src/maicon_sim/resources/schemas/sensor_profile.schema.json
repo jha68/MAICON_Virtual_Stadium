@@ -1,0 +1,680 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/sensor_profile.schema.json",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "profile_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assumption_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "geometry": {
+      "type": "object",
+      "properties": {
+        "footprint_length_m": {
+          "type": "number",
+          "minimum": 0.01
+        },
+        "footprint_width_m": {
+          "type": "number",
+          "minimum": 0.01
+        },
+        "wall_thickness_m": {
+          "type": "number",
+          "minimum": 0.001
+        },
+        "chassis": {
+          "type": "object",
+          "properties": {
+            "center_m": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "half_extents_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 1e-06
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "center_m",
+            "half_extents_m"
+          ],
+          "additionalProperties": false
+        },
+        "mast": {
+          "type": "object",
+          "properties": {
+            "center_m": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "half_extents_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 1e-06
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "center_m",
+            "half_extents_m"
+          ],
+          "additionalProperties": false
+        },
+        "gimbal_pivot_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "camera_offset_gimbal_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "laser_offset_gimbal_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "receivers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "center_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "radius_m": {
+                "type": "number",
+                "minimum": 1e-06
+              }
+            },
+            "required": [
+              "center_m",
+              "radius_m"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "facility_receiver_offset_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "facility_receiver_z_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "facility_receiver_radius_m": {
+          "type": "number",
+          "minimum": 0.001
+        },
+        "marker_center_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "marker_width_m": {
+          "type": "number",
+          "minimum": 0.001
+        },
+        "marker_height_m": {
+          "type": "number",
+          "minimum": 0.001
+        },
+        "marker_normal_body": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "marker_band_height_m": {
+          "type": "number",
+          "minimum": 0.001
+        }
+      },
+      "required": [
+        "footprint_length_m",
+        "footprint_width_m",
+        "wall_thickness_m",
+        "chassis",
+        "mast",
+        "gimbal_pivot_m",
+        "camera_offset_gimbal_m",
+        "laser_offset_gimbal_m",
+        "receivers",
+        "facility_receiver_offset_m",
+        "facility_receiver_z_m",
+        "facility_receiver_radius_m",
+        "marker_center_m",
+        "marker_width_m",
+        "marker_height_m",
+        "marker_normal_body",
+        "marker_band_height_m"
+      ],
+      "additionalProperties": false
+    },
+    "front_camera": {
+      "type": "object",
+      "properties": {
+        "width_px": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height_px": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fx_px": {
+          "type": "number",
+          "minimum": 1e-06
+        },
+        "fy_px": {
+          "type": "number",
+          "minimum": 1e-06
+        },
+        "cx_px": {
+          "type": "number"
+        },
+        "cy_px": {
+          "type": "number"
+        },
+        "near_m": {
+          "type": "number",
+          "minimum": 1e-06
+        },
+        "far_m": {
+          "type": "number",
+          "minimum": 1e-06
+        },
+        "distortion_model": {
+          "const": "none"
+        }
+      },
+      "required": [
+        "width_px",
+        "height_px",
+        "fx_px",
+        "fy_px",
+        "cx_px",
+        "cy_px",
+        "near_m",
+        "far_m",
+        "distortion_model"
+      ],
+      "additionalProperties": false
+    },
+    "drone": {
+      "type": "object",
+      "properties": {
+        "position_world_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "look_at_world_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "up_world": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "width_px": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height_px": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hfov_deg": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 179
+        },
+        "near_m": {
+          "type": "number",
+          "minimum": 0.001
+        },
+        "far_m": {
+          "type": "number",
+          "minimum": 0.01
+        }
+      },
+      "required": [
+        "position_world_m",
+        "look_at_world_m",
+        "up_world",
+        "width_px",
+        "height_px",
+        "hfov_deg",
+        "near_m",
+        "far_m"
+      ],
+      "additionalProperties": false
+    },
+    "lidar": {
+      "type": "object",
+      "properties": {
+        "origin_body_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "angle_min_rad": {
+          "type": "number"
+        },
+        "ray_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "range_min_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "range_max_m": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "origin_body_m",
+        "angle_min_rad",
+        "ray_count",
+        "range_min_m",
+        "range_max_m"
+      ],
+      "additionalProperties": false
+    },
+    "numeric": {
+      "type": "object",
+      "properties": {
+        "ray_epsilon_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endpoint_epsilon_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "distance_tie_epsilon_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "corner_step_max_m": {
+          "type": "number",
+          "minimum": 1e-05
+        },
+        "max_penetration_m": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "ray_epsilon_m",
+        "endpoint_epsilon_m",
+        "distance_tie_epsilon_m",
+        "corner_step_max_m",
+        "max_penetration_m"
+      ],
+      "additionalProperties": false
+    },
+    "render": {
+      "type": "object",
+      "properties": {
+        "renderer": {
+          "const": "tiny"
+        },
+        "ambient": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "diffuse": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "light_direction_world": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "fog_enabled": {
+          "type": "boolean"
+        },
+        "fog_density_per_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fog_rgb": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "jpeg_quality": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "fog_model": {
+          "enum": [
+            "full_scene",
+            "volume"
+          ],
+          "description": "SIM-3D-FOG: explicit path model. Missing means full_scene for schema1.0 compatibility."
+        },
+        "fog_volume_world_aabb_m": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number"
+            }
+          },
+          "description": "[minimum_xyz, maximum_xyz] in world meters; componentwise min < max."
+        }
+      },
+      "required": [
+        "renderer",
+        "ambient",
+        "diffuse",
+        "light_direction_world",
+        "fog_enabled",
+        "fog_density_per_m",
+        "fog_rgb",
+        "jpeg_quality"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "fog_model": {
+                "const": "volume"
+              },
+              "fog_enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "fog_model",
+              "fog_enabled"
+            ]
+          },
+          "then": {
+            "required": [
+              "fog_volume_world_aabb_m"
+            ]
+          }
+        }
+      ]
+    },
+    "noise_profiles": {
+      "type": "object",
+      "properties": {
+        "ideal": {
+          "type": "object",
+          "properties": {
+            "semantic_miss_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "semantic_wrong_class_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "semantic_fp_poisson": {
+              "type": "number",
+              "minimum": 0
+            },
+            "bbox_sigma_px": {
+              "type": "number",
+              "minimum": 0
+            },
+            "camera_delay_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "camera_drop_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "odom_linear_scale": {
+              "type": "number",
+              "minimum": 0.01
+            },
+            "odom_yaw_bias_rps": {
+              "type": "number"
+            },
+            "odom_increment_sigma_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "lidar_sigma_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "lidar_no_return_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "imu_yaw_bias_rps": {
+              "type": "number"
+            },
+            "imu_gyro_sigma_rps": {
+              "type": "number",
+              "minimum": 0
+            },
+            "imu_accel_sigma_mps2": {
+              "type": "number",
+              "minimum": 0
+            },
+            "drone_delay_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "semantic_miss_p",
+            "semantic_wrong_class_p",
+            "semantic_fp_poisson",
+            "bbox_sigma_px",
+            "camera_delay_ms",
+            "camera_drop_p",
+            "odom_linear_scale",
+            "odom_yaw_bias_rps",
+            "odom_increment_sigma_m",
+            "lidar_sigma_m",
+            "lidar_no_return_p",
+            "imu_yaw_bias_rps",
+            "imu_gyro_sigma_rps",
+            "imu_accel_sigma_mps2",
+            "drone_delay_ms"
+          ],
+          "additionalProperties": false
+        },
+        "stress_v1": {
+          "type": "object",
+          "properties": {
+            "semantic_miss_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "semantic_wrong_class_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "semantic_fp_poisson": {
+              "type": "number",
+              "minimum": 0
+            },
+            "bbox_sigma_px": {
+              "type": "number",
+              "minimum": 0
+            },
+            "camera_delay_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "camera_drop_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "odom_linear_scale": {
+              "type": "number",
+              "minimum": 0.01
+            },
+            "odom_yaw_bias_rps": {
+              "type": "number"
+            },
+            "odom_increment_sigma_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "lidar_sigma_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "lidar_no_return_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "imu_yaw_bias_rps": {
+              "type": "number"
+            },
+            "imu_gyro_sigma_rps": {
+              "type": "number",
+              "minimum": 0
+            },
+            "imu_accel_sigma_mps2": {
+              "type": "number",
+              "minimum": 0
+            },
+            "drone_delay_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "semantic_miss_p",
+            "semantic_wrong_class_p",
+            "semantic_fp_poisson",
+            "bbox_sigma_px",
+            "camera_delay_ms",
+            "camera_drop_p",
+            "odom_linear_scale",
+            "odom_yaw_bias_rps",
+            "odom_increment_sigma_m",
+            "lidar_sigma_m",
+            "lidar_no_return_p",
+            "imu_yaw_bias_rps",
+            "imu_gyro_sigma_rps",
+            "imu_accel_sigma_mps2",
+            "drone_delay_ms"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "ideal",
+        "stress_v1"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "profile_id",
+    "assumption_ids",
+    "geometry",
+    "front_camera",
+    "drone",
+    "lidar",
+    "numeric",
+    "render",
+    "noise_profiles"
+  ],
+  "additionalProperties": false
+}

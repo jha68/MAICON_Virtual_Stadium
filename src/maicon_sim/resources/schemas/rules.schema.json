@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/rules.schema.json",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "profile_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_commit": {
+      "const": "7c414445fcf0302620b2c89f16ce2064f91ca753"
+    },
+    "assumption_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "timing": {
+      "type": "object",
+      "properties": {
+        "tick_ms": {
+          "const": 10
+        },
+        "match_ms": {
+          "type": "integer",
+          "minimum": 10
+        },
+        "objective_publish_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "report_ms": {
+          "type": "integer",
+          "minimum": 10
+        }
+      },
+      "required": [
+        "tick_ms",
+        "match_ms",
+        "objective_publish_ms",
+        "report_ms"
+      ],
+      "additionalProperties": false
+    },
+    "robot": {
+      "type": "object",
+      "properties": {
+        "hp_max": {
+          "const": 4
+        },
+        "ammo_initial": {
+          "const": 8
+        },
+        "max_linear_mps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_angular_rps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "watchdog_ms": {
+          "type": "integer",
+          "minimum": 10
+        },
+        "laser_on_ms": {
+          "type": "integer",
+          "minimum": 10
+        },
+        "fire_period_ms": {
+          "type": "integer",
+          "minimum": 10
+        },
+        "hit_dwell_ms": {
+          "type": "integer",
+          "minimum": 10
+        },
+        "invulnerability_ms": {
+          "type": "integer",
+          "minimum": 10
+        },
+        "hit_lock_ms": {
+          "type": "integer",
+          "minimum": 10
+        }
+      },
+      "required": [
+        "hp_max",
+        "ammo_initial",
+        "max_linear_mps",
+        "max_angular_rps",
+        "watchdog_ms",
+        "laser_on_ms",
+        "fire_period_ms",
+        "hit_dwell_ms",
+        "invulnerability_ms",
+        "hit_lock_ms"
+      ],
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "pause_freezes_match": {
+          "const": true
+        },
+        "pause_freezes_effects": {
+          "const": true
+        },
+        "m3_count_unit": {
+          "const": "image_face"
+        },
+        "m5_capture": {
+          "const": "post_publish_rising_edge"
+        },
+        "m6_ties": {
+          "const": "max_over_tied_permutations"
+        },
+        "alliance_compare": {
+          "const": "m1_to_m6_before_bonus"
+        },
+        "start_detection": {
+          "const": "ready_admitted_auto_start"
+        },
+        "battery_model": {
+          "const": "fixed_100_with_faults"
+        }
+      },
+      "required": [
+        "pause_freezes_match",
+        "pause_freezes_effects",
+        "m3_count_unit",
+        "m5_capture",
+        "m6_ties",
+        "alliance_compare",
+        "start_detection",
+        "battery_model"
+      ],
+      "additionalProperties": false
+    },
+    "sensors": {
+      "type": "object",
+      "properties": {
+        "camera_hz": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "camera_width_px": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "camera_height_px": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "camera_hfov_deg": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 179
+        },
+        "odom_hz": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "imu_hz": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "state_hz": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "lidar_hz": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "lidar_rays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "lidar_min_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "lidar_max_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "drone_intervals_ms": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 10
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "camera_hz",
+        "camera_width_px",
+        "camera_height_px",
+        "camera_hfov_deg",
+        "odom_hz",
+        "imu_hz",
+        "state_hz",
+        "lidar_hz",
+        "lidar_rays",
+        "lidar_min_m",
+        "lidar_max_m",
+        "drone_intervals_ms"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "profile_id",
+    "source_commit",
+    "assumption_ids",
+    "timing",
+    "robot",
+    "policy",
+    "sensors"
+  ],
+  "additionalProperties": false
+}

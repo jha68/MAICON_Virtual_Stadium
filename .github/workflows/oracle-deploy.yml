@@ -1,0 +1,108 @@
+name: oracle-arm64-deploy
+on:
+  workflow_run:
+    workflows: [simulator-validation]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oracle-production
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}
+      revision: ${{ steps.revision.outputs.sha }}
+    steps:
+      - name: Check deployment settings before building
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          OCI_SSH_KNOWN_HOSTS: ${{ secrets.OCI_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$OCI_HOST" && test -n "$OCI_SSH_KEY" && test -n "$OCI_SSH_KNOWN_HOSTS" || {
+            echo 'Set OCI_HOST, OCI_SSH_KEY, OCI_SSH_KNOWN_HOSTS repository secrets. See deploy/oracle/README.md.'
+            exit 1
+          }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - id: revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          python-version: '3.10'
+      - run: uv sync --frozen --extra dev
+      - run: uv run --no-sync pytest tests/unit tests/contracts -m 'not slow and not render and not hardware and not manual_gui'
+      - id: image
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "name=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        id: build
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.name }}:sha-${{ steps.revision.outputs.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.revision }}
+          persist-credentials: false
+      - name: Install dedicated SSH identity and pinned host key
+        env:
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          OCI_SSH_KNOWN_HOSTS: ${{ secrets.OCI_SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$OCI_SSH_KEY" > "$HOME/.ssh/oracle_deploy"
+          printf '%s\n' "$OCI_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/oracle_deploy" "$HOME/.ssh/known_hosts"
+      - name: Pull immutable image, restart and verify (rollback on failure)
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+        run: |
+          [[ "$OCI_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          ssh_options=(-i "$HOME/.ssh/oracle_deploy" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20)
+          remote_script=".maicon-deploy-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.sh"
+          scp "${ssh_options[@]}" deploy/oracle/deploy.sh "ubuntu@$OCI_HOST:$remote_script"
+          printf '%s' "$REGISTRY_TOKEN" | ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" \
+            "docker login ghcr.io --username '$REGISTRY_USER' --password-stdin"
+          trap 'ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "docker logout ghcr.io >/dev/null; rm -f $remote_script" || true' EXIT
+          ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "bash $remote_script '$IMAGE'"

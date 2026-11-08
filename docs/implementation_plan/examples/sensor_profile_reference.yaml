@@ -1,0 +1,160 @@
+schema_version: '1.0'
+profile_id: synthetic_robot_sensors_v1
+assumption_ids:
+- SIM-3D-GEOM
+- SIM-3D-CAM
+- SIM-3D-DRONE
+- SIM-3D-LIDAR
+- SIM-3D-IMU
+- SIM-GEOMETRY
+- SIM-NOISE
+geometry:
+  footprint_length_m: 0.23
+  footprint_width_m: 0.25
+  wall_thickness_m: 0.02
+  chassis:
+    center_m:
+    - 0
+    - 0
+    - 0.1
+    half_extents_m:
+    - 0.115
+    - 0.09
+    - 0.03
+  mast:
+    center_m:
+    - -0.04
+    - 0
+    - 0.19
+    half_extents_m:
+    - 0.025
+    - 0.025
+    - 0.06
+  gimbal_pivot_m:
+  - 0.02
+  - 0
+  - 0.23
+  camera_offset_gimbal_m:
+  - 0.025
+  - 0
+  - 0
+  laser_offset_gimbal_m:
+  - 0.025
+  - 0
+  - 0.02
+  receivers:
+  - center_m:
+    - 0
+    - 0.11
+    - 0.16
+    radius_m: 0.015
+  - center_m:
+    - 0
+    - -0.11
+    - 0.16
+    radius_m: 0.015
+  facility_receiver_offset_m: 0.021
+  facility_receiver_z_m: 0.35
+  facility_receiver_radius_m: 0.02
+  marker_center_m:
+  - -0.08
+  - 0.018
+  - 0.27
+  marker_width_m: 0.06
+  marker_height_m: 0.08
+  marker_normal_body:
+  - 1
+  - 0
+  - 0
+  marker_band_height_m: 0.004
+front_camera:
+  width_px: 640
+  height_px: 480
+  fx_px: 320.0
+  fy_px: 320.0
+  cx_px: 319.5
+  cy_px: 239.5
+  near_m: 0.02
+  far_m: 10.0
+  distortion_model: none
+drone:
+  position_world_m:
+  - 3.06
+  - 2.5
+  - 2.5
+  look_at_world_m:
+  - 3.06
+  - 2.5
+  - 0.0
+  up_world:
+  - 0
+  - 1
+  - 0
+  width_px: 1280
+  height_px: 1024
+  hfov_deg: 110.0
+  near_m: 0.02
+  far_m: 10.0
+lidar:
+  origin_body_m:
+  - 0
+  - 0
+  - 0.145
+  angle_min_rad: -3.141592653589793
+  ray_count: 360
+  range_min_m: 0.05
+  range_max_m: 8.0
+numeric:
+  ray_epsilon_m: 1.0e-09
+  endpoint_epsilon_m: 1.0e-06
+  distance_tie_epsilon_m: 1.0e-09
+  corner_step_max_m: 0.002
+  max_penetration_m: 1.0e-05
+render:
+  renderer: tiny
+  ambient: 0.6
+  diffuse: 0.4
+  light_direction_world:
+  - -1
+  - -1
+  - -2
+  fog_enabled: false
+  fog_density_per_m: 0.15
+  fog_rgb:
+  - 210
+  - 210
+  - 210
+  jpeg_quality: 90
+noise_profiles:
+  ideal:
+    semantic_miss_p: 0.0
+    semantic_wrong_class_p: 0.0
+    semantic_fp_poisson: 0.0
+    bbox_sigma_px: 0.0
+    camera_delay_ms: 0
+    camera_drop_p: 0.0
+    odom_linear_scale: 1.0
+    odom_yaw_bias_rps: 0.0
+    odom_increment_sigma_m: 0.0
+    lidar_sigma_m: 0.0
+    lidar_no_return_p: 0.0
+    imu_yaw_bias_rps: 0.0
+    imu_gyro_sigma_rps: 0.0
+    imu_accel_sigma_mps2: 0.0
+    drone_delay_ms: 0
+  stress_v1:
+    semantic_miss_p: 0.1
+    semantic_wrong_class_p: 0.05
+    semantic_fp_poisson: 0.05
+    bbox_sigma_px: 2.0
+    camera_delay_ms: 100
+    camera_drop_p: 0.05
+    odom_linear_scale: 1.02
+    odom_yaw_bias_rps: 0.005
+    odom_increment_sigma_m: 0.001
+    lidar_sigma_m: 0.01
+    lidar_no_return_p: 0.02
+    imu_yaw_bias_rps: 0.005
+    imu_gyro_sigma_rps: 0.002
+    imu_accel_sigma_mps2: 0.02
+    drone_delay_ms: 100

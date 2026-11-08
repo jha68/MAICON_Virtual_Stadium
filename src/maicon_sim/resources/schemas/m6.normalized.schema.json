@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/m6.normalized.schema.json",
+  "type": "object",
+  "properties": {
+    "mission_code": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9]{8}$"
+    },
+    "ranking": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "B-1",
+          "B-2",
+          "B-3",
+          "R-1",
+          "R-2",
+          "R-3"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "mission_code",
+    "ranking"
+  ],
+  "additionalProperties": false
+}

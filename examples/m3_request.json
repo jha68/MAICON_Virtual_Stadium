@@ -1,0 +1,45 @@
+{
+  "mission_code": "SIMB0001",
+  "sectors": [
+    {
+      "sector": "R-S1",
+      "objects": [
+        {
+          "type": "tank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "sector": "R-S2",
+      "objects": [
+        {
+          "type": "missile",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "sector": "R-S3",
+      "objects": [
+        {
+          "type": "drum",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "sector": "CM",
+      "objects": [
+        {
+          "type": "ammo_box",
+          "count": 1
+        },
+        {
+          "type": "drum",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "name": "JSON Schema 2020-12 meta validation",
+      "status": "PASS",
+      "detail": 9
+    },
+    {
+      "name": "YAML examples against declared schemas",
+      "status": "PASS",
+      "detail": 7
+    },
+    {
+      "name": "Normalized request examples",
+      "status": "PASS",
+      "detail": 3
+    },
+    {
+      "name": "Sample semantic and cross-file consistency",
+      "status": "PASS",
+      "detail": "3 scenarios: references, identity, assignment, assets, sensor fields, placements"
+    },
+    {
+      "name": "Negative schema examples reject invalid input",
+      "status": "PASS",
+      "detail": 13
+    },
+    {
+      "name": "Quotations exactly match main commit",
+      "status": "PASS",
+      "detail": "78 exact excerpts from 5 files"
+    },
+    {
+      "name": "Markdown links fences and Korean prose",
+      "status": "PASS",
+      "detail": "188 local links and all code fences"
+    },
+    {
+      "name": "Hand-calculated scoring and test IDs",
+      "status": "PASS",
+      "detail": "smoke6x20; golden214/141 before bonus,229/141 after; 152 unique tests"
+    }
+  ],
+  "failures": [],
+  "passed": true
+}

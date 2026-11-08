@@ -1,0 +1,1928 @@
+{
+  "schema_version": "1.0",
+  "meaning": "Coverage map only; outcomes require actual pytest execution. Partial or unrun checks do not pass a gate.",
+  "base_count": 152,
+  "supplemental_count": 34,
+  "coverage_counts": {
+    "mapped": 152
+  },
+  "cases": [
+    {
+      "id": "RULE-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "admitted·started 6팀, 모두 미피격, 보고 없음 | 300초와 보고 창 종료 | M1/M3/M6=0, 각 M4=15. 다른 사건이 없으면 M2/M5=0. 양 진영 동점 승리 보너스는 각 5, 최종 각 20",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_001_full_idle_episode*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M1 정답 target·sector set·base 고정 | 세 항목 모두 정답 | M1=10",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_002_complete_m1*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 M1 정답 | target만 정답, sectors만 정답, base만 정답을 각각 별도 run | 각각3·3·4점. 빠진 필드를 이전 제출에서 보충하지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_003_partial_m1*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M1 sectors 정답 `[R-S1, CM]` | 순서만 뒤집음 / R-S2를 추가함 | 순서 변경은3점, 추가 구역은 해당 항목0점",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_004_sector_set*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M1 전체 정답 보고 저장 | base만 정답으로 재보고 | target/search_sectors=null, 최종 M1=4",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_005_replacement_m1*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "BLUE 팀, R-S1·R-S2·R-S3·CM 정답 모두 보고 | 종료 | M3=30",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_006_complete_m3*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 M3 fixture | R-S1의 한 클래스 count 를1 증가 | R-S1=0, 나머지7+7+9=23",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_007_one_wrong_count*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "R-S3 정답은 빈 목록 | R-S3를 명시한 objects=[] / R-S3 자체 생략 | 전자는7, 후자는0. `SIM-M3-COUNT`",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_008_empty_vs_missing*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "어떤 섹터에서 tank 정답0 | objects=[] / tank:0 / DRUM:0을 각각 제출 | 정의된 6종의 0 항목은 모두0으로 정규화해 동일 집계. 알 수 없는 type:0 은422",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_009_zero_normalization*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-010",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "BLUE 팀이 아군 B-S1도 정확히 보고 | 상대 구역과 CM 보고는 없음 | B-S1은 저장되지만 M3=0",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_010_own_sector*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-011",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "모든 채점구역 완전 정답 보고 저장 | R-S1만 정확히 재보고 | 기존 나머지 구역은 사라짐. 최종 M3=7",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_011_m3_replacement*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-012",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "BLUE 팀의 M1 search_sectors가 B-S1, base가 RED_COMMAND_POST | M3 R-S1/R-S2/R-S3/CM 보고, 이후 M5 RED_MAINTENANCE 공개 | M3는 정상 30점. M5 목표는 MAINTENANCE. M1 출력으로 두 목표를 덮지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_012_independent_missions*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-013",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "BLUE B-1의 지정표적 RED_RADAR | B-2 또는 RED로봇이 처음 파괴 | B-1개인 M2=10. 실제 사격자의 M2에는 자동10점이 붙지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_013_assignment_owner*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-014",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "RED 세 시설이 모두 처음 파괴됨 | M2 집계 | BLUE 세 팀 각15. 세 번째 파괴 시 기존 두 팀도 보너스 5 반영",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_014_alliance_targets*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-015",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "이미 파괴한 표적 | 같은 표적을 반복 명중 | 추가 M2점수·파괴 개수 변화 없음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_015_destroy_idempotent*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-016",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "각 로봇 누적 피격0·1·2·3·4회 | 보고 단계에서 M4 확정 | 각각15·12·8·3·0",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_016_hp_score*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-017",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "아군이 다른 아군 수광부에 유효 조사 | 2초 dwell 충족 | 피해 로봇 HP 감소와 M4 감점. 공격자 명중 가점 없음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_017_friendly_fire*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-018",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "4분 공개된 RED_MAINTENANCE가 BLUE 목표 | 그 거점 센서를 어느 로봇이든 유효 차단 | BLUE 세 팀 각 M5=10, RED=0, 즉시 reporting",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_018_capture_assigned_camp*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-019",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "상대 목표가 된 BLUE 거점 | BLUE로봇이 자기 거점 센서를 유효 차단 | RED 점령으로 판정. 로봇 camp로 점령 주체를 바꾸지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_019_self_camp_intrusion*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-020",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "현재 목표가 아닌 거점 | 센서 차단 | M5점수와 경기 단계 변화 없음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_020_nonobjective*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-021",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M6 순위 정답 R1>R2>R3 | 6개 전체 순열 제출 | 아래 M6 순열 기대값과 정확히 일치",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_021_m6_tiers*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-022",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M6 위험도 동점 | 동점 그룹 안에서만 순서 교환 | 허용 정답 순열에 대한 최대 tier 점수 적용. `SIM-M6-SCORING`",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_022_exact_integer_ties*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-023",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "종료 때 HP·탄약·M3 스냅숏 확보 | reporting 중 추가 센서/교전 이벤트 주입 | M6 정답과 M1~M5점수는 바뀌지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_023_freeze*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-024",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "아래 6팀 golden 점수 스냅숏 | M6 모두 저장 후 최종 집계 | BLUE 합214, RED 합141(보너스 전), BLUE 각+5만 적용",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_024_engine_golden_six_team_fixture*",
+        "tests/unit/test_rules_time.py::test_RULE_024_golden_scorer*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RULE-025",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "start_failure가 주입된 팀 | 보고 제출과 종료 | admission/start 정책대로 409·0점, eligible 집합에서 제외. 나머지 팀의 정상 점수를0으로 만들지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_RULE_025_start_failure*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "시작 전 `/order?wait=0`, 시작 tick이후 같은 요청 | 전자는 200 accepted:false, 후자는 200 accepted:true. 최초 공개 뒤 order 불변",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_001_order_publication*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "match_ms=239990과240000에 `/target?wait=0` | 전자는 미공개, 후자는 공개. polling 간격 때문에 게시가 지연되지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_002_objective_boundary*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "match_ms=299990과300000에 유효 M3 접수 | 앞 요청만 저장. 뒤 요청은 409. 마지막 저장 보고는 앞 값",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_003_deadline_report*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "match_ms=245000 구간 끝에 목표 센서 차단 | reporting 시작=245000. 이후 M1·M3 거절, M6 허용, 로봇 제어 잠금",
+      "tests": [
+        "tests/unit/test_geometry.py::test_E2E_002_TIME_004_physical_capture_at_245_seconds*",
+        "tests/unit/test_rules_time.py::test_TIME_004_capture_endpoint*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "reporting 시작 뒤 elapsed=29990과30000에 M6 접수 | 앞 요청은 200, 뒤 요청은 409",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_005_report_deadline*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "6팀 중5팀 유효 제출, 6번째 팀은 malformed M6 | reporting 유지. 422는 제출 완료로 세지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_006_invalid_final_report*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "마지막 eligible 팀이 유효 M6 제출 | 그 요청은 200·저장값 보존 후 즉시 finished. 앞 팀의 후속 수정은 409",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_007_final_ack_then_finish*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "5팀까지 M6 제출 후 한 팀이 재제출 | 최신 보고만 교체. 제출 팀 수는5 유지",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_008_resubmit_count*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "match100초에서 pause, simulation clock10초 진행 후 resume | match·effect clock은100초 유지, HTTP phase=running, M1·M3 허용, motion 정지. `SIM-PAUSE`",
+      "tests": [
+        "tests/integration/test_match_command.py::test_TIME_009_HTTP_own_match_publishes_resume_after_pause*",
+        "tests/unit/test_rules_time.py::test_TIME_009_pause_clock_and_reports*",
+        "tests/unit/test_rules_time.py::test_TIME_009_public_match_distinguishes_resume_and_preserves_checkpoint*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-010",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "pause가 시작될 때 주행·레이저·팬틸트 동작 중 | 물리 동작 중단. resume만으로 이전 주행·발광을 재시작하지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_010_cancel_actions*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-011",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "emitter가 같은 수광부를 연속 조사 | 199tick까지 hit 없음. 200tick=2초 완료에1hit",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_011_dwell_boundary*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-012",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "1초 조사 후1tick 단절, 다시1초 조사 | hit 없음. 마지막 재접촉부터2초 연속이어야 hit",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_012_dwell_gap*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-013",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "emitter A가1초, B가 이어서1초 동안 같은 수광부 조사 | hit 없음. `SIM-LASER`는 emitter·receiver 쌍별 시간이며 다른 emitter끼리 합산하지 않음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_013_emitters_separate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-014",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "t=0 발사, 다른 제한 없음 | t=4.99 발광, t=5.00 소등. t=9.99 재요청은 reloading,10.00은 fired",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_014_laser_expiry*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-015",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "탄약8발, t=0,10,...70에8번 fired | 총8발 감소. t=80 요청은 empty이며 발광 없음",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_015_ammo_eight*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-016",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "t=2에 피격, 이후 계속 조사되는 평가자 전용 입력 | t<12 추가 피격 없음. 무적 중 dwell=0이므로 t=12부터 새로 누적하여 t=14에 다음 hit",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_016_invulnerability_no_accumulation*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-017",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "HP1로봇이 피격되어 HP0 | drive·gimbal·fire 10초 잠금. 만료 후 HP0 상태로 새 명령 허용. 보고 프로세스 유지",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_017_hp_zero_recovers_controls*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-018",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "HP0로봇이 다시 피격 | HP는 음수가 되지 않음. 기능 제한10초 재발생, M4=0 유지",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_018_hp_zero_rehit*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-019",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "t=0에 v=.6 명령 한 번, 장애물·잡음 없음 | [0,.5) 동안만 이동해 .3m. .5초부터 정지. 새 명령 수신 후 다시 이동",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_019_watchdog*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-020",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M5 공개 전부터 센서가 가려져 있음 | `SIM-CAPTURE` 기본값은 게시 후 false→true edge만 인정. 비웠다가 다시 가려야 점령",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_020_prepublish_blocked_requires_new_edge*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-021",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "양 진영 센서 사건의 시각 차이가10ms보다 큼 / 같은 tick | 앞 경우 빠른 사건 승리. 같은 tick은 기록된 event sequence, 기본 생성은 stable base_id 정렬로 결정",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_021_simultaneous_capture_stable_order*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-022",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "match_ms=300000에 hit threshold와 M5 edge 발생 | timer 마감 우선. reporting으로 전이하고 해당 hit·M5는 무시",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_022_deadline_before_geometry*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-023",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "match_ms=240000에 새 목표의 false→true edge 발생 | target 게시 우선. edge를 판정하여 유효 점령·즉시 reporting",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_023_publish_before_geometry*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-024",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "admitted·started eligible 집합이 비어 있음 | 즉시 finished, 전원0점. 보고 창을 기다리지 않음. `SIM-REPORT-ELIGIBILITY`",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_024_empty_eligible*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "TIME-025",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "practice가 활성화된 idle/ready에서 발사·피격 잠금 발생 | robot effect clock이 진행하여 cooldown·lock이 만료되고 SIM-PRACTICE대로 회복. mission idle/ready에서는 물리 제어 잠금 유지",
+      "tests": [
+        "tests/unit/test_rules_time.py::test_TIME_025_practice_effect_clock*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "올바른 mission_code의 대소문자만 변경 | 같은 팀으로 인증. 코드 형식은 영숫자 8자리",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_001_002_auth_and_no_echo*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "틀린 코드, 누락된 코드, 잘못된 body를 각각 전송 | 05의 인증·검증 우선순위에 따라 401 또는 422. traceback·secret 노출 없음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_001_002_auth_and_no_echo*",
+        "tests/contracts/test_http_contract.py::test_API_002_missing_bad_or_unknown_body*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "`/me` 정상 응답 확인 | 공식 필드 slot, camp, phase, ready만 제공. match_id·remaining_time·score·opponent_state 자동 추가 금지",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_003_004_me_ready*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "waiting에서 ready POST, ready에서 ready POST | 전자는 409, 후자는 200 accepted:true. 이후 `/me.ready=true`",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_003_004_me_ready*",
+        "tests/contracts/test_http_contract.py::test_API_004_waiting_rejects_ready*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M1 구식 `sectors`·`goal_base` 전송 | 새 필드로 조용히 추정·변환하지 않음. 05의 unknown-field 정책에 따라 422",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_005_006_invalid_m1*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M1 값에 한글 시설명, 숫자 섹터, 중복 섹터 | 422. enum 코드와 섹터 문자열 검사",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_005_006_invalid_m1*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M3 count=-1,100,1.5,true 또는 중복 type·sector | 각각 422. Python bool을 정수 1로 수용하지 않음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_007_duplicate_normalized_class_and_sector*",
+        "tests/contracts/test_http_contract.py::test_API_007_nonfinite_JSON_rejected_before_journal*",
+        "tests/contracts/test_http_contract.py::test_API_007_strict_count*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M3 type 대소문자와 섹터 순서 변경 | 수용·정규화하고 received로 실제 저장값 확인",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_008_normalize_and_replacement*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "M6에 자기 camp, 중복 ID, 잘못된 형식, 빈 ranking | 422. 제출 팀 수 증가 없음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_009_m6_validation*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-010",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "유효 POST의 저장 직후 응답 유실 | 저장 상태 보존. retry로 점수를 중복 추가하지 않고 최신 전체 보고만 교체",
+      "tests": [
+        "tests/integration/test_http_socket.py::test_API_010_socket_response_loss_keeps_committed_report*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-011",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "A 정상 응답 뒤 B 제출 / A 저장 전 지연·client timeout 뒤 B 제출 | 정상 경로는 SDK 직렬화로 A→B 순서. timeout 경로는 B→늦은 A 저장이 가능함을 재현하고 최신 B 재전송·received 확인으로 복구. 공식 revision/CAS 없이 마감 직전 복구를 절대 보장하지 않음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_011_real_service_delayed_ingress_unknown_outcome_repair*",
+        "tests/contracts/test_sdk_adapters.py::test_API_011_unknown_outcome_late_A_commit_repaired_by_B_resend*",
+        "tests/contracts/test_sdk_adapters.py::test_latest_report_replaces_pending_and_is_retransmitted*",
+        "tests/integration/test_http_socket.py::test_API_011_socket_latest_snapshot_repairs_late_commit*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-012",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "6팀이 order와 target 각각 wait120, 총 12개 longpoll 유지 | `/me`, ready·보고, 로봇 명령 처리가 멈추지 않음. 엔진 single writer 계속 진행",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_012_longpolls_leave_control_live*",
+        "tests/contracts/test_http_contract.py::test_API_012_slow_sensor_copy_does_not_block_command_ingress*",
+        "tests/integration/test_http_socket.py::test_API_012_018_twelve_socket_waits_and_six_concurrent_reports*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-013",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "wait=0,1,120,121,-1,문자열 요청 | 05의 범위 검증. 0은 즉시 응답, 1·120은 대기, 범위 밖과 비정수는 422",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_013_wait_one_second_without_early_timeout*",
+        "tests/contracts/test_http_contract.py::test_API_013_wait_validation*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-014",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "실제 HTTP에서 게시 없이 wait120 지속 | wall clock 120초 이전에 timeout 응답하지 않음. 120초 후 허용 환경 오차 내 accepted:false. slow 시험",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_014_real_wall_120_second_wait*",
+        "tests/integration/test_http_socket.py::test_API_014_socket_longpoll_uses_120_wall_seconds*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-015",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "longpoll 중 클라이언트 취소·프로세스 종료를 100회 반복 | waiter 정리. 종료 후 활성 waiter=0이며 미완료 task가 늘지 않음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_015_cancellation_has_no_waiter_leak*",
+        "tests/integration/test_http_isolation.py::test_API_015_socket_cancel_100_cleans_waiters_and_tasks*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-016",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "구 경기 longpoll 중 다음 경기로 reset | 새 경기 order를 옛 세션 응답으로 누출하지 않음. session 교체 규칙대로 종결",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_016_reset_ends_old_waiter*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-017",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "realtime HTTP 서버를 accelerated 배속으로 실행 시도 | 지원하지 않는 조합으로 startup에서 명시 실패. network 시간을 임의 배속하지 않음",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_API_017_external_http_accelerated_cli_rejected*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-018",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 시각에 6팀의 M3 POST도착 | ingress 순서 기록·재생 가능. request handler가 world를 직접 변경하지 않음",
+      "tests": [
+        "tests/integration/test_http_socket.py::test_API_012_018_twelve_socket_waits_and_six_concurrent_reports*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-019",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "rehearsal prefix로 me·ready·order·target·보고 호출 | 동일 body와 단계 규칙. 별도 공식 경기 기록을 오염시키지 않음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_019_020_rehearsal_unconfigured_separate*",
+        "tests/contracts/test_http_contract.py::test_API_019_independent_rehearsal_and_active_robot_conflict*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-020",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "`/api/rehearsal/drone` 요청 | 미지원 404. 테스트 영상은 `/api/report/drone?camera=test1` 사용",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_019_020_rehearsal_unconfigured_separate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-021",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "order·target이 HTTP 200 accepted:false 반환 | client가 임무 수신 성공으로 해석하지 않고 reason을 구분해 재시도",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_021_false_order_is_not_success*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "API-022",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "report 창이 닫힌 뒤 오래된 M1·M3 retry | 409 후 재시도 폭주 없음. 저장값 변화 없음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_API_022_finished_retries_do_not_mutate_reports*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "참가팀 public API·robot bridge·SDK 객체 순회 | 상대 true pose·HP·ammo·score, M3 정답, 원본 face ID, segmentation ID를 찾을 수 없음",
+      "tests": [
+        "tests/integration/test_http_isolation.py::test_ISO_001_007_socket_public_DTO_SDK_graph_and_redacted_logs*",
+        "tests/unit/test_information_boundary.py::test_ISO_001_participant_dtos_have_no_truth_fields*",
+        "tests/unit/test_sensors.py::test_ISO_001_ISO_003_sensor_dtos*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "평가자 renderer가 segmentation·depth truth 생성 | 평가자 전용 경로에만 기록. RGB 응답·메타데이터·픽셀 파일명에 정답 라벨을 넣지 않음",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_001_ISO_002_T3D12_direct_bgr_private_boundary*",
+        "tests/render/test_dataset.py::test_ISO_002_dataset_private_files_hashes_and_hidden_inventory*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "2D semantic 모드 실행 | run 결과에 semantic 모드 명시. 실제 카메라 AI 검증으로 표시하지 않음",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_ISO_003_006_007_public_child_environment*",
+        "tests/unit/test_sensors.py::test_ISO_001_ISO_003_sensor_dtos*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "oracle 평가 policy 실행 | oracle 표식과 별도 결과 그룹 사용. candidate leaderboard 기본 비교에서 제외",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_ISO_004_oracle_groups_separate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "B-1 토큰으로 B-2로봇 조회·명령 | 05의 팀 범위 검사로 거절. 다른 팀 정보와 동작에 변화 없음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_ISO_005_007_no_cross_robot_or_credentials*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "참가팀 서브프로세스 시작 | admin 자격증명과 truth 경로를 환경·인수·작업 경로로 전달하지 않음",
+      "tests": [
+        "tests/e2e/test_process_lifecycle.py::test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preservation*",
+        "tests/integration/test_evaluation.py::test_ISO_003_006_007_public_child_environment*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "일반 로그·HTTP access log·예외 로그 수집 | mission_code와 admin token 마스킹. query string으로 코드가 새지 않음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_ISO_005_007_no_cross_robot_or_credentials*",
+        "tests/integration/test_evaluation.py::test_ISO_003_006_007_public_child_environment*",
+        "tests/integration/test_http_isolation.py::test_ISO_001_007_socket_public_DTO_SDK_graph_and_redacted_logs*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "허용 관측은 같고 숨은 truth만 다른 두 세계 | 참가팀 DTO 직렬화 결과 동일. 숨은 truth는 평가자 채점에만 영향을 줄 수 있음",
+      "tests": [
+        "tests/unit/test_information_boundary.py::test_ISO_008_hidden_reports_do_not_change_public_observations*",
+        "tests/unit/test_sensors.py::test_ISO_008_hidden_hp_ammo_do_not_change_dto*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "ISO-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "3D camera-only profile에서 semantic endpoint 조회 | 거절. detector 없이 정답 객체를 자동 주입하지 않음",
+      "tests": [
+        "tests/contracts/test_http_contract.py::test_ISO_009_admin_backend_switch_rebuilds_shared_sensor_gateway*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "장애물 없는 world, pose(1,1,0), v=.2,w=0을 1초 | pose(1.2,1,0), 허용 오차 1e-6",
+      "tests": [
+        "tests/unit/test_geometry.py::test_constant_twist*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "pose(1,1,0), v=0,w=pi/2를 1초 | 위치 불변, yaw=pi/2",
+      "tests": [
+        "tests/unit/test_geometry.py::test_constant_twist*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "pose(1,1,0), v=.2,w=.5를 2초 | x=1+.4sin(1), y=1+.4(1-cos(1)), yaw=1",
+      "tests": [
+        "tests/unit/test_geometry.py::test_constant_twist*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "양의 yaw 회전과 양의 pan 명령 | yaw는 왼쪽, pan은 오른쪽으로 방향 변화. 동일 부호로 처리하지 않음",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_S02_T3D03_GEO_004_pan_right*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "25×23cm footprint가 회전하며 벽·박스에 접근 | 중심점이 아닌 회전 footprint로 충돌 판정. 1e-5m 초과 침투 없음",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_C04_GEO_005_rotating_corner_blocked*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "한 tick에 얇은 장애물을 건너뛰는 큰 시험 속도 | 명령 제한 또는 swept·substep 검사로 관통 방지",
+      "tests": [
+        "tests/unit/test_geometry.py::test_GEO_006_large_internal_twist_cannot_tunnel*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "두 로봇이 같은 통로에서 정면 접근 | iteration 순서를 바꿔도 결과 동일. 상호 침투 없음",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_C02_GEO_007_simultaneous_symmetry*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "40cm 통로 중앙으로 직진 | 25cm 폭 로봇 통과. 회전할 때도 대각 footprint 검사",
+      "tests": [
+        "tests/unit/test_geometry.py::test_GEO_008_40cm_corridor*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "박스에 sector_id 명시, 카메라는 다른 섹터에 위치 | 정답은 manifest의 박스 섹터. 보고를 로봇의 현재 섹터로 강제 변환하지 않음",
+      "tests": [
+        "tests/unit/test_sensors.py::test_GEO_009_D2_S04_face_inventory_manifest_sector*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-010",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "생성기가 박스 중심을 섹터 경계에 배치 | 06의 검증에 따라 거절·재생성. 부동소수점 경계로 결과가 흔들리지 않음",
+      "tests": [
+        "tests/unit/test_config.py::test_invalid_configuration_is_actionable*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-011",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "frustum 안 객체 앞에 불투명 박스 추가 | semantic가림 정책에 따라 미관측 처리. 카메라 뒤 객체는 항상 미관측",
+      "tests": [
+        "tests/unit/test_sensors.py::test_D2_S03_GEO_011_occlusion_and_backface*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-012",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 face를 100프레임에서 재관측 | baseline 집계 1. 프레임 수만큼 누적하지 않음",
+      "tests": [
+        "tests/unit/test_policies.py::test_GEO_012_repeated_surface_is_one_track*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-013",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "동일 클래스·동일 texture를 서로 다른 두 face에 배치 | 물리 관측을 구별할 수 있으면 집계 2. texture이름으로 합치지 않음",
+      "tests": [
+        "tests/unit/test_policies.py::test_GEO_013_same_image_different_positions_or_normals_stays_separate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-014",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "false positive 뒤에 반증 관측 제공 | baseline 집계 수정 가능. 과거 최대 count를 고정하지 않음",
+      "tests": [
+        "tests/unit/test_policies.py::test_GEO_014_evidence_corrects_wrong_class_and_retracts_false_positive*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "GEO-015",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "미관측 섹터와 충분히 관측한 빈 섹터 | 내부 상태 구분. 미관측을 자동으로 빈 정답이라고 확정하지 않음",
+      "tests": [
+        "tests/unit/test_policies.py::test_GEO_015_unknown_and_observed_empty_sectors_are_distinct*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "PyBullet DIRECT, DISPLAY와 GPU 없음 | GUI 호출 없이 640×480 uint8 BGR frame 생성",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_001_ISO_002_T3D12_direct_bgr_private_boundary*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "optical 좌표 (0,0,2)의 점 투영 | 주점(cx,cy)에 표시. +x는 이미지 오른쪽, +y는 아래쪽",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_002_T3D01_T3D02_T3D03_T3D04_projection_pan_tilt*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "fx=fy=320,cx=319.5,cy=239.5, 점(.5,0,2) | 예상 u=399.5,v=239.5. landmark 검출 오차 ≤2px",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_003_004_T3D05_metric_depth_plane_and_landmark*",
+        "tests/unit/test_geometry.py::test_optical_projection*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "카메라 앞 2m의 정면 평면, 04 fixture의 near·far | depth 역변환의 중심 오차 ≤0.01m. depth buffer를 미터로 직접 해석하지 않음",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_003_004_T3D05_metric_depth_plane_and_landmark*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "RGB 빨강·초록·파랑 색 패치 | SDK BGR 채널 순서 정확. raw 색 시험과 JPEG 손실 시험 분리",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_005_008_T3D06_uv_and_color_quadrants*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 장면에서 pan=+20, tilt=+20 | pan 물리각 -10deg, tilt +3deg. 04 행렬의 투영 예측과 차이 ≤2px",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_006_combined_pan_tilt_actual_landmark*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "불투명 박스가 객체 face를 완전히 가림 | 참가팀 영상에서 해당 face가 보이지 않고 평가자 visible 면적=0",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_007_T3D07_T3D08_full_partial_occlusion_keeps_private_inventory*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "박스 앞면과 뒷면의 texture가 다름 | 뒷면 이미지가 앞면에 뒤집혀 나타나지 않음. face 방향·UV 정확",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_005_008_T3D06_uv_and_color_quadrants*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "카메라 시야에 자기 차체를 놓고, LiDAR ray 앞에 다른 로봇을 놓음 | RGB는 실제 visual mesh의 가림을 반영. LiDAR는 04의 기본값대로 자기 body를 제외하고 다른 로봇은 차폐물로 판정",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_009_rgb_own_body_occludes*",
+        "tests/unit/test_sensors.py::test_RENDER_009_lidar_other_robot_mast_self_excluded*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-010",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "camera10Hz, odom·IMU20Hz, state2Hz, 1초 구간 | t=0 샘플을 제외한 (0,1]에서 각각 10·20·20·2개. timestamp는 생성 시각",
+      "tests": [
+        "tests/unit/test_sensors.py::test_T3D_09_RENDER_010_actual_rgb_sensor_cadence*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-011",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "image worker를 500ms 지연 | 센서 큐 상한 유지, 최신 frame 정책 동작. motion100Hz 유지",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_011_T3D15_bounded_async_worker_delay_and_generation_reset*",
+        "tests/render/test_bullet_backend.py::test_RENDER_011_T3D15_core_heartbeat_during_500ms_renderer*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-012",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "drone의 마지막 정상 frame 반복 반환 | JPEG bytes와 X-Captured-At 동일. 새 관측으로 중복 추정하지 않음",
+      "tests": [
+        "tests/unit/test_sensors.py::test_D2_S05_RENDER_012_RENDER_013_drone_cache_and_gate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-013",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "우리 시설 파괴 수 0→1→2→3 | 새 drone frame 간격 1→2→5초, 마지막 403. 상대 시설 수로 우리 간격을 바꾸지 않음",
+      "tests": [
+        "tests/unit/test_sensors.py::test_D2_S05_RENDER_012_RENDER_013_drone_cache_and_gate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-014",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "카메라 초기 미수신·일시 손상·진행 외 요청 | 각각 503·마지막 정상 frame 반복·409로 구분",
+      "tests": [
+        "tests/unit/test_sensors.py::test_RENDER_014_RENDER_015_drone_phase_and_test_camera*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-015",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "test mode on, camera=test1, 경기 밖 | 연습 영상은 1초 간격. camera를 생략한 경기 요청과 구분",
+      "tests": [
+        "tests/unit/test_sensors.py::test_RENDER_014_RENDER_015_drone_phase_and_test_camera*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-016",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "noise=0인 평면 LiDAR ray, 벽까지 1m | 거리 오차 ≤1e-5m. miss sentinel은 계약 형식",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_016_canonical_solid_and_bullet_proxy_distance*",
+        "tests/unit/test_sensors.py::test_RENDER_016_lidar_distance_and_null*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-017",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "offline lockstep에서 고정 seed로 noise·drift 적용 | 동일 센서 시퀀스 재현. RGB 렌더 빈도가 odom 난수를 바꾸지 않음",
+      "tests": [
+        "tests/unit/test_sensors.py::test_D2_P02_RENDER_017_reproducible_noise_independent_streams*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-018",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "smoke proxy 강도 증가 | profile에 정의한 영상 감쇠 재현. 실제 연기·LiDAR 물리 검증으로 표시하지 않음",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_018_T3D16_fog_identity_volume_and_contrast*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-019",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "texture asset 누락 또는 digest 불일치 | 실행 전 검증 실패. 별도로 명시한 placeholder 모드만 허용",
+      "tests": [
+        "tests/render/test_assets.py::test_import_digest_failure_is_explicit*",
+        "tests/render/test_assets.py::test_resolved_tamper_detected*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "RENDER-020",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "매 engine tick마다 3D scene 동기화 | visual body pose와 truth pose 차이가 허용 오차 이내. PyBullet이 base를 별도로 이동시키지 않음",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_020_T3D14_scene_sync_no_dynamics_hash_and_close*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "동일 scenario·rules·seed·backend에서 offline lockstep 또는 기록된 ingress·actions·drops 재생 | phase 전이·접수 순서·점수·shot/hit/capture event·state hash 동일. realtime OS 스케줄링을 seed만으로 재현한다고 주장하지 않음",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_001_004_006_roundtrip_public_artifacts*",
+        "tests/integration/test_replay_acceptance.py::test_REPLAY_001_004_scheduled_actions_reexecute_identical_effects*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 action과 공통 semantic·oracle 입력을 2D·3D에 재생 | 공통 base pose·제한 상태·점수·종료 이유 동일. 이미지 추론 결과는 이 시험 입력에서 제외",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_002_D2_P03_T3D_13_same_actions_two_backends*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 3D RGB를 후보 모델 2종에 재생 | 입력 frame와 시각 동일. 검출·보고·점수 차이는 허용하며 비교 측정",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_003_same_recorded_rgb_two_callbacks*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "기록된 API 접수 순서를 CPU 부하가 다른 환경에서 재생 | 저장 순서·deadline 판정 동일. 실시간 네트워크 도착 순서의 동일성은 요구하지 않음",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_001_004_006_roundtrip_public_artifacts*",
+        "tests/integration/test_replay_acceptance.py::test_REPLAY_001_004_scheduled_actions_reexecute_identical_effects*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "로그 중간 snapshot에서 resume | 처음부터 재생한 동일 tick의 상태와 일치. 난수 상태·pending effect 복원",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_005_recorded_checkpoint_cli_resume*",
+        "tests/integration/test_replay_acceptance.py::test_REPLAY_005_private_file_checkpoint_resumes_sensor_and_core*",
+        "tests/unit/test_rules_time.py::test_CORE_checkpoint_preserves_effects*",
+        "tests/unit/test_sensors.py::test_REPLAY_005_noisy_sensor_checkpoint_continuation*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "frame 렌더를 끄거나 viewer를 닫음 | 고정 action trace의 규칙·채점 결과 불변",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_D2_P01_viewer_does_not_change_fixed_trace*",
+        "tests/integration/test_evaluation.py::test_REPLAY_001_004_006_roundtrip_public_artifacts*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "run seed 변경 | 랜덤화 대상만 바뀌고 스키마·크기·충돌·배치 제약은 유지",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_007_materialized_generation_deterministic*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "REPLAY-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "로그를 수정하거나 일부 누락 | checksum·sequence 검사에서 명시 실패. 손상 로그를 정상 재현으로 표시하지 않음",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_008_corrupted_or_missing_journal_fails*",
+        "tests/integration/test_replay_acceptance.py::test_REPLAY_008_corrupted_journal_is_rejected*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "서로 다른 mission_code로 참가팀 6개를 별도 프로세스로 실행 | 임무·slot·camp 혼선 없이 ready→running→reporting→finished. 각 프로세스는 자기 정보만 획득",
+      "tests": [
+        "tests/integration/test_http_socket.py::test_E2E_001_six_processes_actual_HTTP_and_last_M6_ACK*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "245초에 M5로 조기 종료, 모든 팀이 M6 준비 완료 | M1·M3 저장 보존, 제어 즉시 잠금, 첫 M6에 최선 결과 제출, 전원 제출 시 조기 finished",
+      "tests": [
+        "tests/unit/test_geometry.py::test_E2E_002_TIME_004_physical_capture_at_245_seconds*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "한 팀만 준비 실패 또는 미출발 | 다른 팀 계속 진행. admission·eligible 정책 기록. 보고 창에서 무한 대기하지 않음",
+      "tests": [
+        "tests/integration/test_combined_faults.py::test_E2E_003_one_ineligible_team_does_not_block_other_five*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "경기 중 참가팀 하나를 강제 종료, 최대 3회 자동 재시작 | 현재 phase·session 확인 후 복구. 자식 worker와 motion publisher 중복 없음",
+      "tests": [
+        "tests/e2e/test_process_lifecycle.py::test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preservation*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "4번째 비정상 종료 | 무한 재시작 없음. 다른 팀·서버 유지. 실패 원인 기록",
+      "tests": [
+        "tests/e2e/test_process_lifecycle.py::test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preservation*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "보고 직후 응답 유실과 프로세스 재실행 | 저장 보고 보존. 새 보고는 전체 snapshot. 재실행을 새 경기로 오인하지 않음",
+      "tests": [
+        "tests/e2e/test_process_lifecycle.py::test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preservation*",
+        "tests/integration/test_controller_faults.py::test_E2E_006_restart_same_match_preserves_committed_report*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "다음 경기에서 camp·slot 변경, 코드 재사용 profile 적용 | 과거 object·rank·timer·ready·cache 무효화. 새 session 확인",
+      "tests": [
+        "tests/integration/test_controller_faults.py::test_E2E_007_reset_reused_code_new_camp_clears_policy_evidence*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "LLM 5초 지연·timeout·잘못된 JSON | 제어 루프 유지, 오류 기록. 규칙 기반 대체는 허용 profile에서만 실행",
+      "tests": [
+        "tests/integration/test_controller_faults.py::test_E2E_008_009_actual_llm_delay_invalid_timeout_and_longpoll_preserve_control*",
+        "tests/unit/test_policies.py::test_E2E_008_slow_policy_does_not_block_heartbeat_or_step*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "두 개의 wait120과 camera 추론 병행 | 명시적인 pause를 제외하고 주행 명령 공백이 0.5초를 넘지 않음",
+      "tests": [
+        "tests/integration/test_controller_faults.py::test_E2E_008_009_actual_llm_delay_invalid_timeout_and_longpoll_preserve_control*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-010",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "stale POST·드론 중단·pause·restart를 고정 seed로 복합 주입 | trace 재생 가능. 마감 후 재시도 폭주와 메모리 무한 증가 없음",
+      "tests": [
+        "tests/integration/test_combined_faults.py::test_E2E_010_real_HTTP_composite_stale_drone_pause_process_restart_and_core_replay*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-011",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "observer UI에서 일시정지·배속 조작 | realtime의 금지 조합 차단. simulation pause와 match pause를 구분해 표시",
+      "tests": [
+        "tests/e2e/test_gui.py::test_PACK_010_E2E_011_actual_x11_observer_controls*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "E2E-012",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "참가팀 HP0·물리 잠금 중 reporting | 프로세스가 살아 있고 M6 제출. HP0을 경기 종료로 오인하지 않음",
+      "tests": [
+        "tests/integration/test_controller_faults.py::test_E2E_012_hp_zero_device_lock_does_not_prevent_m6*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PERF-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "2D headless, 로봇 6대, 300초, seed 10개 | wall duration·sim/wall 배율·tick p50/p95/p99 기록. realtime 누적 lag를 감추지 않음",
+      "tests": [
+        "tests/performance/test_batch_profiles.py::test_PERF_001_ten_seed_full_2d_episodes*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PERF-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "3D DIRECT, camera 1개 640×480@10Hz와 drone, 300초 | 생성·전달 지연, drop 수, sim/wall 배율 기록. realtime을 못 맞추면 overload 명시",
+      "tests": [
+        "tests/performance/test_render_profiles.py::test_PERF_002_003_render_profiles*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PERF-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "3D DIRECT, camera 6개, 같은 기간 | 확장성 별도 측정. camera 1개 결과를 6개 성능으로 표시하지 않음",
+      "tests": [
+        "tests/performance/test_render_profiles.py::test_PERF_002_003_render_profiles*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PERF-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "longpoll 12개, 팀별 me1Hz, 변경 보고 병행 | request p95/p99·timeout·queue 최대 길이 기록. control 처리 기아 없음",
+      "tests": [
+        "tests/integration/test_http_performance.py::test_PERF_004_socket_longpolls_me_reports_and_control*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PERF-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "추론 worker2FPS, 입력10FPS | queue 상한 유지, 최신 frame 선택, drop 계수 정확",
+      "tests": [
+        "tests/integration/test_controller_faults.py::test_PERF_005_virtual_10fps_input_2fps_inference_exact_drop_accounting*",
+        "tests/integration/test_controller_faults.py::test_PERF_005_wall_10hz_source_2hz_callback_queue_and_accounting*",
+        "tests/unit/test_policies.py::test_PERF_005_inference_latest_queue_bounded_and_timestamps_preserved*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PERF-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "같은 simulator 프로세스에서 6경기 반복 | reset 후 worker·waiter·subscriber 수 복원. warmup이후 RSS가 지속해서 선형 증가하지 않음",
+      "tests": [
+        "tests/performance/test_repeated_matches.py::test_PERF_006_six_sessions_keep_workers_waiters_entities_and_memory_bounded*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-001",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "저장소가 없는 깨끗한 Ubuntu22.04·Python3.10 | 08의 설치와 lock 동기화로 필수 의존성 설치. 개발자 개인 경로·원본 대화·기존 MAICON checkout 불필요",
+      "tests": [
+        "tests/e2e/test_packaging.py::test_PACK_001_003_004_clean_ubuntu_frozen_install_and_offline_3d*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-002",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "core·2D만 설치 | PyBullet·ROS·CUDA import 없이 core 시험과 2D headless 실행",
+      "tests": [
+        "tests/e2e/test_packaging.py::test_PACK_002_009_wheel_core_only_resources_and_lock_outside_checkout*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-003",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "3D 선택 의존성 설치, DISPLAY 없음 | headless RGB demo와 render 시험 통과",
+      "tests": [
+        "tests/e2e/test_packaging.py::test_PACK_001_003_004_clean_ubuntu_frozen_install_and_offline_3d*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-004",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "네트워크 차단 후 동봉 demo 실행 | 외부 LLM·모델 다운로드·공식 비공개 이미지 없이 fixture와 demo 동작",
+      "tests": [
+        "tests/e2e/test_packaging.py::test_PACK_001_003_004_clean_ubuntu_frozen_install_and_offline_3d*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-005",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "공백을 포함한 임의 경로에 clone | 상대경로와 CLI 정상. `/workspace`나 작성자 home 하드코딩 없음",
+      "tests": [
+        "tests/e2e/test_packaging.py::test_PACK_005_008_complete_cli_workflow_in_spaced_paths*",
+        "tests/integration/test_evaluation.py::test_PACK_005_cli_space_path*",
+        "tests/unit/test_config.py::test_all_supplied_scenarios*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-006",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "모든 sample config와 scenario 검증 | schema·참조 무결성·asset digest·배치 검증 통과",
+      "tests": [
+        "tests/unit/test_config.py::test_all_supplied_scenarios*",
+        "tests/unit/test_config.py::test_schema_definition*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-007",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "잘못된 config·없는 asset·지원하지 않는 version | 실행 전 원인·필드 경로를 제시하고 nonzero exit. 조용한 대체와 traceback-only 금지",
+      "tests": [
+        "tests/render/test_assets.py::test_import_digest_failure_is_explicit*",
+        "tests/unit/test_config.py::test_invalid_configuration_is_actionable*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-008",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "README의 처음 사용자 절차 실행 | 2D 보기·3D frame·모의 경기·재생·batch 결과 파일 실제 생성",
+      "tests": [
+        "tests/e2e/test_packaging.py::test_PACK_005_008_complete_cli_workflow_in_spaced_paths*",
+        "tests/integration/test_evaluation.py::test_PACK_008_readme_cli_help_and_assets*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-009",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "wheel을 설치하고 repo 밖에서 실행 | 필요한 default schema·asset·config가 package에 포함돼 정상 동작",
+      "tests": [
+        "tests/e2e/test_packaging.py::test_PACK_002_009_wheel_core_only_resources_and_lock_outside_checkout*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "PACK-010",
+      "source": "base",
+      "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
+      "requirement": "GUI 환경에서 2D viewer와 3D GUI 실행 | 선택 로봇·phase·시계·시점 표시. 창 닫기 후 정상 종료·로그 보존",
+      "tests": [
+        "tests/e2e/test_gui.py::test_PACK_010_E2E_011_actual_x11_observer_controls*",
+        "tests/e2e/test_gui.py::test_PACK_010_actual_x11_bullet_gui_orbit_zoom_and_close*",
+        "tests/e2e/test_gui.py::test_PACK_010_actual_x11_viewer_selected_rgb_drone_panels*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-K01",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "`(x,y,yaw)=(1,1,0)`, `v=.2,w=0`, 1초 | `(1.2,1,0)`, pose 오차 각 `1e-9` 이하",
+      "tests": [
+        "tests/unit/test_geometry.py::test_constant_twist*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-K02",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "`(1,1,0)`, `v=0,w=1`, 1초 | 위치 동일, yaw 1, 오차 `1e-9` 이하",
+      "tests": [
+        "tests/unit/test_geometry.py::test_constant_twist*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-K03",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "`(1,1,0)`, `v=.2,w=1`, 1초 | `x=1+.2*sin(1)`, `y=1+.2*(1-cos(1))`, yaw 1",
+      "tests": [
+        "tests/unit/test_geometry.py::test_constant_twist*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-K04",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "yaw `pi-.01`, `w=1`, .02초 | 저장 yaw `-pi+.01`, 각도 비교 정상",
+      "tests": [
+        "tests/unit/test_geometry.py::test_constant_twist*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-C01",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "2cm 두께 고정벽에 최고속도로 전진 | 벽의 반대편으로 이동하지 않음; 승인 pose의 footprint 비겹침",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_C01_thin_wall_swept*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-C02",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "대칭 위치 두 로봇이 서로 접근 | 충돌 microstep에서 양쪽 정지; 슬롯 이름 바꿔도 대응 궤적 동일",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_C02_GEO_007_simultaneous_symmetry*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-C03",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "A→B→고정벽 연쇄 후보 | 고정점 해결 후 모든 승인 footprint 비겹침",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_C03_collision_chain_no_penetration*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-C04",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "장애물 옆 제자리 회전 | 코너가 스칠 swept bound이면 회전 거부, 중심만 보고 통과시키지 않음",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_C04_GEO_005_rotating_corner_blocked*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-S01",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "카메라 optical `(0,0,1)` 점 | 화면 중심 `(319.5,239.5)`에 투영",
+      "tests": [
+        "tests/unit/test_geometry.py::test_optical_projection*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-S02",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "팬 +20 wire units, yaw0 | 카메라 전방 yaw -10°; 차량 angular.z+와 부호 다름",
+      "tests": [
+        "tests/unit/test_geometry.py::test_D2_S02_T3D03_GEO_004_pan_right*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-S03",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "그림과 카메라 사이 불투명 박스 | 5/9 표본을 가리면 해당 detection 없음",
+      "tests": [
+        "tests/unit/test_sensors.py::test_D2_S03_GEO_011_occlusion_and_backface*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-S04",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "동일 그림이 서로 다른 두 면에 존재 | evaluator 정답은 2; participant detection에는 진짜 면 ID 없음",
+      "tests": [
+        "tests/unit/test_sensors.py::test_GEO_009_D2_S04_face_inventory_manifest_sector*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-S05",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "드론 프레임 반복 장애 | JPEG와 captured timestamp 동일; 요청 횟수만 늘어남",
+      "tests": [
+        "tests/unit/test_sensors.py::test_D2_S05_RENDER_012_RENDER_013_drone_cache_and_gate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-P01",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "viewer 끔/켬, 같은 seed·입력 | canonical event hash와 점수 동일",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_D2_P01_viewer_does_not_change_fixed_trace*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-P02",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "`stress_v1` 프로필 동일 seed 2회 | 같은 플랫폼·잠긴 의존성에서 관측 sequence 동일",
+      "tests": [
+        "tests/unit/test_sensors.py::test_D2_P02_RENDER_017_reproducible_noise_independent_streams*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "D2-P03",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/03_PLAN_2D.md",
+      "requirement": "2D/3D 동일 명령 replay | 평면 pose와 공통 규칙 이벤트 동일; pixel hash 비교는 하지 않음",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_002_D2_P03_T3D_13_same_actions_two_backends*",
+        "tests/render/test_dense_parity.py::test_T3D_13_D2_P03_all_100hz_poses_and_bullet_scene_follow_same_core*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-01",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "canonical camera, optical point `(0,0,1)` | 연속 투영 `(319.5,239.5)` 오차 1e-6px 이하",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_002_T3D01_T3D02_T3D03_T3D04_projection_pan_tilt*",
+        "tests/unit/test_geometry.py::test_optical_projection*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-02",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "optical points `(.1,0,1)`, `(0,.1,1)` | 각각 `(351.5,239.5)`, `(319.5,271.5)` 오차 1e-6px 이하",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_002_T3D01_T3D02_T3D03_T3D04_projection_pan_tilt*",
+        "tests/unit/test_geometry.py::test_optical_projection*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-03",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "yaw=0, pan_wire=+20, tilt=0 | optical forward world yaw=-10°; positive pan이 오른쪽임",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_002_T3D01_T3D02_T3D03_T3D04_projection_pan_tilt*",
+        "tests/unit/test_geometry.py::test_D2_S02_T3D03_GEO_004_pan_right*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-04",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "yaw=0, pan=0, tilt_wire=+20 | optical forward elevation=+3°",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_002_T3D01_T3D02_T3D03_T3D04_projection_pan_tilt*",
+        "tests/unit/test_geometry.py::test_T3D04_tilt_up*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-05",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "camera forward plane z_O=2m, center pixel depth | depth buffer 역변환 2m 오차 1mm 이하; RGB 투영과 private mask 경계 1px 이내",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_003_004_T3D05_metric_depth_plane_and_landmark*",
+        "tests/render/test_bullet_backend.py::test_T3D05_depth_rgb_mask_boundaries_one_pixel*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-06",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "적·청 checker texture, 네 면 각각 정면 캡처 | BGR 채널·좌우·상하 방향 일치, grayscale 채널 기준 fixture 오차 범위 내",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_005_008_T3D06_uv_and_color_quadrants*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-07",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "동일 시야 대상 앞에 완전 차폐 box 삽입 | 뒤쪽 대상 visible pixel=0, private full inventory 유지",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_007_T3D07_T3D08_full_partial_occlusion_keeps_private_inventory*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-08",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "앞 box를 옮겨 대상의 절반만 보이게 함 | visible fraction 감소, full instance count는 변하지 않음",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_007_T3D07_T3D08_full_partial_occlusion_keeps_private_inventory*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-09",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "1초=100tick canonical run | camera tick0 포함 11개, odom/IMU21개, state3개; endpoint convention 동일",
+      "tests": [
+        "tests/unit/test_sensors.py::test_T3D_09_RENDER_010_actual_rgb_sensor_cadence*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-10",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "drone 2초 제한 중 여러 GET | 새 허용 capture 전에는 동일 JPEG hash·X-Captured-At; 파괴3개403",
+      "tests": [
+        "tests/unit/test_sensors.py::test_T3D_10_actual_drone_delivery_gate*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-11",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "laser 조준·가림·연속 199/200interval fixture | 2D와 같은 hit/no-hit, 이벤트 tick·HP·M2 점수 정확 일치",
+      "tests": [
+        "tests/unit/test_sensors.py::test_T3D_11_analytic_laser_199_200_2d_3d_parity*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-12",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "RGB public request·로그·오류 응답 검사 | opponent HP/ammo/M3, entity truth ID, segmentation/depth truth 미노출",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_001_ISO_002_T3D12_direct_bgr_private_boundary*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-13",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "canonical 2D/3D에 동일 action transcript | 모든 core pose 1e-9m/rad 이내, 판정 이벤트·점수·종료 tick 일치",
+      "tests": [
+        "tests/integration/test_evaluation.py::test_REPLAY_002_D2_P03_T3D_13_same_actions_two_backends*",
+        "tests/render/test_dense_parity.py::test_T3D_13_D2_P03_all_100hz_poses_and_bullet_scene_follow_same_core*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-14",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "same pinned renderer·seed·snapshot 2회 | RGB hash 일치; 다른 플랫폼은 geometric tests로 대체하고 pixel 재현 한계 기록",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_020_T3D14_scene_sync_no_dynamics_hash_and_close*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-15",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "렌더에 500ms 지연 fault | realtime core 10Hz command 처리 유지, capture queue bounded, 오래된 frame timestamp 유지",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_011_T3D15_bounded_async_worker_delay_and_generation_reset*",
+        "tests/render/test_bullet_backend.py::test_RENDER_011_T3D15_core_heartbeat_during_500ms_renderer*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-16",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "fog beta0 및 beta 증가 | beta0 RGB와 동일; 증가 시 지정 volume 뒤 contrast 감소; 판정 geometry/점수 불변",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_RENDER_018_T3D16_fog_identity_volume_and_contrast*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-17",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "stationary IMU 및 yaw 회전 | canonical specific_force z=+9.80665, angular rate rad/s; deg/rad 혼용 없음",
+      "tests": [
+        "tests/unit/test_sensors.py::test_T3D17_stationary_imu_gravity*",
+        "tests/unit/test_sensors.py::test_imu_actual_yaw_rate_radians*"
+      ],
+      "coverage": "mapped"
+    },
+    {
+      "id": "T3D-18",
+      "source": "supplemental",
+      "document": "docs/implementation_plan/docs/04_PLAN_3D.md",
+      "requirement": "same match participant restart, then new match | renderer instance 중복 없음; 이전 frame/scene/session 데이터가 새 경기로 누출되지 않음",
+      "tests": [
+        "tests/render/test_bullet_backend.py::test_T3D18_restart_same_scene_new_session_discards_frames*"
+      ],
+      "coverage": "mapped"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:maicon-sim:admin-configure:1.0",
+  "title": "SIM supervisor configure request; not an official competition endpoint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scenario_path"],
+  "properties": {
+    "scenario_path": {"type": "string", "minLength": 1},
+    "backend": {"enum": ["2d", "3d"]},
+    "clock_mode": {"const": "realtime"},
+    "session": {"enum": ["report", "rehearsal"]},
+    "test_mode": {"type": "boolean"}
+  }
+}

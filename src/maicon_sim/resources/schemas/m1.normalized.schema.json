@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maicon-sim.invalid/schema/1.0/m1.normalized.schema.json",
+  "type": "object",
+  "properties": {
+    "mission_code": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9]{8}$"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "enum": [
+            "BLUE_COMMS",
+            "BLUE_OUTPOST",
+            "BLUE_RADAR",
+            "RED_COMMS",
+            "RED_OUTPOST",
+            "RED_RADAR"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "search_sectors": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "enum": [
+              "B-S1",
+              "B-S2",
+              "B-S3",
+              "CM",
+              "R-S1",
+              "R-S2",
+              "R-S3"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 7
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "base": {
+      "anyOf": [
+        {
+          "enum": [
+            "BLUE_COMMAND_POST",
+            "BLUE_MAINTENANCE",
+            "BLUE_SUPPLY_DEPOT",
+            "RED_COMMAND_POST",
+            "RED_MAINTENANCE",
+            "RED_SUPPLY_DEPOT"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "mission_code"
+  ],
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "required": [
+        "target"
+      ],
+      "properties": {
+        "target": {
+          "not": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "required": [
+        "search_sectors"
+      ],
+      "properties": {
+        "search_sectors": {
+          "not": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "required": [
+        "base"
+      ],
+      "properties": {
+        "base": {
+          "not": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

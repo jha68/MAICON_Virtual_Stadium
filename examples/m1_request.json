@@ -1,0 +1,9 @@
+{
+  "mission_code": "SIMB0001",
+  "target": "RED_RADAR",
+  "search_sectors": [
+    "R-S1",
+    "CM"
+  ],
+  "base": "RED_SUPPLY_DEPOT"
+}
