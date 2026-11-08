@@ -25,7 +25,8 @@ RUN --mount=type=secret,id=proxy_ca,required=false \
     if [ -s /run/secrets/proxy_ca ]; then export SSL_CERT_FILE=/run/secrets/proxy_ca; fi; \
     uv sync --frozen --all-extras --python /usr/bin/python3.10 \
     && scripts/doctor.sh \
-    && mkdir -p /app/artifacts && chown 1000:1000 /app/artifacts
+    && mkdir -p /app/artifacts && chown 1000:1000 /app/artifacts \
+    && chmod -R a+rX /app
 
 USER 1000:1000
 

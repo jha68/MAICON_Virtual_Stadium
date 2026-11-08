@@ -60,3 +60,9 @@
 최초 GitHub Actions ARM64 빌드 로그에서 PyBullet 3.2.7의 `examples/pybullet/pybullet.c:40:10: fatal error: Python.h: No such file or directory`를 확인했다. x86에서는 wheel을 사용했으므로 드러나지 않았던 Docker 빌드 의존성 누락이다. 컴파일러만 설치한 build-essential에는 Python 개발 헤더가 포함되지 않는다.
 
 Dockerfile에 인터프리터와 일치하는 `python3.10-dev`를 추가했다. 긴 소스 빌드 전 `python3.10-config --includes`와 C 컴파일러의 `-fsyntax-only`로 실제 Python.h include를 검사한다. 독립적으로 빌드 도구를 확인할 수 있도록 build-base stage를 구분했다. PyBullet 버전·의존성 lock·TinyRenderer 기능은 유지했다. 로컬 x86 헤더 검사와 원격 ARM 전체 빌드 결과는 구분해 기록한다.
+
+## D009 — Oracle 사용자 UID와 bind mount 쓰기 권한
+
+사용자가 제공한 로그에서 ARM64 이미지 빌드·GHCR 인증·VM pull 성공 후 앱이 PermissionError로 재시작하는 것을 확인했다. VM의 `id`와 `ls -ldn`으로 ubuntu 및 maicon-data/runs 소유자는 1001:1001이지만 Dockerfile의 기본 USER는 1000:1000임을 확인했다. 읽기·실행이 가능한 앱이 bind mount의 결과·토큰·자산 경로에 쓰지 못한 것이다.
+
+배포 시 실제 VM 사용자 UID/GID를 `--user`로 지정한다. 서버 정지 전에 같은 UID/GID로 패키지 import와 쓰기·삭제 검사를 수행해 잘못된 이미지/mount 권한이면 기존 서버를 유지한 채 실패한다. Docker 빌드 시 `/app`의 배포 코드·의존성에 읽기/디렉터리 탐색 권한을 보장해 빌드 컨텍스트의 umask와 무관하게 다른 UID가 실행할 수 있게 한다. 런타임 생성되는 private 토큰/기록 권한은 변경하지 않는다. sudo 배포는 거절한다. 앱 root 실행·권한 777·전체 데이터 강제 chown은 사용하지 않는다. 배포 테스트에 쓰기 사전 검사 실패 시 기존 컨테이너 보존을 추가했다. 로컬 실제 Docker에서 1000→1001 권한 오류를 재현하고, UID 일치 후 실제 640×480 Bullet RGB 생성·파일 저장 통과를 확인했다. 원격 재배포 성공은 별도로 확인한다.

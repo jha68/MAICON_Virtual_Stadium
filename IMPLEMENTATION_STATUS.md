@@ -141,4 +141,12 @@ API는 VM loopback으로 유지한다. 공인 IP에서 브라우저 경기 화�
 
 ### 최초 ARM 이미지 빌드 실패 수정
 
-사용자가 제공한 실제 Actions 로그에서 PyBullet 3.2.7 소스 컴파일의 `fatal error: Python.h: No such file or directory`를 확인했다. Dockerfile의 Python 개발 헤더 누락을 `python3.10-dev`로 보완했고, 의존성 설치 전에 C 컴파일러로 Python.h를 검사하도록 했다(D008). `build-base` stage로 이 설치·헤더 검사만 별도로 실행할 수 있다。로컬 x86 Ubuntu 22.04에서 `docker build --target build-base`를 실제 실행해 설치와 C 컴파일러 헤더 검사 통과를 확인했다. 로그는 `artifacts/python-header-build.log`에 저장한다. 이 검사는 수정 후 원격 ARM 전체 빌드 성공과 별개이며, 원격 성공은 아직 확인되지 않았다.
+사용자가 제공한 실제 Actions 로그에서 PyBullet 3.2.7 소스 컴파일의 `fatal error: Python.h: No such file or directory`를 확인했다. Dockerfile의 Python 개발 헤더 누락을 `python3.10-dev`로 보완했고, 의존성 설치 전에 C 컴파일러로 Python.h를 검사하도록 했다(D008). `build-base` stage로 이 설치·헤더 검사만 별도로 실행할 수 있다. 로컬 x86 Ubuntu 22.04에서 `docker build --target build-base`를 실제 실행해 설치와 C 컴파일러 헤더 검사 통과를 확인했다. 로그는 `artifacts/python-header-build.log`에 저장한다. 이 검사는 수정 후 원격 ARM 전체 빌드 성공과 별개이며, 당시 원격 성공은 아직 확인되지 않았다.
+
+### Oracle bind mount UID 수정
+
+이후 사용자가 제공한 Actions 로그로 ARM64 이미지 빌드·GHCR push·VM pull 성공을 확인했다(digest `6764d1f2414e78dc07fb734c27a600b972766a79cbe219cdf32e29d683b9f841`). 앱 실행은 PermissionError로 실패했다. VM의 id와 디렉터리 소유권 출력으로 ubuntu/data는 1001:1001, 이미지 기본 사용자는 1000:1000임을 확인했다.
+
+배포 스크립트에 VM 사용자 UID/GID 적용, 기존 서버 정지 전 패키지 import·볼륨 쓰기 검사, sudo 실행 거절을 추가했다. Dockerfile은 배포 코드/의존성의 읽기·탐색 권한을 정규화한다. private 런타임 데이터 권한은 넓히지 않는다(D009).
+
+배포 성공·실패·복구 검사 7개 통과: `artifacts/oracle-deploy-uid.xml`. 로컬 실제 Docker에서 UID 1001 소유 폴더에 UID 1000의 쓰기 실패를 재현했다. 같은 UID 1001로 실행하면 실제 Bullet RGB(640×480) 생성과 저장에 성공했다: `artifacts/oracle-bind-uid-check.json`. 검증용 이미지는 기존 x86 acceptance 이미지에 동일한 읽기 권한 정규화를 적용했다. 수정 후 Oracle ARM64 재배포 성공은 아직 확인 전이다.

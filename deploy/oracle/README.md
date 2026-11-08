@@ -49,6 +49,8 @@ GHCR가 비공개여도 workflow의 일회성 GITHUB_TOKEN으로 VM에서 pull�
 
 산출물은 `~/maicon-data/runs/`에 보존한다. 실패하면 이전 컨테이너를 복구한다. 직전 이미지와 실행 기록을 자동 삭제하지 않으므로 디스크 사용량을 관찰한다. 배포는 API readiness 검사이며 6대 주행/3D 실시간 성능 시험을 대신하지 않는다.
 
+VM 사용자의 UID/GID는 이미지 기본값 1000과 다를 수 있다(현재 Oracle ubuntu는 1001:1001). 배포 스크립트가 `id -u`/`id -g`를 읽어 컨테이너의 `--user`에 적용한다. 기존 서버를 정지하기 전에 같은 사용자로 `/data/runs`에 임시 파일을 쓰고 지우는 검사를 한다. 배포 스크립트는 ubuntu로 실행하며 sudo로 실행하지 않는다. 데이터 폴더의 권한을 777로 넓히거나 앱을 root로 실행하지 않는다.
+
 ## 4. 접속 범위와 웹 화면
 
 이 단계는 기존 3D API 서버를 배포한다. **브라우저 viewer는 아직 구현되지 않았다.** Docker host network를 사용하지만 API 자체가 VM loopback 8000/8001에만 bind한다. 관리자 포트를 공인 IP에 공개하지 않는다. 외부에서 사용하려면 후속 웹 viewer와 인증/HTTPS reverse proxy를 연결한다. 서버 설치만으로 공인 IP에 경기 화면이 생기지는 않는다.

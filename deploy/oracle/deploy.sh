@@ -10,6 +10,17 @@ mkdir -p "$data_dir/runs"
 exec 9>"$data_dir/deploy.lock"
 flock -n 9 || { echo 'Another deployment is in progress' >&2; exit 3; }
 docker pull "$image"
+runtime_uid=$(id -u)
+runtime_gid=$(id -g)
+if [[ "$runtime_uid" == 0 ]]; then
+    echo 'Run deployment as the non-root VM user, without sudo.' >&2
+    exit 2
+fi
+# Bind mounts preserve numeric ownership; Ubuntu's UID may differ from image UID 1000.
+# Verify writes before stopping a healthy existing match server.
+docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
+    --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
+    -c 'import maicon_sim.config.loader; import pathlib,tempfile; d=tempfile.TemporaryDirectory(dir="/data/runs"); pathlib.Path(d.name,"probe").write_text("ok"); d.cleanup()'
 old=false
 if docker container inspect maicon-sim >/dev/null 2>&1; then
     docker rm -f maicon-sim-previous >/dev/null 2>&1 || true
@@ -34,6 +45,7 @@ trap 'rollback; exit 1' ERR
 run_id="$(date -u +%Y%m%dT%H%M%S)-${image##*:}-$$"
 # Both APIs bind loopback. No public admin port or unauthenticated web UI.
 docker run -d --name maicon-sim --restart unless-stopped --network host \
+    --user "$runtime_uid:$runtime_gid" \
     --mount "type=bind,src=$data_dir,dst=/data" \
     "$image" serve --example smoke_six --backend 3d \
     --public-port 8000 --admin-port 8001 --out "/data/runs/$run_id" >/dev/null
