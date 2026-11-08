@@ -1,0 +1,32 @@
+const { chromium }=require('playwright');
+const fs=require('fs'); // Run against a disposable local 3D serve instance on ports 18000/18001/18080.
+fs.mkdirSync('artifacts/evidence',{recursive:true});
+(async()=>{let ready=false;for(let i=0;i<120;i++){try{const r=await fetch('http://127.0.0.1:18080/');if(r.status===401){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('Disposable web test server did not start');const browser=await chromium.launch({executablePath:process.env.CHROMIUM_BIN||undefined,headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const context=await browser.newContext({viewport:{width:1440,height:1120},httpCredentials:{username:'admin',password:'test-only-browser-password-0123456789'}});
+const page=await context.newPage(), errors=[];page.on('pageerror',e=>errors.push(e.message));
+try{
+ await page.goto('http://127.0.0.1:18080/');await page.waitForSelector('#connection.online');
+ await page.waitForFunction(()=>document.querySelector('#camera').naturalWidth===640,null,{timeout:30000});
+ await page.screenshot({path:'artifacts/evidence/web-2d.png',fullPage:true});
+ await page.click('#view-3d');await page.waitForSelector('#world canvas',{state:'visible'});await page.waitForTimeout(400);
+ await page.locator('#world canvas').screenshot({path:'artifacts/evidence/web-3d-canvas.png'});
+ await page.click('[data-action=ready]');await page.waitForFunction(()=>!document.querySelector('[data-action=start]').disabled,null,{timeout:45000});
+ await page.click('[data-action=start]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 진행');
+ const first=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
+ await page.waitForTimeout(2500);
+ const moved=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
+ const distances=Object.keys(first.robots).map(s=>Math.hypot(first.robots[s].pose.x_m-moved.robots[s].pose.x_m,first.robots[s].pose.y_m-moved.robots[s].pose.y_m));
+ if(!distances.some(d=>d>.01))throw Error('Patrol demo did not move');
+ await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:'artifacts/evidence/web-running-3d.png',fullPage:true});
+ await page.click('[data-action=pause]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='일시정지');
+ const paused=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();await page.waitForTimeout(350);
+ const still=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
+ if(paused.match_elapsed_ticks!==still.match_elapsed_ticks)throw Error('Paused clock advanced');
+ await page.click('[data-action=resume]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 진행');
+ await page.click('[data-action=finish]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 종료',null,{timeout:45000});
+ const result=await (await context.request.get('http://127.0.0.1:18080/api/result')).json();
+ page.once('dialog',d=>d.accept());await page.click('[data-action=reset]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='세팅 중');
+ if(errors.length)throw Error('Browser errors: '+errors.join(';'));
+ fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,browserErrors:errors},null,2));
+ console.log('Browser E2E passed: real RGB, WebGL, six processes, movement, pause/resume, finish/result, reset.');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

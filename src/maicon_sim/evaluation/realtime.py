@@ -5,6 +5,7 @@ import asyncio
 import os
 from pathlib import Path
 import secrets
+import signal
 import socket
 import subprocess
 import sys
@@ -24,13 +25,13 @@ from .recorder import Recorder
 
 class LocalServers:
     """Bound sockets avoid race-prone ephemeral-port discovery."""
-    def __init__(self, public, admin, public_port=0, admin_port=0):
-        self.apps = (public, admin)
+    def __init__(self, public, admin, public_port=0, admin_port=0, extra=()):
+        self.apps = (public, admin, *(app for app, _ in extra))
         self.ports = []
         self.servers = []
         self.threads = []
         self.sockets = []
-        for app, port in zip(self.apps, (public_port, admin_port)):
+        for app, port in zip(self.apps, (public_port, admin_port, *(port for _, port in extra))):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind(("127.0.0.1", port))
@@ -239,11 +240,19 @@ def run_realtime(config, *, backend="2d", out=None, headless=True, viewer=False,
         recorder.close()
 
 
-def serve(config, backend, public_port, admin_port, out):
+def serve(config, backend, public_port, admin_port, out, web_port=None):
+    password = None
+    if web_port is not None:
+        password_file = os.environ.get('MAICON_WEB_PASSWORD_FILE')
+        if not password_file:
+            raise ValueError('MAICON_WEB_PASSWORD_FILE is required for the operator dashboard')
+        password = Path(password_file).read_text().strip()
+        if len(password) < 24:
+            raise ValueError('Dashboard password must contain at least 24 characters')
     root = Path(out).resolve()
     root.mkdir(parents=True, exist_ok=True)
     scene, assets = start_scene(config, backend, root, True)
-    engine = MatchEngine(config)
+    engine = MatchEngine(config, retain_journal=web_port is None)
     gateway = SensorGateway(config, scene)
     token = secrets.token_urlsafe(32)
     token_path = root / "private" / "admin.token"
@@ -252,15 +261,32 @@ def serve(config, backend, public_port, admin_port, out):
     with os.fdopen(fd, "w") as f:
         f.write(token)
     public, admin = create_apps(engine, gateway, token)
-    runtime = EngineRuntime(engine, gateway)
+    manager = None
+    extra = ()
+    if web_port is not None:
+        from maicon_sim.server.web import DashboardManager, create_dashboard
+        manager = DashboardManager(public.state.service, root)
+        extra = ((create_dashboard(manager, password), web_port),)
+    runtime = EngineRuntime(engine, gateway, on_tick=manager.on_tick if manager else None)
+    previous_term = None
+    if threading.current_thread() is threading.main_thread():
+        previous_term = signal.signal(signal.SIGTERM, lambda *_: setattr(public.state.service, 'shutdown_requested', True))
     try:
-        with runtime, LocalServers(public, admin, public_port, admin_port):
+        with runtime, LocalServers(public, admin, public_port, admin_port, extra=extra) as servers:
+            if manager:
+                manager.public_url = servers.public_url
             print(f"Realtime APIs active. Supervisor credential file: {token_path}", flush=True)
             while not public.state.service.shutdown_requested:
                 if runtime.failure:
                     raise runtime.failure
+                if manager:
+                    manager.maintain()
                 time.sleep(.05)
     finally:
+        if previous_term is not None:
+            signal.signal(signal.SIGTERM, previous_term)
+        if manager:
+            manager.close()
         runtime.close()
         if scene:
             scene.close()

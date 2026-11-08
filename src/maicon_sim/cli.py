@@ -42,6 +42,7 @@ def parser():
     serve.add_argument("--public-port", type=int, default=8000)
     serve.add_argument("--admin-port", type=int, default=8001)
     serve.add_argument("--out", default="artifacts/server")
+    serve.add_argument("--web-port", type=int, help="Loopback operator dashboard; requires MAICON_WEB_PASSWORD_FILE")
     agent = subs.add_parser("agent", help="Run one public-port participant process")
     agent.add_argument("--slot", required=True, choices=("B-1", "B-2", "B-3", "R-1", "R-2", "R-3"))
     agent.add_argument("--policy", choices=("idle", "baseline", "patrol", "blocker", "capture_runner"), default="baseline")
@@ -178,7 +179,7 @@ def execute(args):
         if args.clock != "realtime":
             raise ValueError("External HTTP participants require realtime clock; accelerated HTTP is unsupported")
         from maicon_sim.evaluation.realtime import serve
-        return serve(config, args.backend, args.public_port, args.admin_port, args.out)
+        return serve(config, args.backend, args.public_port, args.admin_port, args.out, web_port=args.web_port)
     if args.command == "batch":
         from maicon_sim.evaluation.batch import batch
         try:

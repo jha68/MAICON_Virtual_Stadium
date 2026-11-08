@@ -1,6 +1,6 @@
 # MAICON Virtual Stadium
 
-Oracle ARM64 배포 준비·GitHub Actions 설정은 [배포 안내](deploy/oracle/README.md)를 참고하세요. 기존 API 서버의 배포 절차이며 브라우저 viewer는 아직 별도 구현이 필요합니다.
+Oracle ARM64 자동 배포와 HTTPS 웹 화면 접속은 [배포 안내](deploy/oracle/README.md)를 참고하세요. 웹에서 2D 지도·3D 장면·실제 로봇 카메라와 경기 준비·시작·초기화를 사용할 수 있습니다.
 
 공통 Python 코어를 사용하는 2D·3D 경기 시뮬레이터입니다. 2D는 의미 관측과 전략·통신을, 3D는 CPU PyBullet TinyRenderer의 RGB·가림·깊이와 영상 인식 경로를 시험합니다. ROS·GPU·외부 모델·LLM 키 없이 동봉 합성 자료로 실행할 수 있습니다.
 
@@ -25,6 +25,16 @@ bash scripts/bootstrap.sh
 각 출력에는 새 디렉터리를 지정하세요. `--example`은 wheel 안의 리소스를 사용하므로 설치 후 저장소 밖에서도 동작합니다.
 
 코어·2D만 필요하면 `uv sync --frozen`으로 설치할 수 있습니다. `bullet`, `vision`, `viewer`, `dev`는 선택 extra이며 코어는 PyBullet·pygame·ROS를 import하지 않습니다. 기본 프로필의 HP·탄약·시계와 임무 채점은 두 백엔드에서 동일합니다.
+
+## 브라우저에서 경기 운영
+
+Oracle 배포의 기본 주소는 `https://maicon.junununseo.com`입니다. DNS A 레코드를 VM 공인 IP로 지정하고 OCI 인바운드 TCP 80·443을 허용해야 합니다. Caddy가 HTTPS 인증서를 자동 발급·갱신합니다. 로그인 사용자명은 `admin`, 최초 배포 시 생성되는 비밀번호는 VM에서 `cat ~/maicon-data/web.password`로 확인합니다. 비밀번호를 채팅이나 저장소에 올리지 마세요.
+
+정책 선택 → 준비 시작 → 여섯 팀 준비 완료 → 경기 시작 순서입니다. 실제 참가팀 프로세스 여섯 개를 실행하며 pose를 직접 움직이지 않습니다. 일시정지·재개·종료 후 점수 JSON 확인, 다음 경기 초기화를 지원합니다. 세팅/준비 중에는 제한 시간이 줄어들지 않습니다. 준비가 실패하면 초기화로 취소할 수 있습니다. 기본 순찰 데모와 실제 LLM을 쓰지 않는 baseline을 구분하세요.
+
+2D 지도와 브라우저 WebGL 3D 장면은 같은 core snapshot을 그립니다. 오른쪽 카메라는 실제 PyBullet RGB이며 화면 갱신은 최대 2Hz입니다. 서버 센서 프로필·규칙은 바꾸지 않습니다. 브라우저 3D는 wheel 동역학이나 서버 렌더 영상이 아닙니다. 모든 화면은 인증된 운영자 정답 시점이며 참가팀 공개 API에 정답 endpoint를 추가하지 않습니다.
+
+자세한 보안·기록 범위와 시험은 [웹 화면 계약](docs/WEB_DASHBOARD.md)에 있습니다.
 
 ## 화면과 실제 프로세스 실행
 

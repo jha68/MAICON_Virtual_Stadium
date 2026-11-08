@@ -97,12 +97,14 @@ jobs:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
           IMAGE: ${{ needs.publish.outputs.image }}
+          WEB_DOMAIN: ${{ vars.MAICON_DOMAIN || 'maicon.junununseo.com' }}
         run: |
           [[ "$OCI_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$WEB_DOMAIN" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$ ]]
           ssh_options=(-i "$HOME/.ssh/oracle_deploy" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20)
           remote_script=".maicon-deploy-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.sh"
           scp "${ssh_options[@]}" deploy/oracle/deploy.sh "ubuntu@$OCI_HOST:$remote_script"
           printf '%s' "$REGISTRY_TOKEN" | ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" \
             "docker login ghcr.io --username '$REGISTRY_USER' --password-stdin"
           trap 'ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "docker logout ghcr.io >/dev/null; rm -f $remote_script" || true' EXIT
-          ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "bash $remote_script '$IMAGE'"
+          ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "bash $remote_script '$IMAGE' '$WEB_DOMAIN'"

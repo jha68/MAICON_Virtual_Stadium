@@ -150,3 +150,22 @@ API는 VM loopback으로 유지한다. 공인 IP에서 브라우저 경기 화�
 배포 스크립트에 VM 사용자 UID/GID 적용, 기존 서버 정지 전 패키지 import·볼륨 쓰기 검사, sudo 실행 거절을 추가했다. Dockerfile은 배포 코드/의존성의 읽기·탐색 권한을 정규화한다. private 런타임 데이터 권한은 넓히지 않는다(D009).
 
 배포 성공·실패·복구 검사 7개 통과: `artifacts/oracle-deploy-uid.xml`. 로컬 실제 Docker에서 UID 1001 소유 폴더에 UID 1000의 쓰기 실패를 재현했다. 같은 UID 1001로 실행하면 실제 Bullet RGB(640×480) 생성과 저장에 성공했다: `artifacts/oracle-bind-uid-check.json`. 검증용 이미지는 기존 x86 acceptance 이미지에 동일한 읽기 권한 정규화를 적용했다. 수정 후 Oracle ARM64 재배포 성공은 아직 확인 전이다.
+
+### Oracle 배포 확인과 운영자 웹 화면
+
+사용자의 VM 출력으로 `maicon-sim` 컨테이너 Up 및 `/sim/session`의 `rgb:true, semantic:false, lidar:true`를 확인했다. UID 수정 후 기존 3D API 서버 배포는 성공했다. 이후 브라우저 화면 연결 요청에 따라 운영자 웹 UI를 구현했다.
+
+- 인증된 별도 loopback8080 웹 앱: 2D 지도·WebGL3D 장면·실제 선택 로봇 RGB, HP·탄약·준비 상태·경기 시계·지연/누락 수치.
+- 준비 시작 시 실제 참가 프로세스6개를 실행하고 공개 API ready를 기다린다. 시작·일시정지·재개·종료·결과 JSON·준비 취소·다음 경기 초기화를 지원한다. 종료 점수는 private/results에 보존한다.
+- 비밀번호는 VM의 `~/maicon-data/web.password`에 최초 생성(0600)하고 재배포 시 유지한다. 운영자 admin 계정은 기존 관리자 Bearer 토큰과 분리한다. 공개 참가팀 앱에 정답 endpoint를 추가하지 않는다.
+- Caddy2.10.2와 인증서 named volume을 자동 배포한다. 기본 주소는 사용자가 지정한 `maicon.junununseo.com`이며, GitHub variable MAICON_DOMAIN으로 변경 가능하다. A 레코드·DNS only·OCI/VM TCP80/443 허용이 필요하다. 공개 인증서 발급은 아직 확인하지 않았다.
+- Three.js0.180.0을 MIT license와 provenance와 함께 패키지에 포함했다. 외부 CDN 의존성은 없다. 브라우저3D는 코어 기하의 관찰 장면이고 실제 PyBullet 센서 영상은 별도 패널이다.
+
+실행 검증:
+
+1. 웹 인증·CSRF·정적 파일·참가팀 정보 경계·writer 조작·결과 보존·준비 취소·SIGTERM 종료 및 기존 HTTP/배포 회귀 **26 passed, 1 deselected**: `artifacts/web-regression.xml`. deselected는 별도의120초 slow 시험이며 새 웹 통과 수에 포함하지 않았다.
+2. 실제 Chromium/Playwright에서 WebGL·실제 RGB·6개 참가 프로세스·순찰 주행·pause 시계 정지·resume·관리자 조기 종료·점수·다음 경기 reset 통과. `artifacts/web-browser-evidence.json`, `artifacts/evidence/web-2d.png`, `web-running-3d.png`. 기본300초 경기를 끝까지 진행한 시험이 아니라 UI 조기 종료 경로 시험이다. 원격2 OCPU 성능 보장이 아니다.
+3. 실제 Caddy 컨테이너로 운영 도메인 설정 검증. localhost TLS에서 신뢰한 테스트 CA로 인증서 검증·익명401·로그인200·HTTPS proxy를 통한 동일-origin 조작200 확인: `artifacts/web-https-evidence.json`. 공개 ACME 발급과 구분한다.
+4. 최종 wheel에 HTML/CSS/JS/Three.js/license를 원본 바이트 그대로 포함하는지 확인했다. 두 workflow는 actionlint1.7.7(shellcheck 제외)로 통과했다. 브라우저 E2E를 기존 CI에 추가해 성공 후 Oracle 배포하도록 했다. 새 원격 CI와 웹 배포 성공은 별도 확인 전이다.
+
+웹 범위·보안·기록 계약은 `docs/WEB_DASHBOARD.md`, 접속 절차는 `deploy/oracle/README.md`에 있다. 초기 run/replay·실물H·실제LLM·인식 일반화의 한계는 유지한다.
