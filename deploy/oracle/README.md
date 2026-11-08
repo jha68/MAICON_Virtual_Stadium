@@ -1,6 +1,8 @@
 # Oracle ARM64 CI/CD
 
-현재 대상: Ubuntu 24.04 ARM64, 2 OCPU, RAM 약12GB. VM에는 Docker만 설치하고 GitHub Actions가 ARM64 이미지를 빌드한다. x86 runner의 QEMU 빌드라 첫 빌드는 오래 걸릴 수 있다. Docker build 안의 doctor가 ARM64 의존성과 실제 TinyRenderer를 검사한다. 아직 원격 ARM 빌드·Oracle 배포는 실행하지 않았다.
+현재 대상: Ubuntu 24.04 ARM64, 2 OCPU, RAM 약12GB. VM에는 Docker만 설치하고 GitHub Actions가 ARM64 이미지를 빌드한다. x86 runner의 QEMU 빌드라 첫 빌드는 오래 걸릴 수 있다. Docker build 안의 doctor가 ARM64 의존성과 실제 TinyRenderer를 검사한다. 원격 ARM 전체 빌드·Oracle 배포 성공은 아직 확인하지 못했다.
+
+최초 원격 ARM 빌드는 PyBullet 3.2.7 컴파일 중 `Python.h` 누락으로 실패했다. 수정된 Dockerfile은 `python3.10-dev`를 설치하고 의존성 설치 전에 실제 C 컴파일러로 Python 헤더를 검사한다. 수정 후 배포 시에는 실패한 이전 실행을 Re-run하는 대신 **Run workflow → main**으로 새 실행을 만든다. 이전 실행의 Re-run은 수정 전 커밋을 사용한다.
 
 ## 1. VM 최초 준비
 

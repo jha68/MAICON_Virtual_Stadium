@@ -54,3 +54,9 @@
 전체 인수 시험의 반복 빌드에서 63GB 작업 디스크가 고갈되었다. 관리 Docker daemon의 VFS 저장 방식은 각 COPY/RUN 단계마다 설치된 가상환경을 포함한 전체 파일 트리를 복사하므로, 여러 번의 13단계 빌드가 작은 논리 이미지 크기보다 훨씬 큰 물리 공간을 차지했다. 해당 실행은 ENOSPC로 중단된 환경 오류로 기록하고 통과로 처리하지 않았다.
 
 이 작업에서 생성한 maicon-sim 이미지와 검사로 확인한 해당 빌드 캐시만 정리했다. Dockerfile은 의존성 설치 캐시를 분리한 채 소스·문서·예시·시험 COPY를 한 단계로 합치고, 프로젝트 설치·doctor·출력 디렉터리 준비를 한 RUN으로 합쳤다. .dockerignore는 환경값 파일을 제외한다. 저장 드라이버·daemon 설정·TLS 검증을 바꾸지 않았다. 소스와 시험 증거를 보존하고 공간을 확보한 뒤 Ubuntu 비루트·네트워크 차단 렌더/경기와 전체 시험을 다시 실행했다. 최종 전체 시험 355개 통과를 확인했으며 JUnit과 기준별 결과는 IMPLEMENTATION_STATUS.md에 연결했다.
+
+## D008 — ARM 소스 빌드의 Python 개발 헤더
+
+최초 GitHub Actions ARM64 빌드 로그에서 PyBullet 3.2.7의 `examples/pybullet/pybullet.c:40:10: fatal error: Python.h: No such file or directory`를 확인했다. x86에서는 wheel을 사용했으므로 드러나지 않았던 Docker 빌드 의존성 누락이다. 컴파일러만 설치한 build-essential에는 Python 개발 헤더가 포함되지 않는다.
+
+Dockerfile에 인터프리터와 일치하는 `python3.10-dev`를 추가했다. 긴 소스 빌드 전 `python3.10-config --includes`와 C 컴파일러의 `-fsyntax-only`로 실제 Python.h include를 검사한다. 독립적으로 빌드 도구를 확인할 수 있도록 build-base stage를 구분했다. PyBullet 버전·의존성 lock·TinyRenderer 기능은 유지했다. 로컬 x86 헤더 검사와 원격 ARM 전체 빌드 결과는 구분해 기록한다.

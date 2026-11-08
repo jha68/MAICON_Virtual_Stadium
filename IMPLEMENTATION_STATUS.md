@@ -138,3 +138,7 @@ Ubuntu 24.04 ARM64 VM(2코어, 메모리 약12GB, 루트48GB)에 사용자 본�
 배포 shell의 성공·pull 실패·컨테이너 실행 실패·상태 확인 실패·rename 실패와 mutable tag 거절을 실제 subprocess+가짜 Docker 상태로 검증했다. 6개 통과: `artifacts/oracle-deploy.xml`. 두 workflow는 체크섬을 검증한 actionlint 1.7.7로 검사해 통과했다(shellcheck 제외). 이는 실제 Oracle 배포 성공 증거가 아니다. 기존 355개 전체 시험/176개 재검증 결과는 앞 날짜의 소프트웨어 검증 기록이다.
 
 API는 VM loopback으로 유지한다. 공인 IP에서 브라우저 경기 화면을 제공하는 웹 viewer는 아직 없으며 후속 구현이 필요하다. 경기 중 main 배포는 컨테이너를 재시작하므로 세팅 시간에 배포하도록 운영한다. 상세 최초 설정은 `deploy/oracle/README.md`를 따른다.
+
+### 최초 ARM 이미지 빌드 실패 수정
+
+사용자가 제공한 실제 Actions 로그에서 PyBullet 3.2.7 소스 컴파일의 `fatal error: Python.h: No such file or directory`를 확인했다. Dockerfile의 Python 개발 헤더 누락을 `python3.10-dev`로 보완했고, 의존성 설치 전에 C 컴파일러로 Python.h를 검사하도록 했다(D008). `build-base` stage로 이 설치·헤더 검사만 별도로 실행할 수 있다。로컬 x86 Ubuntu 22.04에서 `docker build --target build-base`를 실제 실행해 설치와 C 컴파일러 헤더 검사 통과를 확인했다. 로그는 `artifacts/python-header-build.log`에 저장한다. 이 검사는 수정 후 원격 ARM 전체 빌드 성공과 별개이며, 원격 성공은 아직 확인되지 않았다.
