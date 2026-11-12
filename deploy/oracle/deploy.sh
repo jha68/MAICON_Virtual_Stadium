@@ -78,7 +78,7 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
         'http://127.0.0.1:8000/sim/session?mission_code=SIMB0001' \
         | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["capabilities"]["rgb"] and d["slot"]=="B-1"' 2>/dev/null; then
         if [[ -n "$web_domain" ]]; then
-            if ! docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib; p=pathlib.Path("/data/web.password").read_text().strip(); r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}); assert urllib.request.urlopen(r,timeout=5).status==200'; then
+            if ! docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib; p=pathlib.Path("/data/web.password").read_text().strip(); h={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}; r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers=h); assert urllib.request.urlopen(r,timeout=5).status==200; page=urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8080/",headers=h),timeout=5).read().decode(); assert not any(marker in page for marker in ("id=\"change-password\"","id=\"password-form\"","id=\"logout\""))'; then
                 sleep "$health_interval"
                 continue
             fi

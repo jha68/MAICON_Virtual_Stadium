@@ -36,6 +36,32 @@ def test_D2_cadence_closed_and_open_intervals(setup):
     # Removing the initial tick gives 10,20,20,2 as required by RENDER-010.
     assert g.get('B-1','state')['captured_tick']==100
 
+def test_headless_render_updates_preserve_capture_cadence_and_detach_geometry(setup):
+    class CaptureBackend:
+        capabilities={'rgb':True,'semantic':False,'lidar':True,'depth':False}
+        asynchronous=True
+        def __init__(self): self.scenes=[];self.captures=[]
+        def sync_scene(self,scene): self.scenes.append(scene)
+        def request_capture(self,camera,tick): self.captures.append((camera,tick,self.scenes[-1]))
+        def poll_completed(self): return []
+        def close(self): pass
+    c,e,_=setup
+    backend=CaptureBackend();g=SensorGateway(c,backend)
+    for tick in range(101): e.sim_tick=tick;g.update(e)
+    #100Hz core updates still request each10Hz camera and1Hz drone frame.
+    assert len(backend.scenes)==11
+    assert [tick for camera,tick,_ in backend.captures if camera=='B-1/front']==list(range(0,101,10))
+    assert [tick for camera,tick,_ in backend.captures if camera=='main']==[0,100]
+    assert g.counts['B-1','odom']==21 and g.counts['B-1','scan']==11
+    assert all(scene['sim_tick']==tick for _,tick,scene in backend.captures)
+    first=copy.deepcopy(backend.scenes[0])
+    robot=e.robots['B-1'];robot.pose=Pose2(2.,2.,1.);robot.hp=1
+    e.boxes[0]['pose']['x_m']+=.1
+    assert backend.scenes[0]==first
+    assert 'reports' not in first and 'scores' not in first
+    assert not {'ready','last_velocity_received_tick'} & first['robots']['B-1'].keys()
+    g.close()
+
 def test_ISO_001_ISO_003_sensor_dtos(setup):
     c,e,g=setup;g.update(e)
     forbidden={'ammo','face_id','box_id','sector','score','segmentation','true_pose','world_pose','destroyed','expected_m1'}

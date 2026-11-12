@@ -130,6 +130,22 @@ def test_idle_sends_no_mission_reports_even_reporting():
     assert policy.compute({}, {"phase": "reporting"}).reports == {}
 
 
+@pytest.mark.parametrize('name', ['patrol', 'blocker', 'capture_runner'])
+def test_scripted_navigation_does_not_run_rgb_inference(name, monkeypatch):
+    def unexpected_detector(*args, **kwargs):
+        raise AssertionError('A waypoint policy does not need image inference')
+    monkeypatch.setattr('maicon_sim.perception.combat.CombatVisionDetector', unexpected_detector)
+    observations = {'odom': {'sequence': 1, 'captured_tick': 100,
+                             'local_pose': {'x_m': 0., 'y_m': 0., 'yaw_rad': 0.}},
+                    'match': {'cmd': 'start'}}
+    expected = ParticipantPolicy(prior(), {}, 'B-1', name).compute(observations, {'phase': 'running'})
+    with_rgb = {**observations, 'rgb': {'sequence': 1, 'data': np.zeros((480, 640, 3), dtype=np.uint8)}}
+    actual = ParticipantPolicy(prior(), {}, 'B-1', name).compute(with_rgb, {'phase': 'running'})
+    assert actual.velocity == expected.velocity
+    assert actual.reports == expected.reports
+    assert not actual.fire
+
+
 def test_baseline_uses_actual_m5_and_fallback_m6_not_m1_base():
     policy = ParticipantPolicy(prior(), {}, "B-1")
     obs = {"odom": {"sequence": 1, "captured_tick": 100, "local_pose": {"x_m": 0., "y_m": 0., "yaw_rad": 0.}}, "match": {"cmd": "start"}}

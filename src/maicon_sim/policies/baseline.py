@@ -278,7 +278,7 @@ class ParticipantPolicy:
                 self.grid.update_scan(scan_pose, scan)
         semantic = observations.get("semantic", {})
         rgb = observations.get("rgb")
-        if not semantic and isinstance(rgb, dict) and "data" in rgb:
+        if self.policy == "baseline" and not semantic and isinstance(rgb, dict) and "data" in rgb:
             sequence = rgb.get("sequence", rgb.get("captured_tick"))
             if sequence != self._last_rgb_sequence:
                 if self._rgb_detector is None:

@@ -30,6 +30,19 @@ def encode_jpeg(frame,quality=90):
     output=io.BytesIO();image.save(output,format='JPEG',quality=quality)
     return output.getvalue()
 
+def scene_snapshot(engine):
+    """Detached render geometry, without scores, reports or actuator bookkeeping."""
+    def pose(value):
+        x,y,yaw=pose_values(value)
+        return {'x_m':x,'y_m':y,'yaw_rad':yaw}
+    return {'robots':{s:{'pose':pose(r.pose),'pan':r.pan,'tilt':r.tilt,'hp':r.hp,'ammo':r.ammo}
+                      for s,r in engine.robots.items()},
+            'boxes':[{'box_id':b['box_id'],'pose':pose(b['pose']),'size_m':list(b['size_m'])}
+                     for b in engine.boxes],
+            'phase':engine.phase,'paused':engine.paused,'sim_tick':engine.sim_tick,
+            'match_elapsed_ticks':engine.match_elapsed_ticks,
+            'reporting_elapsed_ticks':engine.reporting_elapsed_ticks}
+
 class SensorGateway:
     """Cadenced measurements. World objects are never returned to participants."""
     def __init__(self,config,backend=None):
@@ -118,8 +131,13 @@ class SensorGateway:
                     else:
                         key=(camera_id.split('/')[0],'camera')
                         self._deliver(key,frame,tick,self.noise.get('camera_delay_ms',0)//10,self.noise.get('camera_drop_p',0))
-            snapshot=engine.snapshot();self.backend.sync_scene(snapshot)
             robots=engine.robots;boxes=getattr(engine,'boxes',self.config.scenario['boxes']);bounds=self.config.arena['bounds'];sensors=self.config.sensors;rules=self.config.rules['sensors']
+            # The renderer consumes geometry only when a frame is captured.
+            # Native GUI previews still receive every update; headless scenes
+            # need neither full engine checkpoints nor100Hz deep copies.
+            camera_due=self.capabilities['rgb'] and self.camera_slots and tick%(100//rules['camera_hz'])==0
+            if camera_due or tick%100==0 or not getattr(self.backend,'headless',True):
+                self.backend.sync_scene(scene_snapshot(engine))
             geom_key=(tuple((s,*pose_values(r.pose)) for s,r in sorted(robots.items())),tuple((b['box_id'],*pose_values(b['pose']),*b['size_m'],repr(b['faces'])) for b in boxes))
             if geom_key!=self._geom_key:
                 self._geom_key=geom_key;self._sem_cache.clear();self._lidar_cache.clear()
