@@ -37,6 +37,7 @@ def main():
     parser.add_argument('--seconds', type=float, default=20)
     parser.add_argument('--no-profile', action='store_true')
     parser.add_argument('--cpus', type=int, default=2)
+    parser.add_argument('--sample-resources', action='store_true')
     args = parser.parse_args()
     root = Path(args.out).resolve()
     root.mkdir(parents=True, exist_ok=False)
@@ -84,7 +85,15 @@ def main():
                 initial_tick = engine.match_elapsed_ticks
                 initial_drops = gateway.dropped
                 initial_poses = {s:(r.pose.x_m,r.pose.y_m) for s,r in engine.robots.items()}
-                await asyncio.sleep(args.seconds)
+                sampler = None
+                if args.sample_resources:
+                    from resource_usage import ProcessSampler
+                    sampler = ProcessSampler(os.getpid())
+                    sampler.sample()
+                while time.monotonic() - start < args.seconds:
+                    await asyncio.sleep(min(1., max(0., args.seconds - (time.monotonic() - start))))
+                    if sampler:
+                        sampler.sample()
                 elapsed=time.monotonic()-start
                 from maicon_sim.evaluation.metrics import machine
                 data.update(environment=machine(), scenario_seed=config.scenario['seed'],
@@ -94,6 +103,8 @@ def main():
                             frame_drops=gateway.dropped-initial_drops,
                             runtime=runtime.metrics, renderer=backend.metrics,
                             movement_m={s:((r.pose.x_m-initial_poses[s][0])**2+(r.pose.y_m-initial_poses[s][1])**2)**.5 for s,r in engine.robots.items()})
+                if sampler:
+                    data['resources'] = sampler.summary()
                 await manager.service.submit('finish')
                 await manager.service.submit('stop')
                 await asyncio.sleep(1)

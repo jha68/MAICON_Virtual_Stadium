@@ -1,0 +1,75 @@
+name: oracle-resource-measurement
+on:
+  push:
+    branches: [measure/oci-resources-20261112]
+    paths:
+      - .github/workflows/oracle-measure.yml
+      - scripts/oracle_measure.py
+      - scripts/resource_usage.py
+      - scripts/profile_realtime_cpu.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oracle-production
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install existing deployment SSH identity
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          OCI_SSH_KNOWN_HOSTS: ${{ secrets.OCI_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$OCI_HOST" && test -n "$OCI_SSH_KEY" && test -n "$OCI_SSH_KNOWN_HOSTS"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$OCI_SSH_KEY" > "$HOME/.ssh/oracle_measure"
+          printf '%s\n' "$OCI_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/oracle_measure" "$HOME/.ssh/known_hosts"
+      - name: Measure deployed image in an isolated container
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+        run: |
+          [[ "$OCI_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          ssh_options=(-i "$HOME/.ssh/oracle_measure" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ServerAliveInterval=15)
+          remote_dir=".maicon-measure-$GITHUB_RUN_ID"
+          ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "install -d -m 700 '$remote_dir'"
+          scp -q "${ssh_options[@]}" scripts/oracle_measure.py scripts/resource_usage.py scripts/profile_realtime_cpu.py "ubuntu@$OCI_HOST:$remote_dir/"
+          ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "python3 '$remote_dir/oracle_measure.py' --run-id '$GITHUB_RUN_ID' --seconds 60 --output '$remote_dir/result.json'"
+          mkdir -p artifacts
+          scp -q "${ssh_options[@]}" "ubuntu@$OCI_HOST:$remote_dir/result.json" artifacts/oracle-resources.json
+      - name: Save numeric report on measurement branch
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          report = json.loads(pathlib.Path('artifacts/oracle-resources.json').read_text())
+          assert report['source'] == 'production_Oracle_VM'
+          target = pathlib.Path('docs/evidence') / ('oracle-resources-' + os.environ['GITHUB_RUN_ID'] + '.json')
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_text(json.dumps(report, indent=2) + '\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Oracle VM resource measurement\n\n```json\n' + json.dumps(report, indent=2) + '\n```\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "docs/evidence/oracle-resources-$GITHUB_RUN_ID.json"
+          git commit -m 'Record Oracle resource measurement [skip ci]'
+          git push origin "HEAD:$GITHUB_REF_NAME"
+      - name: Require completed measurement
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          result = json.loads(pathlib.Path('artifacts/oracle-resources.json').read_text())
+          assert result['status'] == 'completed', result['status']
+          PY
+      - name: Remove runner SSH identity
+        if: always()
+        run: rm -f "$HOME/.ssh/oracle_measure"
