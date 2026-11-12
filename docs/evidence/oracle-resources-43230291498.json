@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "source": "production_Oracle_VM",
+  "run_id": "43230291498",
+  "cpu_units": "CPU cores, e.g.1.0 =100% of one CPU;2.0 =200%",
+  "status": "completed",
+  "architecture": "aarch64",
+  "logical_cpus": 2,
+  "image_id": "sha256:6670f7614dac07c82591114960632f6b1b93417fbbbf18bb5e8479e6f5afc050",
+  "gpu": {
+    "nvidia_smi_available": false,
+    "nvidia_device_detected": false,
+    "drm_device_count": 1
+  },
+  "production_initial_phase": "finished",
+  "host": {
+    "duration_s": 74.67422775703017,
+    "cpu_busy_pct": 98.11460010735374,
+    "cpu_steal_pct": 0.322061191626409,
+    "logical_cpus": 2,
+    "ram_total_bytes": 12504465408,
+    "ram_used_peak_bytes": 1928794112,
+    "production_container": {
+      "average_cpu_cores": 0.5822360713453393,
+      "memory_peak_bytes": 394625024
+    }
+  },
+  "mode": "isolated_baseline",
+  "benchmark_cpu_budget": 2,
+  "benchmark_memory_limit_gib": 6,
+  "caveat": "Production website remains running; benchmark has lower CPU scheduling priority.",
+  "exit_code": 0,
+  "benchmark": {
+    "environment": {
+      "os": "Linux-7.0.0-1013-oracle-aarch64-with-glibc2.35",
+      "python": "3.10.12",
+      "cpu": "aarch64",
+      "logical_cpus": 2,
+      "peak_rss_kib": 119256,
+      "gpu_required": false
+    },
+    "scenario_seed": 20261107,
+    "policy": "baseline",
+    "cpu_affinity": [
+      0,
+      1
+    ],
+    "profiled": false,
+    "wall_s": 60.285447419970296,
+    "simulated_s": 60.33,
+    "real_time_factor": 1.0007390271107939,
+    "frame_drops": 3554,
+    "runtime": {
+      "tick_p50_s": 0.00019040098413825035,
+      "tick_p95_s": 0.025233244581613606,
+      "tick_p99_s": 0.0922878341982141,
+      "max_lag_s": 2.0117528096889146,
+      "overloaded": false,
+      "real_time_factor": 0.9987036562218479,
+      "tick_count": 6869,
+      "wall_duration_s": 68.77916143799666
+    },
+    "renderer": {
+      "render_latency_ms": {
+        "count": 39,
+        "p50": 883.6436429992318,
+        "p95": 3794.645494740689,
+        "p99": 3874.254589949269
+      },
+      "capture_latency_ms": {
+        "count": 130,
+        "p50": 0.007199996616691351,
+        "p95": 1387.9109779867576,
+        "p99": 3839.7479896969157
+      },
+      "captures": 130,
+      "cache_hits": 91,
+      "cached_scene_reuse": true,
+      "render_queue_peak": 7,
+      "render_queue_capacity": "one_per_camera",
+      "render_dropped": 4056,
+      "completed_dropped": 0,
+      "render_inflight_count": 1
+    },
+    "movement_m": {
+      "B-1": 0.041980925050542656,
+      "B-2": 0.013499289873953168,
+      "B-3": 0.014999025893802137,
+      "R-1": 0.035978249333929214,
+      "R-2": 0.0,
+      "R-3": 0.0
+    },
+    "resources": {
+      "samples": 44,
+      "duration_s": 59.97146311198594,
+      "process_roles": {
+        "core_api": {
+          "cpu_seconds": 12.43,
+          "peak_rss_bytes": 119947264,
+          "peak_pss_bytes": 99612672,
+          "peak_threads": 13,
+          "average_cpu_cores": 0.20726524508480318
+        },
+        "support": {
+          "cpu_seconds": 0.0,
+          "peak_rss_bytes": 10051584,
+          "peak_pss_bytes": 5415936,
+          "peak_threads": 1,
+          "average_cpu_cores": 0.0
+        },
+        "renderer": {
+          "cpu_seconds": 14.470000000000002,
+          "peak_rss_bytes": 335769600,
+          "peak_pss_bytes": 313073664,
+          "peak_threads": 2,
+          "average_cpu_cores": 0.24128142368279185
+        },
+        "participant_B-1": {
+          "cpu_seconds": 8.879999999999999,
+          "peak_rss_bytes": 110845952,
+          "peak_pss_bytes": 77215744,
+          "peak_threads": 7,
+          "average_cpu_cores": 0.1480704244853622
+        },
+        "participant_B-2": {
+          "cpu_seconds": 9.02,
+          "peak_rss_bytes": 109690880,
+          "peak_pss_bytes": 75932672,
+          "peak_threads": 7,
+          "average_cpu_cores": 0.15040486811463594
+        },
+        "participant_B-3": {
+          "cpu_seconds": 8.340000000000002,
+          "peak_rss_bytes": 111792128,
+          "peak_pss_bytes": 78053376,
+          "peak_threads": 7,
+          "average_cpu_cores": 0.13906614191530645
+        },
+        "participant_R-1": {
+          "cpu_seconds": 9.0,
+          "peak_rss_bytes": 112705536,
+          "peak_pss_bytes": 79124480,
+          "peak_threads": 7,
+          "average_cpu_cores": 0.15007137616759683
+        },
+        "participant_R-2": {
+          "cpu_seconds": 9.430000000000001,
+          "peak_rss_bytes": 110178304,
+          "peak_pss_bytes": 76549120,
+          "peak_threads": 7,
+          "average_cpu_cores": 0.1572414530289376
+        },
+        "participant_R-3": {
+          "cpu_seconds": 9.019999999999998,
+          "peak_rss_bytes": 109887488,
+          "peak_pss_bytes": 76253184,
+          "peak_threads": 7,
+          "average_cpu_cores": 0.1504048681146359
+        }
+      },
+      "cpu_units": "1.0 core =100% of one logical CPU;2.0 cores =200%",
+      "container": {
+        "average_cpu_cores": 1.3425231405419653,
+        "cpu_quota_cores": 2.0,
+        "quota_used_pct": 67.12615702709826,
+        "memory_peak_bytes": 815910912,
+        "memory_limit_bytes": 6442450944,
+        "throttled_seconds": 0.0
+      }
+    }
+  },
+  "production_final_phase": "finished"
+}
