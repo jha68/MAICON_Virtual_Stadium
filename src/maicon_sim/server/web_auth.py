@@ -111,11 +111,3 @@ def install_auth(app, password):
             return JSONResponse({'detail': '비밀번호를 확인해 주세요.'}, status_code=401)
         failures.pop(peer, None)
         return cookie(JSONResponse({'accepted': True}), request)
-
-    @app.post('/auth/logout')
-    async def logout(request: Request):
-        if not same_origin(request):
-            return JSONResponse({'detail': '허용되지 않은 요청입니다.'}, status_code=403)
-        response = JSONResponse({'accepted': True})
-        response.delete_cookie(COOKIE, path='/')
-        return response

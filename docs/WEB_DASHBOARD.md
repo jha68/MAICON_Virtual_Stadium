@@ -4,7 +4,7 @@
 
 ## 경계
 
-`serve --web-port 8080`과 `MAICON_WEB_PASSWORD_FILE`을 지정해야 활성화한다. 비밀번호는 최소10자이며 미설정/잘못된 값이면 실행을 거절한다. 로그인 페이지에서 비밀번호만 입력하고 서명된 HttpOnly·SameSite 세션 쿠키로 페이지·정적 파일·JSON·카메라를 인증한다. HTTPS에서는 Secure 쿠키를 사용한다. 브라우저 기본 아이디/비밀번호 팝업은 사용하지 않는다. 내부 배포 상태 검사용 Basic 인증은 호환 유지한다. 비밀번호 변경 화면과 API는 제공하지 않으며 실행 시 기존 비밀번호 파일을 읽기만 한다. 실제 운영에서는 Caddy의 HTTPS만 공개한다. 관리자 Bearer 토큰·mission_code·비밀번호를 브라우저 JSON·스크립트·URL에 포함하지 않는다.
+`serve --web-port 8080`과 `MAICON_WEB_PASSWORD_FILE`을 지정해야 활성화한다. 비밀번호는 최소10자이며 미설정/잘못된 값이면 실행을 거절한다. 로그인 페이지에서 비밀번호만 입력하고 서명된 HttpOnly·SameSite 세션 쿠키로 페이지·정적 파일·JSON·카메라를 인증한다. HTTPS에서는 Secure 쿠키를 사용한다. 브라우저 기본 아이디/비밀번호 팝업은 사용하지 않는다. 내부 배포 상태 검사용 Basic 인증은 호환 유지한다. 비밀번호 변경·로그아웃 화면과 API는 제공하지 않으며 실행 시 기존 비밀번호 파일을 읽기만 한다. 실제 운영에서는 Caddy의 HTTPS만 공개한다. 관리자 Bearer 토큰·mission_code·비밀번호를 브라우저 JSON·스크립트·URL에 포함하지 않는다.
 
 `/api/state`는 운영자 전용 정답 snapshot이며 참가팀 앱에는 없다. `/api/command`는 X-Maicon-Operator 헤더와 동일 origin을 검사하고, 정해진 action/policy만 허용한다. CORS·임의 경로·임의 scenario 파일·임의 shell 명령을 허용하지 않는다. 정적 파일은 패키지 web 디렉터리를 벗어날 수 없다. 응답은 no-store, CSP self, frame-ancestors none, nosniff를 적용한다. 현재는 한 명 이상의 동등한 운영자를 위한 공통 관리자 계정이며 다중 역할·SSO 기능은 없다.
 

@@ -26,10 +26,11 @@ try{
  await page.click('[data-action=finish]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 종료',null,{timeout:45000});
  const result=await (await context.request.get('http://127.0.0.1:18080/api/result')).json();
  page.once('dialog',d=>d.accept());await page.click('[data-action=reset]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='세팅 중');
- if(await page.locator('#change-password, #password-form').count())throw Error('Password change controls remain');
+ if(await page.locator('#change-password, #password-form, #logout').count())throw Error('Removed account controls remain');
  const change=await context.request.post('http://127.0.0.1:18080/auth/password',{headers:{'X-Maicon-Operator':'1'},data:{current_password:'test-only-browser-password-0123456789',new_password:'NewPass123'}});if(change.status()!==404)throw Error('Password change API remains');
- await page.click('#logout');await page.waitForSelector('#login');await page.fill('#password','test-only-browser-password-0123456789');await page.click('#login button');await page.waitForSelector('#connection.online');
+ const logout=await context.request.post('http://127.0.0.1:18080/auth/logout',{headers:{'X-Maicon-Operator':'1'}});if(logout.status()!==404)throw Error('Logout API remains');
+ await context.clearCookies();await page.goto('http://127.0.0.1:18080/');await page.waitForSelector('#login');await page.fill('#password','test-only-browser-password-0123456789');await page.click('#login button');await page.waitForSelector('#connection.online');
  if(errors.length)throw Error('Browser errors: '+errors.join(';'));
- fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,passwordChangeRemoved:true,samePasswordRelogin:true,browserErrors:errors},null,2));
- console.log('Browser E2E passed: real RGB, WebGL, six processes, movement, pause/resume, finish/result, reset, removed password change, same-password login.');
+ fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,passwordChangeRemoved:true,logoutRemoved:true,samePasswordRelogin:true,browserErrors:errors},null,2));
+ console.log('Browser E2E passed: real RGB, WebGL, six processes, movement, pause/resume, finish/result, reset, removed account controls, same-password login.');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

@@ -13,7 +13,7 @@ def app(password):
     return result
 
 
-def test_password_only_login_logout_and_removed_change_route(tmp_path):
+def test_password_only_login_and_removed_account_routes(tmp_path):
     path = tmp_path/'web.password'
     path.write_text('old-secret-12345\n')
     original = path.read_bytes()
@@ -40,7 +40,9 @@ def test_password_only_login_logout_and_removed_change_route(tmp_path):
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=application), base_url='https://web', cookies={COOKIE:session}) as other:
                 assert (await other.get('/api/private')).status_code == 200
             assert (await c.get('/api/private')).status_code == 200
-            assert (await c.post('/auth/logout', headers=headers)).status_code == 200
+            assert (await c.post('/auth/logout', headers=headers)).status_code == 404
+            assert (await c.get('/api/private')).status_code == 200
+            c.cookies.clear()
             assert (await c.get('/api/private')).status_code == 401
         restarted = app(path.read_text().strip())
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=restarted), base_url='https://web') as c:
