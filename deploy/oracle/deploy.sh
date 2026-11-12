@@ -27,6 +27,10 @@ docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
     --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
     -c 'import maicon_sim.config.loader; import pathlib,tempfile; d=tempfile.TemporaryDirectory(dir="/data/runs"); pathlib.Path(d.name,"probe").write_text("ok"); d.cleanup()'
 web_args=()
+participant_env=()
+if [[ -f "$data_dir/participant.env" ]]; then
+    participant_env=(--env-file "$data_dir/participant.env")
+fi
 if [[ -n "$web_domain" ]]; then
     docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
         --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
@@ -65,6 +69,7 @@ run_id="$(date -u +%Y%m%dT%H%M%S)-${image##*:}-$$"
 docker run -d --name maicon-sim --restart unless-stopped --network host \
     --user "$runtime_uid:$runtime_gid" \
     --env MAICON_WEB_PASSWORD_FILE=/data/web.password \
+    "${participant_env[@]}" \
     --mount "type=bind,src=$data_dir,dst=/data" \
     "$image" serve --example smoke_six --backend 3d \
     --public-port 8000 --admin-port 8001 --out "/data/runs/$run_id" "${web_args[@]}" >/dev/null

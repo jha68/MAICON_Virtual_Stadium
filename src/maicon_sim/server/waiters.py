@@ -22,7 +22,7 @@ class WaiterHub:
         else:
             await self._notify_local()
 
-    async def wait(self, predicate, wait_s, session_id, current_session, disconnected=None):
+    async def wait(self, predicate, wait_s, session_id, current_session, disconnected=None, terminal=None):
         loop=asyncio.get_running_loop()
         if self.loop is not loop and not self.active:
             self.loop=loop
@@ -42,7 +42,7 @@ class WaiterHub:
                     raise
                 if session_id != current_session():
                     return {"accepted": False, "reason": "simulator session ended"}
-                if answer.get("accepted") or wait_s == 0:
+                if answer.get("accepted") or wait_s == 0 or (terminal is not None and terminal(answer)):
                     return answer
                 if disconnected is not None and await disconnected():
                     raise asyncio.CancelledError()

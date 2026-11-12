@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from importlib import resources
 import json
+import math
 from pathlib import Path
 import time
 
@@ -12,15 +14,26 @@ from .inference import LatestInference
 
 
 class TeamController:
-    def __init__(self, port, slot: str, policy: str = "baseline", *, output=None, llm=None, llm_timeout_s=5., allow_fixture_fallback=False, required_sensor_timeout_s=5.):
+    def __init__(self, port, slot: str, policy: str = "baseline", *, output=None, llm=None, llm_options=None, llm_timeout_s=5., allow_fixture_fallback=False, required_sensor_timeout_s=5., sensor_timeout_s=.5, camera_calibration=None, vision_stress_seed=None):
         self.port, self.slot, self.policy_name = port, slot, policy
         self.output = Path(output) if output else None
         self.policy = None
         self._configured_llm = llm
+        self.llm_options = dict(llm_options or {})
+        self.camera_calibration = camera_calibration
+        self.vision_stress_seed = vision_stress_seed
         self.llm = llm
         self.llm_timeout_s = llm_timeout_s
         self.allow_fixture_fallback = allow_fixture_fallback
         self.required_sensor_timeout_s = required_sensor_timeout_s
+        if not math.isfinite(sensor_timeout_s) or sensor_timeout_s <= 0:
+            raise ValueError("sensor_timeout_s must be positive and finite")
+        self.sensor_timeout_s = sensor_timeout_s
+        self._sensor_progress = {}
+        self._sensor_seen_at = {}
+        self._motion_inhibited = True
+        self._motion_generation = 0
+        self._initializing_session = False
         self._sensors_ready = False
         self.llm_calls = 0
         self.llm_completed = 0
@@ -47,20 +60,35 @@ class TeamController:
         self.errors[:] = self.errors[-100:]
 
     async def _initialize_session(self, identity):
+        # Invalidate old in-flight polls/plans before the first await. New
+        # session capture ticks restart at zero and cannot share freshness.
+        self._generation += 1
+        self._initializing_session = True
         self._sensors_ready = False
+        self._sensor_progress.clear()
+        self._sensor_seen_at.clear()
+        self._motion_inhibited = True
+        self._motion_generation += 1
+        self.decision = PolicyDecision()
         from maicon_sim.sdk.report_worker import ReportWorker
         public_map, calibration = await asyncio.gather(self.port.map_prior(), self.port.calibration())
+        camera_profile = None
+        if self.camera_calibration:
+            from maicon_sim.perception.calibration import validate_calibration
+            camera_profile = json.loads(Path(self.camera_calibration).read_text())
+            validate_calibration(camera_profile)
+            calibration = {**calibration, "front_camera": {**calibration.get("front_camera", {}),
+                                                         **camera_profile["intrinsics"], "distortion_model": "none"}}
         for worker in self.report_workers.values():
             await worker.close()
         if self.inference:
             self.inference.close()
             self.inference = None
-        self._generation += 1
         self.slot = identity["slot"]
         self.policy = ParticipantPolicy(public_map, calibration, self.slot, self.policy_name)
         self.policy.use_inline_fixture = False
-        from maicon_sim.sdk.llm import FixtureLLM
-        self.llm = self._configured_llm or FixtureLLM(identity.get("camp", self.policy.camp))
+        from maicon_sim.sdk.llm import build_llm
+        self.llm = self._configured_llm or build_llm(identity.get("camp", self.policy.camp), **self.llm_options)
         self.policy.llm_provider = getattr(self.llm, "model_name", type(self.llm).__name__)
         self.policy.llm_mock = bool(getattr(self.llm, "mock", False))
         self.session_identity = identity
@@ -70,11 +98,21 @@ class TeamController:
         self.report_workers = {kind: ReportWorker(self.port, kind).start() for kind in ("m1", "m3", "m6")}
         if identity.get("capabilities", {}).get("rgb") and self.policy_name == "baseline":
             def initialize_detector():
-                from maicon_sim.perception.synthetic_template import SyntheticTemplateDetector
-                return SyntheticTemplateDetector()
+                from maicon_sim.perception.combat import CombatVisionDetector
+                return CombatVisionDetector(calibration)
             detector = await asyncio.to_thread(initialize_detector)
-            self.inference = LatestInference(detector.process)
+            def process(frame):
+                if camera_profile:
+                    from maicon_sim.perception.calibration import rectify_camera
+                    frame = rectify_camera(frame, camera_profile)
+                if self.vision_stress_seed is not None:
+                    from maicon_sim.perception.augmentation import augment_image
+                    frame = {**frame, "data": augment_image(frame["data"], self.vision_stress_seed + int(frame.get("sequence", 0)),
+                                                            brightness=.9, blur_sigma=.5, noise_sigma=2.)}
+                return detector.process(frame)
+            self.inference = LatestInference(process)
         await self._acquire_required_observations()
+        self._initializing_session = False
 
     def _missing_required_observations(self, observations):
         missing = []
@@ -88,6 +126,9 @@ class TeamController:
         scan = observations.get("scan")
         if not isinstance(scan, dict) or not isinstance(scan.get("ranges_m"), (list, tuple)) or not scan["ranges_m"]:
             missing.append("scan")
+        match = observations.get("match")
+        if not isinstance(match, dict) or match.get("mode") not in ("practice", "mission") or match.get("cmd") not in ("idle", "standby", "start", "resume", "pause", "report", "stop"):
+            missing.append("match")
         if self.policy_name == "baseline" and self.session_identity.get("capabilities", {}).get("rgb"):
             rgb = observations.get("rgb")
             pixels = rgb.get("data") if isinstance(rgb, dict) else None
@@ -95,7 +136,64 @@ class TeamController:
             expected = (intrinsics.get("height_px", 480), intrinsics.get("width_px", 640), 3)
             if pixels is None or getattr(pixels, "shape", None) != expected or str(getattr(pixels, "dtype", "")) != "uint8":
                 missing.append("rgb")
+        elif self.policy_name == "baseline" and self.session_identity.get("capabilities", {}).get("semantic"):
+            semantic = observations.get("semantic")
+            if not isinstance(semantic, dict) or not isinstance(semantic.get("detections"), list):
+                missing.append("semantic")
         return missing
+
+    def _sensor_timeouts(self):
+        # State/match arrive at 2Hz; allow three periods, independently of the
+        # faster odometry/LiDAR deadline. Camera inference has its own worker.
+        base = self.sensor_timeout_s
+        result = {"state": 3 * base, "match": 3 * base, "odom": base, "scan": base}
+        capabilities = self.session_identity.get("capabilities", {})
+        if self.policy_name == "baseline":
+            if capabilities.get("rgb"):
+                result["rgb"] = 2 * base
+            elif capabilities.get("semantic"):
+                result["semantic"] = 2 * base
+        return result
+
+    @staticmethod
+    def _source_progress(frame):
+        # A repeated cached frame must not become fresh just because another
+        # HTTP request succeeded. Prefer capture time over transport timestamps.
+        if not isinstance(frame, dict):
+            return None
+        for key in ("captured_tick", "sequence"):
+            if key in frame:
+                value = frame[key]
+                return (key, value) if type(value) is int and value >= 0 else None
+        return None
+
+    def _observe_sensor_progress(self, observations):
+        now = time.monotonic()
+        missing = self._missing_required_observations(observations)
+        for channel in self._sensor_timeouts():
+            if channel in missing:
+                continue
+            progress = self._source_progress(observations.get(channel))
+            previous = self._sensor_progress.get(channel)
+            if progress is not None and (previous is None or (progress[0] == previous[0] and progress[1] > previous[1])):
+                self._sensor_progress[channel] = progress
+                self._sensor_seen_at[channel] = now
+
+    def _stale_sensors(self):
+        now = time.monotonic()
+        return [channel for channel, timeout in self._sensor_timeouts().items()
+                if now - self._sensor_seen_at.get(channel, -math.inf) >= timeout]
+
+    def _check_motion_sensors(self):
+        stale = self._stale_sensors()
+        if stale:
+            if not self._motion_inhibited:
+                self._motion_generation += 1
+            self._motion_inhibited = True
+            self.decision = replace(self.decision, velocity=(0., 0.), gimbal=None, fire=False)
+        else:
+            self._motion_inhibited = False
+        return not stale
 
     async def _acquire_required_observations(self):
         deadline = time.monotonic() + self.required_sensor_timeout_s
@@ -109,6 +207,8 @@ class TeamController:
             except asyncio.TimeoutError:
                 raise RuntimeError("required participant sensor frames unavailable: " + ", ".join(missing)) from None
             missing = self._missing_required_observations(observations)
+            self._observe_sensor_progress(observations)
+            missing = sorted(set(missing) | set(self._stale_sensors()))
             if not missing:
                 self.observations = observations
                 self._sensors_ready = True
@@ -166,11 +266,17 @@ class TeamController:
 
     async def _poll_observations(self):
         while not self.closed and not self.done.is_set():
+            if self._initializing_session:
+                await asyncio.sleep(.08)
+                continue
             try:
                 generation = self._generation
                 observations = await self.port.latest_observations()
                 if generation != self._generation:
                     continue
+                self._observe_sensor_progress(observations)
+                if hasattr(self.policy, "history"):
+                    self.policy.history.add(observations)
                 rgb = observations.get("rgb")
                 if self.inference and rgb:
                     sequence = rgb.get("sequence", rgb.get("captured_tick"))
@@ -265,12 +371,12 @@ class TeamController:
             if self.policy_name == "baseline" and self.me.get("phase") == "running":
                 generation = self._generation
                 try:
-                    prefix = "R" if self.slot.startswith("B") else "B"
-                    allowed = {f"{prefix}-{i}" for i in (1, 2, 3)}
-                    evidence = {"self_slot": self.slot, "camp": self.policy.camp, "opposing_slots": sorted(allowed),
-                                "observed_markers": dict(self.policy.marker_evidence),
-                                "confidence": "low", "missing_fields": ["opponent_hp", "opponent_ammo", "opponent_m3"]}
-                    ranking = await asyncio.wait_for(self.llm.rank_threat(evidence, deadline=time.monotonic() + self.llm_timeout_s), self.llm_timeout_s)
+                    tick = self.policy.observation_tick(self.observations)
+                    evidence = self.policy.threat.summary(tick)
+                    evidence["self_slot"] = self.slot
+                    allowed = set(evidence["opposing_slots"])
+                    ranking = (self.policy.threat.ranking(tick) if getattr(self.llm, "mock", False) else
+                               await asyncio.wait_for(self.llm.rank_threat(evidence, deadline=time.monotonic() + self.llm_timeout_s), self.llm_timeout_s))
                     if not isinstance(ranking, (list, tuple)) or len(ranking) != 3 or any(not isinstance(s, str) for s in ranking):
                         raise ValueError("LLM ranking must contain three opposing slots")
                     ranking = [s.upper() for s in ranking]
@@ -278,12 +384,15 @@ class TeamController:
                         raise ValueError("LLM ranking must contain three unique opposing slots")
                     if generation == self._generation:
                         self.policy.ranking_override = ranking
-                        self.policy.rank_confidence = ("low: mock LLM deterministic fallback; no hidden opponent state" if getattr(self.llm, "mock", False)
-                                                       else "low: provider ranking from observed markers; opponent HP/ammo/M3 unknown")
+                        self.policy.rank_confidence = ("uncertain: visual evidence ranking; fixture LLM selected" if getattr(self.llm, "mock", False)
+                                                       else "uncertain: provider ranking from public visual evidence")
                 except asyncio.CancelledError:
                     raise
                 except Exception as error:
                     self._error("llm_ranking", error)
+                    if generation == self._generation:
+                        self.policy.ranking_override = None
+                        self.policy.rank_confidence = "uncertain: evidence-only ranking; provider call failed"
             await asyncio.sleep(2.)
 
     async def _heartbeat(self):
@@ -292,7 +401,8 @@ class TeamController:
             try:
                 phase = self.me.get("phase")
                 match_cmd = self.observations.get("match", {}).get("cmd")
-                velocity = self.decision.velocity if phase == "running" and match_cmd != "pause" else (0., 0.)
+                sensors_fresh = self._check_motion_sensors()
+                velocity = self.decision.velocity if sensors_fresh and phase == "running" and match_cmd in ("start", "resume") else (0., 0.)
                 await self.port.command_velocity(*velocity)
                 self.control_times.append(time.monotonic())
                 self.control_times[:] = self.control_times[-10000:]
@@ -306,18 +416,52 @@ class TeamController:
 
     async def _compute_step(self):
         """Compute in a worker thread so A*/RGB work cannot block the heartbeat."""
+        if self._initializing_session:
+            return
         generation = self._generation
+        motion_generation = self._motion_generation
+        sensors_were_fresh = self._check_motion_sensors()
         decision = await asyncio.to_thread(self.policy.compute, dict(self.observations), dict(self.me), dict(self.order), dict(self.target))
         if generation != self._generation:
             return
+        requested_fire = decision.fire
+        if not sensors_were_fresh or not self._check_motion_sensors() or motion_generation != self._motion_generation:
+            decision = replace(decision, velocity=(0., 0.), gimbal=None, fire=False,
+                               diagnostics={**decision.diagnostics, "motion_blocked": "required sensor frames stale or unavailable"})
         self.decision = decision
         tick = self.policy.observation_tick(self.observations)
+        policy = self.policy
         if decision.gimbal:
             try:
                 response = await self.port.command_gimbal(*decision.gimbal)
-                self.policy.acknowledge_gimbal(decision.gimbal, response, tick)
+                if generation != self._generation:
+                    return
+                ack_tick = policy.observation_tick(self.observations)
+                policy.acknowledge_gimbal(decision.gimbal, response, ack_tick)
             except Exception as error:
+                if generation != self._generation:
+                    return
                 self._error("gimbal", error)
+        if generation != self._generation:
+            return
+        # Firing is an actuation: never retry an unknown outcome. The policy
+        # latches intent until acknowledgement or conservative cooldown.
+        control_allowed = self.me.get("phase") == "running" and self.observations.get("match", {}).get("cmd") in ("start", "resume")
+        if decision.fire and control_allowed and self._check_motion_sensors() and motion_generation == self._motion_generation:
+            try:
+                response = await self.port.fire()
+                if generation != self._generation:
+                    return
+                policy.acknowledge_fire(response, tick)
+            except Exception as error:
+                if generation != self._generation:
+                    return
+                self._error("fire", error)
+                policy.acknowledge_fire(None, tick)
+        elif requested_fire and hasattr(self.policy, "combat"):
+            self.policy.combat.discard_unsent_fire(tick)
+        if generation != self._generation:
+            return
         if self.report_workers["m6"].acknowledged_revision is not None:
             self.policy.sent_m6 = True
         for kind, payload in decision.reports.items():
@@ -396,9 +540,11 @@ class TeamController:
         await self.port.close()
 
 
-async def run_agent(server: str, slot: str, policy: str, mission_code: str, output=None, max_wall_s: float = 700.):
+async def run_agent(server: str, slot: str, policy: str, mission_code: str, output=None, max_wall_s: float = 700., *, llm_options=None, camera_calibration=None, vision_stress_seed=None):
     from maicon_sim.sdk.http_port import HTTPPort
-    controller = TeamController(HTTPPort(server, mission_code), slot, policy, output=output)
+    controller = TeamController(HTTPPort(server, mission_code), slot, policy, output=output, llm_options=llm_options,
+                                llm_timeout_s=(llm_options or {}).get("timeout_s", 5.),
+                                camera_calibration=camera_calibration, vision_stress_seed=vision_stress_seed)
     try:
         await asyncio.wait_for(controller.run(), timeout=max_wall_s)
         return 0

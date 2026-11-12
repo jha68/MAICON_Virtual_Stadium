@@ -81,6 +81,10 @@ getent ahostsv4 maicon.junununseo.com
 
 HTTPS가 안 열리면 DNS가 실제 공인 IP를 가리키는지, OCI와 VM 방화벽80/443, Caddy 로그를 확인한다. SSH fingerprint나 GitHub Secrets는 다시 만들지 않는다.
 
-## 5. 웹 화면 시험
+## 5. 실제 LLM과 카메라 설정
+
+VM의 `~/maicon-data/participant.env`에 `MAICON_LLM_PROVIDER`, `MAICON_LLM_ENDPOINT`, `MAICON_LLM_MODEL`, `MAICON_LLM_API_KEY_ENV`와 지정한 키를 안전하게 설정하고 파일 권한을0600으로 유지한다. 값을 채팅·저장소·Actions 로그에 출력하지 않는다. 다음 배포부터 파일이 있으면 Docker `--env-file`로 읽고 참가팀에는 선택한 제공자 설정만 전달한다. 파일이 없으면 기본 fixture가 유지된다. 실측 카메라 JSON은 같은 데이터 디렉터리에 저장하고 `MAICON_CAMERA_CALIBRATION=/data/<파일명>.json`으로 지정한다. 준비·센서·LLM 연결을 다시 검증한다. [후속 기능](../../docs/FOLLOWUP_FEATURES.md)의 요청 형식과 검증 범위를 따른다.
+
+## 6. 웹 화면 시험
 
 `tests/integration/test_web_dashboard.py`는 운영자 인증·CSRF·참가팀 정보 경계·실제 writer 큐 조작·결과 보존·준비 취소·SIGTERM 종료를 검증한다. `scripts/check_web_ui.cjs`는 별도 로컬3D 서버(18000/18001/18080)에서 실제 Chromium·WebGL·RGB·여섯 참가 프로세스·주행·pause/resume·종료·초기화를 검사한다. CI는 고정 Playwright1.62.1을 RUNNER_TEMP에 설치하고 이 브라우저 시험까지 통과한 뒤 배포한다. 해당 스크립트의 자격 증명은 테스트 전용이며 운영 웹 비밀번호로 사용하지 않는다.

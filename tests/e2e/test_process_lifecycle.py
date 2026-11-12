@@ -22,7 +22,11 @@ def until(predicate, timeout=10., message='condition did not become true'):
 
 @pytest.mark.e2e
 @pytest.mark.integration
-def test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preservation(tmp_path):
+def test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preservation(tmp_path, monkeypatch):
+    # Exercise the default isolated launcher even when the test runner has an
+    # explicit provider setting. Unselected parent API keys must remain private.
+    monkeypatch.delenv('MAICON_LLM_PROVIDER', raising=False)
+    monkeypatch.setenv('MAICON_LLM_API_KEY', 'unselected-parent-test-key')
     config=load_scenario('examples/scenario_smoke_six.yaml')
     engine=MatchEngine(config)
     engine.request('enter_ready')

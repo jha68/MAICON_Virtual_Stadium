@@ -348,16 +348,16 @@ def test_PERF_005_wall_10hz_source_2hz_callback_queue_and_accounting(tmp_path):
 def test_ready_RGB_model_offloop_and_required_frames_precede_ready(monkeypatch):
     import threading
     import numpy as np
-    from maicon_sim.perception import synthetic_template
+    from maicon_sim.perception import combat
     initialized = threading.Event()
     main_thread = threading.get_ident()
     class Detector:
-        def __init__(self):
+        def __init__(self, calibration=None):
             assert threading.get_ident() != main_thread
             initialized.set()
         def process(self, frame):
             return {"detections": []}
-    monkeypatch.setattr(synthetic_template, 'SyntheticTemplateDetector', Detector)
+    monkeypatch.setattr(combat, 'CombatVisionDetector', Detector)
     class RGBPort(PublicControllerFixturePort):
         def __init__(self):
             super().__init__()

@@ -98,6 +98,17 @@ class ParticipantProcesses:
         # Do not inherit admin tokens, truth paths, provider credentials or parent cwd.
         env = {"PATH": os.environ.get("PATH", ""), "LANG": "C.UTF-8", "PYTHONUNBUFFERED": "1",
                "MAICON_SIM_MISSION_CODE": agent["mission_code"]}
+        from maicon_sim.sdk.llm import llm_environment
+        provider_env = llm_environment()
+        env.update(provider_env)
+        if provider_env.get("MAICON_LLM_PROVIDER", "fixture") != "fixture":
+            for name in ("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR", "REQUESTS_CA_BUNDLE"):
+                if name in os.environ:
+                    env[name] = os.environ[name]
+        # Forward only opt-in camera configuration; unrelated parent secrets
+        # and evaluator bindings remain outside participant processes.
+        if os.environ.get("MAICON_CAMERA_CALIBRATION"):
+            env["MAICON_CAMERA_CALIBRATION"] = str(Path(os.environ["MAICON_CAMERA_CALIBRATION"]).resolve())
         args = [sys.executable, "-m", "maicon_sim", "agent", "--slot", slot, "--policy", agent["policy"],
                 "--server", self.server, "--out", "."]
         child = subprocess.Popen(args, cwd=directory, env=env, stdout=self.logs[slot], stderr=self.logs[slot])

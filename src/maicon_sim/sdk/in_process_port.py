@@ -34,6 +34,7 @@ class InProcessPort:
         sensor=self._engine.config.sensors
         return copy.deepcopy({"front_camera":sensor["front_camera"],"gimbal_pivot_m":sensor["geometry"]["gimbal_pivot_m"],
                               "camera_offset_gimbal_m":sensor["geometry"]["camera_offset_gimbal_m"],"pan_deg_per_unit":.5,
+                              "laser_offset_camera_m":[a-b for a,b in zip(sensor["geometry"]["laser_offset_gimbal_m"],sensor["geometry"]["camera_offset_gimbal_m"])],
                               "tilt_deg_per_unit":.15,"lidar":sensor["lidar"]})
     async def latest_observations(self):
         result={}

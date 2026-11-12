@@ -21,6 +21,7 @@ class PolicyDecision:
     gimbal: tuple[float, float, float, float] | None = None
     reports: dict = field(default_factory=dict)
     diagnostics: dict = field(default_factory=dict)
+    fire: bool = False
 
 
 def fixture_interpret_order(text: str, slot: str) -> dict:
@@ -91,6 +92,14 @@ class ParticipantPolicy:
         bounds = public_map.get("bounds", {})
         self.grid = OccupancyGrid(bounds.get("width_m", 6.12), bounds.get("height_m", 5.))
         self.tracker, self.gimbal = ObjectTracker(), GimbalEstimate()
+        from .combat import CombatPolicy
+        from .threat import ThreatEstimator
+        from .observations import ObservationHistory, GimbalHistory, SurfaceMapper
+        self.combat = CombatPolicy(slot, public_map)
+        self.threat = ThreatEstimator(self.camp)
+        self.history, self.gimbal_history = ObservationHistory(), GimbalHistory()
+        self.surface_mapper = SurfaceMapper(public_map, calibration, slot)
+        self._grid_correction = (0., 0., 0.)
         self.start = nominal_pose(public_map, slot)
         self.waypoints = WaypointPolicy(public_map, slot, policy)
         self.last_sequence = {}
@@ -131,9 +140,10 @@ class ParticipantPolicy:
             return None
         x, y, yaw = self.start
         dx, dy = pose["x_m"], pose["y_m"]
-        return (x + math.cos(yaw) * dx - math.sin(yaw) * dy,
-                y + math.sin(yaw) * dx + math.cos(yaw) * dy,
-                wrap(yaw + pose["yaw_rad"]))
+        raw = (x + math.cos(yaw) * dx - math.sin(yaw) * dy,
+               y + math.sin(yaw) * dx + math.cos(yaw) * dy,
+               wrap(yaw + pose["yaw_rad"]))
+        return self.surface_mapper.localizer.apply(raw)
 
     def _new(self, channel, frame):
         if not frame:
@@ -146,51 +156,6 @@ class ParticipantPolicy:
 
     def _sector(self, point):
         return next((s["sector_id"] for s in self.public_map.get("sectors", []) if inside_polygon(point, s["polygon_xy_m"])), None)
-
-    def _observe_objects(self, frame, scan, pose):
-        captured = frame.get("captured_tick", 0)
-        if not self.gimbal.settled(captured):
-            return
-        camera = self.calibration.get("front_camera", self.calibration.get("intrinsics", {}))
-        fx, cx = camera.get("fx_px", 320.), camera.get("cx_px", 319.5)
-        ranges = scan.get("ranges_m", []) if scan else []
-        increment = scan.get("angle_increment_rad", 2 * math.pi / max(1, len(ranges))) if scan else 0
-        minimum = scan.get("angle_min_rad", -math.pi) if scan else 0
-        observed_tracks = set()
-        for detection in frame.get("detections", []):
-            if detection.get("kind") == "ugv" and detection.get("marker_readout"):
-                marker = detection["marker_readout"]
-                if marker.get("confidence", 0) >= .75 and marker.get("camp") != self.camp:
-                    self.marker_evidence[f"{marker['camp'][0]}-{marker['band_count']}"] = captured
-            if detection.get("kind") != "object":
-                continue
-            bbox = detection["bbox_xyxy_px"]
-            pixel = (bbox[0] + bbox[2]) / 2
-            # Pixel right is body right; positive body yaw is left.
-            relative = -math.atan((pixel - cx) / fx) - math.radians(.5 * self.gimbal.pan)
-            bearing = pose[2] + relative
-            index = int(round((wrap(relative - minimum)) / increment)) % len(ranges) if ranges and increment else -1
-            distance = ranges[index] if index >= 0 else None
-            if distance is None:
-                self.tracker.bearing_only.append({"bearing_rad": bearing, "captured_tick": captured, "class_probs": detection["class_probs"]})
-                self.tracker.bearing_only[:] = self.tracker.bearing_only[-64:]
-                continue
-            # This is an approximate range association, not a true object coordinate.
-            point = (pose[0] + distance * math.cos(bearing), pose[1] + distance * math.sin(bearing))
-            normal = wrap(bearing + math.pi)
-            track_id = self.tracker.observe(point, normal, detection["class_probs"], captured, self._sector(point), detection.get("confidence", 1.))
-            observed_tracks.add(track_id)
-        # Do not infer absence from an occluded or missing range. Clear only when a
-        # current ray reaches significantly beyond the previously estimated surface.
-        for track in tuple(self.tracker.tracks):
-            if track.track_id in observed_tracks or track.last_tick == captured or not ranges:
-                continue
-            angle = wrap(math.atan2(track.position[1] - pose[1], track.position[0] - pose[0]) - pose[2])
-            camera_angle = wrap(angle + math.radians(.5 * self.gimbal.pan))
-            index = int(round(wrap(angle - minimum) / increment)) % len(ranges)
-            distance = ranges[index]
-            if abs(camera_angle) < math.radians(40) and distance is not None and distance > math.dist(pose[:2], track.position) + .15:
-                self.tracker.contradict(track.track_id)
 
     def _coverage(self):
         # Coverage is based on mapped cells, separately from a submitted zero count.
@@ -223,8 +188,19 @@ class ParticipantPolicy:
     def acknowledge_gimbal(self, command, response, tick):
         if response.get("message") == "ok":
             self.gimbal.accepted(*command[:3], tick)
+            self.gimbal_history.command(*command[:3], tick)
         elif response.get("message") == "locked":
             self.gimbal.cancel(tick)
+            self.gimbal_history.cancel(tick)
+        self.combat.acknowledge_gimbal(command, response, tick)
+
+    def acknowledge_fire(self, response, tick):
+        self.combat.acknowledge_fire(response, tick)
+
+    def cancel_motion(self, tick):
+        self.gimbal.cancel(tick)
+        self.gimbal_history.cancel(tick)
+        self.combat.cancel(tick)
 
     def _navigate(self, pose, tick, goal, target_active):
         if goal is None:
@@ -257,23 +233,23 @@ class ParticipantPolicy:
         return follow_waypoint(pose, waypoint)
 
     def compute(self, observations: dict, me: dict, order: dict | None = None, target: dict | None = None) -> PolicyDecision:
+        self.history.add(observations)
         tick = self.observation_tick(observations)
         phase = me.get("phase", "idle")
         cmd = observations.get("match", {}).get("cmd", "")
         self.gimbal.update(tick)
         reports = {}
-        diagnostics = {"pose_source": "nominal_prior_plus_local_odom", "rank_confidence": self.rank_confidence,
+        diagnostics = {"pose_source": "public_wall_registration_plus_local_odom", "rank_confidence": self.rank_confidence,
                        "llm_provider": self.llm_provider, "llm_mock": self.llm_mock, "oracle": False}
         if self.policy == "idle":
             return PolicyDecision(diagnostics=diagnostics)
         if phase == "reporting":
             if not self.sent_m6:
-                opposite = "R" if self.slot.startswith("B") else "B"
-                reports["m6"] = {"ranking": list(self.ranking_override or [f"{opposite}-{i}" for i in (1, 2, 3)])}
+                reports["m6"] = {"ranking": list(self.ranking_override or self.threat.ranking(tick))}
             return PolicyDecision(reports=reports, diagnostics=diagnostics)
         if phase != "running" or cmd == "pause":
             if self.last_phase == "running":
-                self.gimbal.cancel(tick)
+                self.cancel_motion(tick)
             self.last_phase = phase
             return PolicyDecision(diagnostics=diagnostics)
         self.last_phase = phase
@@ -282,21 +258,32 @@ class ParticipantPolicy:
             candidate = self._report("m1", value, tick)
             if candidate:
                 reports["m1"] = candidate
+        scan = observations.get("scan", {})
+        raw_scan_pose = self.history.pose_at(scan.get("captured_tick", tick), self.start)
+        if self.policy == "baseline":
+            self.surface_mapper.correct_pose(raw_scan_pose, scan)
+        correction = self.surface_mapper.localizer.correction
+        if math.dist(correction[:2], self._grid_correction[:2]) > .02 or abs(wrap(correction[2]-self._grid_correction[2])) > .01:
+            bounds = self.public_map.get("bounds", {})
+            self.grid = OccupancyGrid(bounds.get("width_m", 6.12), bounds.get("height_m", 5.))
+            self.path = []
+            self._grid_correction = correction
         pose = self.world_estimate(observations.get("odom"))
         if pose is None:
             diagnostics["motion_blocked"] = "local odometry or nominal prior unavailable"
             return PolicyDecision(reports=reports, diagnostics=diagnostics)
-        scan = observations.get("scan", {})
         if self._new("scan", scan):
-            self.grid.update_scan(pose, scan)
+            scan_pose = self.surface_mapper.localizer.apply(raw_scan_pose) if raw_scan_pose else None
+            if scan_pose is not None:
+                self.grid.update_scan(scan_pose, scan)
         semantic = observations.get("semantic", {})
         rgb = observations.get("rgb")
         if not semantic and isinstance(rgb, dict) and "data" in rgb:
             sequence = rgb.get("sequence", rgb.get("captured_tick"))
             if sequence != self._last_rgb_sequence:
                 if self._rgb_detector is None:
-                    from maicon_sim.perception.synthetic_template import SyntheticTemplateDetector
-                    self._rgb_detector = SyntheticTemplateDetector()
+                    from maicon_sim.perception.combat import CombatVisionDetector
+                    self._rgb_detector = CombatVisionDetector(self.calibration)
                 public_frame = dict(rgb)
                 public_frame.setdefault("camera_id", self.slot + "/front")
                 public_frame.setdefault("width_px", rgb["data"].shape[1])
@@ -307,7 +294,12 @@ class ParticipantPolicy:
                 self._last_rgb_sequence = sequence
                 diagnostics["perception"] = "RGB synthetic_template; no semantic oracle"
         if self.policy == "baseline" and self._new("semantic", semantic):
-            self._observe_objects(semantic, scan, pose)
+            self.threat.observe(semantic)
+            diagnostics.update(self.surface_mapper.observe(semantic, self.history, self.gimbal_history, self.tracker))
+            for detection in semantic.get("detections", []):
+                marker = detection.get("marker_readout", {})
+                if marker.get("confidence", 0) >= .75 and marker.get("camp") != self.camp and marker.get("band_count") in (1, 2, 3):
+                    self.marker_evidence[f"{marker['camp'][0]}-{marker['band_count']}"] = semantic.get("captured_tick", tick)
             if tick % 100 == 0:
                 self._coverage()
             candidate = self._report("m3", self.tracker.report(), tick)
@@ -347,4 +339,23 @@ class ParticipantPolicy:
             gimbal = (pan, 0., 30., 20.)
         diagnostics["tracks"] = len(self.tracker.tracks)
         diagnostics["coverage"] = dict(self.tracker.coverage)
-        return PolicyDecision(velocity, gimbal, reports, diagnostics)
+        fire = False
+        if self.policy == "baseline":
+            interpretation = self.m1_interpretation or (fixture_interpret_order(order.get("order", {}).get("tactical_command", ""), self.slot) if order and self.use_inline_fixture else {})
+            combat_observations = {**observations, "semantic": semantic}
+            capture_tick = semantic.get("captured_tick")
+            capture_angles = self.gimbal_history.at(capture_tick) if type(capture_tick) is int else None
+            capture_pose = self.history.pose_at(capture_tick, self.start) if type(capture_tick) is int else None
+            capture_pose = self.surface_mapper.localizer.apply(capture_pose) if capture_pose else None
+            action = self.combat.update(combat_observations, self.calibration, observations.get("state"),
+                                        interpretation.get("target"), phase=phase, cmd=cmd,
+                                        objective=objective, gimbal={"pan": self.gimbal.pan, "tilt": self.gimbal.tilt},
+                                        pose=capture_pose, capture_gimbal=capture_angles)
+            diagnostics["combat"] = {"state": action.state, **action.diagnostics}
+            if action.hold:
+                velocity = (0., 0.)
+                gimbal = action.gimbal
+            elif action.gimbal is not None:
+                gimbal = action.gimbal
+            fire = action.fire
+        return PolicyDecision(velocity, gimbal, reports, diagnostics, fire)

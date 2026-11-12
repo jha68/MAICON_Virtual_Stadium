@@ -2,7 +2,7 @@
 from __future__ import annotations
 import math
 import numpy as np
-from ..core.geometry3d import camera_transform, project_points, raycast, raycast_distances, face_rectangle, canonical_solids,body_transform
+from ..core.geometry3d import camera_transform, project_points, raycast, raycast_distances, face_rectangle, canonical_solids,body_transform, receiver_primitives
 
 CLASSES=('military_truck','mortar','tank','missile','ammo_box','drum')
 FACILITIES=('COMMS','OUTPOST','RADAR')
@@ -27,6 +27,20 @@ def semantic_candidates(robots,boxes,bounds,sensors,slot,solids=None):
     geometry=sensors['geometry']; intrinsics=sensors['front_camera']; robot=robots[slot]
     origin,R=camera_transform(robot.pose,robot.pan,robot.tilt,geometry)
     if solids is None:solids=canonical_solids(robots,boxes,bounds,geometry)
+    receivers=receiver_primitives(robots,boxes,geometry)
+    def receiver_aim(owner):
+        visible=[]
+        for receiver in receivers:
+            if receiver.owner!=owner:continue
+            delta=receiver.center-origin;distance=float(np.linalg.norm(delta))
+            if distance<=1e-6:continue
+            xy,z=project_points([receiver.center],origin,R,intrinsics)
+            if not intrinsics.get('near_m',.02)<z[0]<intrinsics.get('far_m',10):continue
+            x,y=xy[0]
+            if not (0<=x<intrinsics.get('width_px',640) and 0<=y<intrinsics.get('height_px',480)):continue
+            nearest=raycast_distances(origin,[delta/distance],solids,exclude_owner=slot)[0]
+            if nearest>=distance-1e-6:visible.append((distance,[float(x),float(y)]))
+        return min(visible,key=lambda item:item[0])[1] if visible else None
     candidates=[]
     for box in sorted(boxes,key=lambda b:b['box_id']):
         for face in sorted(box['faces'],key=lambda f:f['side']):
@@ -34,7 +48,11 @@ def semantic_candidates(robots,boxes,bounds,sensors,slot,solids=None):
             bbox=visible_rectangle(origin,R,intrinsics,face_rectangle(box,face['side']),solids)
             if bbox is None:continue
             kind=face['kind']; label=face['object_class'].lower() if kind=='object' else face['facility_code'].split('_',1)[1]
-            candidates.append({'kind':kind,'bbox_xyxy_px':bbox,'label':label})
+            candidate={'kind':kind,'bbox_xyxy_px':bbox,'label':label}
+            if kind=='facility':
+                aim=receiver_aim(face['facility_code'])
+                if aim is not None:candidate['aim_point_px']=aim
+            candidates.append(candidate)
     for other,r in sorted(robots.items()):
         if other==slot:continue
         p,RB=body_transform(r.pose);spec=geometry['chassis']; center=p+RB@np.asarray(spec['center_m']);half=np.asarray(spec['half_extents_m'])
@@ -52,6 +70,8 @@ def semantic_candidates(robots,boxes,bounds,sensors,slot,solids=None):
         if z.min()>.02:
             bbox=[max(0.,float(xy[:,0].min())),max(0.,float(xy[:,1].min())),min(640.,float(xy[:,0].max())),min(480.,float(xy[:,1].max()))]
         candidate={'kind':'ugv','bbox_xyxy_px':bbox,'label':'UGV'}
+        aim=receiver_aim(other)
+        if aim is not None:candidate['aim_point_px']=aim
         if 'marker_center_m' in geometry:
             mc=p+RB@np.asarray(geometry['marker_center_m'])
             marker_rect=(mc,RB[:,0] if np.dot(RB[:,0],origin-mc)>0 else -RB[:,0],RB[:,1],RB[:,2],geometry['marker_width_m']/2,geometry['marker_height_m']/2)
@@ -77,6 +97,9 @@ def apply_noise(candidates,noise,rng,width=640,height=480):
         if bbox[0]>=bbox[2] or bbox[1]>=bbox[3]:continue
         d={'kind':kind,'bbox_xyxy_px':bbox.tolist(),'class_probs':probs,'confidence':max(probs.values())}
         if 'marker_readout' in candidate:d['marker_readout']=dict(candidate['marker_readout'])
+        if 'aim_point_px' in candidate:
+            shift=(bbox[:2]-np.asarray(candidate['bbox_xyxy_px'][:2]))
+            d['aim_point_px']=(np.asarray(candidate['aim_point_px'])+shift).tolist()
         result.append(d)
     for _ in range(rng.poisson(noise.get('semantic_fp_poisson',0))):
         w,h=rng.uniform(8,80,2);x=rng.uniform(0,width-w);y=rng.uniform(0,height-h);label=str(rng.choice(CLASSES))

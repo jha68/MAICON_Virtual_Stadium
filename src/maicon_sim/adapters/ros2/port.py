@@ -15,17 +15,21 @@ class ROS2RobotPort:
                                   ("/imu/data","imu",SENSOR_QOS)):
             def callback(value,channel=channel):
                 self.observations[channel]=copy.deepcopy(value)
-                if channel=="match" and value.get("cmd") in ("pause","report","stop"):
+                if channel=="match" and not self._motion_allowed(value):
                     self.transport.publish("/cmd_vel",{"linear_x_mps":0.0,"angular_z_rps":0.0})
             self._unsubscribers.append(transport.subscribe(topic,callback,qos))
     async def latest_observations(self): return copy.deepcopy(self.observations)
+    @staticmethod
+    def _motion_allowed(match):
+        # Practice has no phase lock. Device-side hit locks still apply.
+        return (match.get("mode")=="practice" or
+                (match.get("mode")=="mission" and match.get("cmd") in ("start","resume")))
     async def command_velocity(self,linear_x_mps,angular_z_rps):
         if not all(type(x) in (float,int) and math.isfinite(x) for x in (linear_x_mps,angular_z_rps)):
             raise ValueError("velocity must be finite")
         if abs(linear_x_mps)>.6 or abs(angular_z_rps)>3:
             raise ValueError("velocity outside documented limits")
-        cmd=self.observations.get("match",{}).get("cmd")
-        if cmd in ("pause","report","stop","standby","idle"):
+        if not self._motion_allowed(self.observations.get("match",{})):
             linear_x_mps=angular_z_rps=0.0
         self.transport.publish("/cmd_vel",{"linear_x_mps":linear_x_mps,"angular_z_rps":angular_z_rps})
     async def command_gimbal(self,pan_units,tilt_units,speed_deg_s=90,acc_units=20):

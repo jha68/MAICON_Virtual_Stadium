@@ -42,6 +42,7 @@ def calibration(config):
     return {"front_camera": copy.deepcopy(config.sensors["front_camera"]),
             "gimbal_pivot_m": config.sensors["geometry"]["gimbal_pivot_m"],
             "camera_offset_gimbal_m": config.sensors["geometry"]["camera_offset_gimbal_m"],
+            "laser_offset_camera_m": [a-b for a,b in zip(config.sensors["geometry"]["laser_offset_gimbal_m"], config.sensors["geometry"]["camera_offset_gimbal_m"])],
             "pan_deg_per_unit": .5, "tilt_deg_per_unit": .15,
             "lidar": copy.deepcopy(config.sensors["lidar"])}
 
@@ -77,7 +78,9 @@ def apply_decision(engine, slot, decision, policy):
         response = engine.request("gimbal", slot, dict(zip(("pan", "tilt", "speed", "acc"), gimbal)))
         policy.acknowledge_gimbal(gimbal, response, engine.sim_tick)
     if getattr(decision, "fire", False):
-        engine.request("fire", slot, {})
+        response = engine.request("fire", slot, {})
+        if hasattr(policy, "acknowledge_fire"):
+            policy.acknowledge_fire(response, engine.sim_tick)
 
 
 def make_result(engine, config, run_id, backend, clock, wall_s, gateway):

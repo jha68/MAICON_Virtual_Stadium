@@ -83,6 +83,12 @@ curl -H 'Content-Type: application/json' -d '{"mission_code":"SIMB0001","target"
 
 사용 권한이 있는 실제 이미지는 `generator: import`, 상대 `path`, SHA256, source/license/split 메타데이터로 등록할 수 있습니다. 해시가 틀리면 실패합니다. 공식 이미지나 모델은 자동으로 내려받지 않습니다. 카메라·레이저·수광부·LiDAR, FOV, 노이즈, fog는 센서 프로필에서 바꾸며 새 프로필과 회귀 결과를 함께 보존합니다.
 
+`generate`의 기본 `--layout-mode competition`은 BLUE/RED 지정표적을 시설 코드로 짝지어 위치·표적면·수광부를 반사 대칭으로 배치합니다. 비시설 박스와 M3 객체 종류까지 동일하게 만들지는 않습니다. 비대칭 스트레스 시험은 `--layout-mode stress`로 명시하며 생성 YAML에도 모드를 기록합니다. 기존 수동 시나리오는 그대로 사용합니다.
+
+참가팀 컨트롤러는 필수 센서 프레임이 진행하지 않으면 주행과 새 조준 명령을 중단합니다. 기본 만료시간은 odom/LiDAR 0.5초, baseline 영상 1초, 2Hz 상태·경기 신호 1.5초입니다. 같은 캐시 프레임의 재수신은 시간을 갱신하지 않습니다. 센서 복구 뒤 새 정책 판단부터 동작하며, 센서 중단 중에도 M6 보고는 계속 처리합니다. 이 시간은 컨트롤러의 `sensor_timeout_s`(기본0.5초)를 기준으로 설정합니다.
+
+baseline 공격·M3 시간 정합/면 추적·M6 시각 증거·실제 LLM 선택·카메라 보정 사용법은 [후속 기능](docs/FOLLOWUP_FEATURES.md)에, 설계 배경은 [개선 설계안](docs/COMPETITION_IMPROVEMENT_IDEAS.md)에 정리했습니다.
+
 ## 기록과 재현
 
 `--out`은 정확한 RUN_ROOT입니다.
