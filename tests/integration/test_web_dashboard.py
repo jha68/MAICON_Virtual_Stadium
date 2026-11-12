@@ -50,6 +50,8 @@ def test_operator_auth_assets_and_participant_boundary(harness):
             c.auth = ('admin', PASSWORD)
             home = await c.get('/')
             assert home.status_code == 200 and '가상 경기장' in home.text
+            assert 'change-password' not in home.text and 'password-form' not in home.text
+            assert 'id="logout"' in home.text
             assert "frame-ancestors 'none'" in home.headers['content-security-policy']
             assert home.headers['cache-control'] == 'no-store'
             for asset in ('app.js', 'world.js', 'vendor/three.module.min.js', 'vendor/three.core.min.js'):

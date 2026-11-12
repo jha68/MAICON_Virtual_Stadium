@@ -1,4 +1,1 @@
-const button=document.querySelector('#change-password'),form=document.querySelector('#password-form');
-button.addEventListener('click',()=>{form.hidden=!form.hidden;});
-form.addEventListener('submit',async event=>{event.preventDefault();const status=document.querySelector('#password-status');status.textContent='';try{const response=await fetch('/auth/password',{method:'POST',headers:{'Content-Type':'application/json','X-Maicon-Operator':'1'},body:JSON.stringify({current_password:form.elements.current_password.value,new_password:form.elements.new_password.value})});const result=await response.json();if(!response.ok)throw new Error(result.detail);form.reset();status.textContent='비밀번호를 변경했습니다.';}catch(e){status.textContent=e.message||'변경하지 못했습니다.';}});
 document.querySelector('#logout').addEventListener('click',async()=>{await fetch('/auth/logout',{method:'POST',headers:{'X-Maicon-Operator':'1'}});location.replace('/login');});

@@ -277,7 +277,7 @@ def serve(config, backend, public_port, admin_port, out, web_port=None):
     if web_port is not None:
         from maicon_sim.server.web import DashboardManager, create_dashboard
         manager = DashboardManager(public.state.service, root)
-        extra = ((create_dashboard(manager, password, password_file), web_port),)
+        extra = ((create_dashboard(manager, password), web_port),)
     runtime = EngineRuntime(engine, gateway, on_tick=manager.on_tick if manager else None)
     previous_term = None
     if threading.current_thread() is threading.main_thread():

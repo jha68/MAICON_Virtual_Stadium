@@ -95,10 +95,10 @@ class DashboardManager:
             return {'accepted': True, 'action': action}
 
 
-def create_dashboard(manager, password, password_path=None):
+def create_dashboard(manager, password):
     app = FastAPI(title='MAICON operator', docs_url=None, redoc_url=None, openapi_url=None)
     from .web_auth import install_auth
-    install_auth(app, password, password_path)
+    install_auth(app, password)
     web_root = Path(str(files('maicon_sim') / 'resources/web'))
 
     @app.middleware('http')

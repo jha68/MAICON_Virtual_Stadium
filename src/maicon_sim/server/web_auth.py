@@ -4,8 +4,6 @@ from collections import OrderedDict
 import hashlib
 import hmac
 from importlib.resources import files
-import os
-from pathlib import Path
 import secrets
 import time
 
@@ -16,7 +14,7 @@ COOKIE = 'maicon_operator'
 SESSION_SECONDS = 12 * 3600
 
 
-def install_auth(app, password, password_path=None):
+def install_auth(app, password):
     if len(password) < 10:
         raise ValueError('Dashboard password must contain at least 10 characters')
     signing_key = secrets.token_bytes(32)
@@ -121,31 +119,3 @@ def install_auth(app, password, password_path=None):
         response = JSONResponse({'accepted': True})
         response.delete_cookie(COOKIE, path='/')
         return response
-
-    @app.post('/auth/password')
-    async def change_password(request: Request):
-        nonlocal password, signing_key
-        if not same_origin(request):
-            return JSONResponse({'detail': '허용되지 않은 요청입니다.'}, status_code=403)
-        try:
-            body = await request.json()
-            value = body.get('new_password')
-            valid = (correct(body.get('current_password')) and isinstance(value, str) and 10 <= len(value) <= 256
-                     and value == value.strip() and '\n' not in value and '\r' not in value)
-        except (ValueError, AttributeError):
-            valid = False
-        if not valid:
-            return JSONResponse({'detail': '현재 비밀번호와 새 비밀번호(10자 이상)를 확인해 주세요.'}, status_code=422)
-        if password_path:
-            path = Path(password_path)
-            temporary = path.with_name(path.name + '.' + secrets.token_hex(8))
-            try:
-                descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-                with os.fdopen(descriptor, 'w') as handle:
-                    handle.write(value + '\n')
-                os.replace(temporary, path)
-            finally:
-                temporary.unlink(missing_ok=True)
-        password = value
-        signing_key = secrets.token_bytes(32)
-        return cookie(JSONResponse({'accepted': True}), request)
