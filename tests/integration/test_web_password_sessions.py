@@ -64,3 +64,14 @@ def test_tampered_cookie_cross_origin_and_login_throttle():
 def test_minimum_password_length():
     with pytest.raises(ValueError): app('123456789')
     app('1234567890')
+
+
+def test_internal_probe_compatibility_cannot_bypass_login_throttle():
+    application = app('TenChars12')
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=application), base_url='http://web') as c:
+            for _ in range(5):
+                assert (await c.get('/api/private', auth=('admin','wrong'))).status_code == 401
+            assert (await c.get('/api/private', auth=('admin','TenChars12'))).status_code == 401
+            assert (await c.post('/auth/login', headers={'X-Maicon-Operator':'1'},json={'password':'TenChars12'})).status_code == 429
+    asyncio.run(run())

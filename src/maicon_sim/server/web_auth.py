@@ -42,11 +42,22 @@ def install_auth(app, password, password_path=None):
         # WWW-Authenticate challenge, so browsers never display an ID prompt.
         header = request.headers.get('authorization', '')
         if header.startswith('Basic '):
+            peer = request.client.host if request.client else 'unknown'
+            now = time.monotonic()
+            attempts = [stamp for stamp in failures.get(peer, []) if now-stamp < 60]
+            if len(attempts) >= 5:
+                return False
             try:
                 user, value = base64.b64decode(header[6:], validate=True).decode().split(':', 1)
-                return user == 'admin' and correct(value)
+                if user == 'admin' and correct(value):
+                    failures.pop(peer, None)
+                    return True
             except (ValueError, UnicodeError):
                 pass
+            failures[peer] = attempts + [now]
+            failures.move_to_end(peer)
+            while len(failures) > 1024:
+                failures.popitem(last=False)
         return False
 
     def cookie(response, request):
