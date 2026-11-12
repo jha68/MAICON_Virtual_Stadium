@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "source": "production_Oracle_VM",
+  "run_id": "43229821884",
+  "cpu_units": "CPU cores, e.g.1.0 =100% of one CPU;2.0 =200%",
+  "status": "completed",
+  "architecture": "aarch64",
+  "logical_cpus": 2,
+  "image_id": "sha256:6670f7614dac07c82591114960632f6b1b93417fbbbf18bb5e8479e6f5afc050",
+  "gpu": {
+    "nvidia_smi_available": false,
+    "nvidia_device_detected": false,
+    "drm_device_count": 1
+  },
+  "production_initial_phase": "finished",
+  "host": {
+    "duration_s": 59.862459302006755,
+    "cpu_busy_pct": 32.00101402737874,
+    "cpu_steal_pct": 0.2112557039040054,
+    "logical_cpus": 2,
+    "ram_total_bytes": 12504465408,
+    "ram_used_peak_bytes": 1158152192,
+    "production_container": {
+      "average_cpu_cores": 0.5830422172252778,
+      "memory_peak_bytes": 394067968
+    }
+  },
+  "mode": "observe_existing_match",
+  "observed": {
+    "wall_s": 60.01906552904984,
+    "initial_phase": "finished",
+    "final_phase": "finished",
+    "paused": false,
+    "simulated_s": 0.0,
+    "performance": {
+      "max_lag_s": 3.5272859155666083,
+      "frame_drops": 18655
+    }
+  }
+}
