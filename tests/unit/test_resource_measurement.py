@@ -59,10 +59,11 @@ def test_existing_match_is_observed_without_launch_or_stop(measurement, monkeypa
     assert result['status'] == 'completed' and result['mode'] == 'observe_existing_match'
 
 
-def test_isolated_benchmark_aborts_and_removes_only_own_container(measurement, monkeypatch, tmp_path):
+@pytest.mark.parametrize('initial_phase', ['waiting', 'finished'])
+def test_isolated_benchmark_aborts_and_removes_only_own_container(measurement, monkeypatch, tmp_path, initial_phase):
     host, _ = measurement
     monkeypatch.setattr(host, 'production_info', lambda: {'id':'original', 'image':'sha256:original', 'pid':1})
-    states = iter([{'phase':'waiting'}, {'phase':'running'}, {'phase':'running'}])
+    states = iter([{'phase':initial_phase}, {'phase':'running'}, {'phase':'running'}])
     monkeypatch.setattr(host, 'production_state', lambda: next(states))
     monkeypatch.setattr(host, 'production_group', lambda pid: None)
     monkeypatch.setattr(host, 'gpu_info', lambda: {})

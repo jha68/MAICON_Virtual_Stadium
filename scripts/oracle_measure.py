@@ -91,7 +91,7 @@ def measure(args, result):
                   image_id=info['image'], gpu=gpu_info(), production_initial_phase=state['phase'])
     samples = [host_sample(group)]
     result['host'] = summarize_host(samples, os.cpu_count())
-    if state['phase'] != 'waiting':
+    if state['phase'] not in ('waiting', 'finished'):
         result['mode'] = 'observe_existing_match'
         begin = time.monotonic()
         initial = state
@@ -142,7 +142,8 @@ def measure(args, result):
             time.sleep(1)
             samples.append(host_sample(group))
             current = production_state()
-            if current['phase'] != 'waiting' or production_info()['id'] != info['id']:
+            if (current['phase'] not in ('waiting', 'finished') or
+                    current.get('match_id') != state.get('match_id') or production_info()['id'] != info['id']):
                 result['status'] = 'aborted_production_activity'
                 break
             running = command(['docker', 'inspect', '--format', '{{.State.Running}} {{.State.ExitCode}}', name]).split()
