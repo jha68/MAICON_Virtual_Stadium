@@ -45,8 +45,8 @@ def test_operator_auth_assets_and_participant_boundary(harness):
     async def run():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://dashboard') as c:
             for path in ('/', '/api/state', '/assets/app.js', '/api/camera/B-1.jpg'):
-                assert (await c.get(path)).status_code == 401
-                assert (await c.get(path, auth=('admin', 'wrong'))).status_code == 401
+                assert (await c.get(path)).status_code == (303 if path == '/' else 401)
+                assert (await c.get(path, auth=('admin', 'wrong'))).status_code == (303 if path == '/' else 401)
             c.auth = ('admin', PASSWORD)
             home = await c.get('/')
             assert home.status_code == 200 and '가상 경기장' in home.text

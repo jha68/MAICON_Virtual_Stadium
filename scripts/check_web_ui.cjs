@@ -1,11 +1,11 @@
 const { chromium }=require('playwright');
 const fs=require('fs'); // Run against a disposable local 3D serve instance on ports 18000/18001/18080.
 fs.mkdirSync('artifacts/evidence',{recursive:true});
-(async()=>{let ready=false;for(let i=0;i<120;i++){try{const r=await fetch('http://127.0.0.1:18080/');if(r.status===401){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('Disposable web test server did not start');const browser=await chromium.launch({executablePath:process.env.CHROMIUM_BIN||undefined,headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-const context=await browser.newContext({viewport:{width:1440,height:1120},httpCredentials:{username:'admin',password:'test-only-browser-password-0123456789'}});
+(async()=>{let ready=false;for(let i=0;i<120;i++){try{const r=await fetch('http://127.0.0.1:18080/');if(r.status===200){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('Disposable web test server did not start');const browser=await chromium.launch({executablePath:process.env.CHROMIUM_BIN||undefined,headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const context=await browser.newContext({viewport:{width:1440,height:1120}});
 const page=await context.newPage(), errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- await page.goto('http://127.0.0.1:18080/');await page.waitForSelector('#connection.online');
+ await page.goto('http://127.0.0.1:18080/');await page.fill('#password','test-only-browser-password-0123456789');await page.click('#login button');await page.waitForSelector('#connection.online');
  await page.waitForFunction(()=>document.querySelector('#camera').naturalWidth===640,null,{timeout:30000});
  await page.screenshot({path:'artifacts/evidence/web-2d.png',fullPage:true});
  await page.click('#view-3d');await page.waitForSelector('#world canvas',{state:'visible'});await page.waitForTimeout(400);
@@ -26,6 +26,7 @@ try{
  await page.click('[data-action=finish]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 종료',null,{timeout:45000});
  const result=await (await context.request.get('http://127.0.0.1:18080/api/result')).json();
  page.once('dialog',d=>d.accept());await page.click('[data-action=reset]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='세팅 중');
+ await page.click('#change-password');await page.fill('[name=current_password]','test-only-browser-password-0123456789');await page.fill('[name=new_password]','NewPass123');await page.click('#password-form button');await page.waitForFunction(()=>document.querySelector('#password-status').textContent.includes('변경했습니다'));await page.click('#logout');await page.waitForSelector('#login');await page.fill('#password','NewPass123');await page.click('#login button');await page.waitForSelector('#connection.online');
  if(errors.length)throw Error('Browser errors: '+errors.join(';'));
  fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,browserErrors:errors},null,2));
  console.log('Browser E2E passed: real RGB, WebGL, six processes, movement, pause/resume, finish/result, reset.');

@@ -258,8 +258,8 @@ def serve(config, backend, public_port, admin_port, out, web_port=None):
         if not password_file:
             raise ValueError('MAICON_WEB_PASSWORD_FILE is required for the operator dashboard')
         password = Path(password_file).read_text().strip()
-        if len(password) < 24:
-            raise ValueError('Dashboard password must contain at least 24 characters')
+        if len(password) < 10:
+            raise ValueError('Dashboard password must contain at least 10 characters')
     root = Path(out).resolve()
     root.mkdir(parents=True, exist_ok=True)
     scene, assets = start_scene(config, backend, root, True)
@@ -277,7 +277,7 @@ def serve(config, backend, public_port, admin_port, out, web_port=None):
     if web_port is not None:
         from maicon_sim.server.web import DashboardManager, create_dashboard
         manager = DashboardManager(public.state.service, root)
-        extra = ((create_dashboard(manager, password), web_port),)
+        extra = ((create_dashboard(manager, password, password_file), web_port),)
     runtime = EngineRuntime(engine, gateway, on_tick=manager.on_tick if manager else None)
     previous_term = None
     if threading.current_thread() is threading.main_thread():

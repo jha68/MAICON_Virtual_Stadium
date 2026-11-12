@@ -34,7 +34,7 @@ fi
 if [[ -n "$web_domain" ]]; then
     docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
         --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
-        -c 'import os,secrets,pathlib; p=pathlib.Path("/data/web.password"); f=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600) if not p.exists() else None; f is not None and os.write(f,(secrets.token_urlsafe(32)+"\n").encode()); f is not None and os.close(f); assert len(p.read_text().strip())>=24; p.chmod(0o600)'
+        -c 'import os,secrets,pathlib; p=pathlib.Path("/data/web.password"); f=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600) if not p.exists() else None; f is not None and os.write(f,("".join(secrets.choice("abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789") for _ in range(10))+"\n").encode()); f is not None and os.close(f); assert len(p.read_text().strip())>=10; p.chmod(0o600)'
     mkdir -p "$data_dir/proxy"
     printf '%s {\n  reverse_proxy 127.0.0.1:8080\n}\n' "$web_domain" > "$data_dir/proxy/Caddyfile.next"
     docker pull caddy:2.10.2
@@ -92,7 +92,7 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
                     --mount type=volume,src=maicon-caddy-config,dst=/config caddy:2.10.2 >/dev/null
             fi
             echo "Operator URL: https://$web_domain (TLS issuance requires DNS and inbound TCP 80/443)."
-            echo 'Username: admin. Read the password only on the VM: cat ~/maicon-data/web.password'
+            echo 'Password-only login. Read the password only on the VM: cat ~/maicon-data/web.password'
         fi
         trap - ERR
         printf '%s\n' "$image" > "$data_dir/deployed-image.txt"
