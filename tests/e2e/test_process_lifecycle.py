@@ -27,6 +27,8 @@ def test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preserva
     # explicit provider setting. Unselected parent API keys must remain private.
     monkeypatch.delenv('MAICON_LLM_PROVIDER', raising=False)
     monkeypatch.setenv('MAICON_LLM_API_KEY', 'unselected-parent-test-key')
+    for name in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'):
+        monkeypatch.setenv(name, '64')
     config=load_scenario('examples/scenario_smoke_six.yaml')
     engine=MatchEngine(config)
     engine.request('enter_ready')
@@ -42,11 +44,14 @@ def test_E2E_004_005_006_ISO_006_real_children_restart_limit_and_report_preserva
               message='all six genuine participant executables must reach ready')
         assert len(set(c.pid for c in processes.children.values()))==6
         # Normal launcher privacy applies to every real child, including restarts.
-        allowed_env={'PATH','LANG','PYTHONUNBUFFERED','MAICON_SIM_MISSION_CODE'}
+        thread_limits = {'OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'}
+        allowed_env={'PATH','LANG','PYTHONUNBUFFERED','MAICON_SIM_MISSION_CODE'} | thread_limits
         for slot,child in processes.children.items():
             environment=(Path('/proc')/str(child.pid)/'environ').read_bytes().split(b'\0')
             names={item.split(b'=',1)[0].decode() for item in environment if item}
             assert names<=allowed_env
+            values = dict(item.split(b'=', 1) for item in environment if item)
+            assert all(values[name.encode()] == b'1' for name in thread_limits)
             assert (Path('/proc')/str(child.pid)/'cwd').resolve()==tmp_path/'public'/slot
             args=(Path('/proc')/str(child.pid)/'cmdline').read_bytes()
             assert b'private' not in args and b'admin' not in args

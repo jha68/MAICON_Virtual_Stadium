@@ -159,6 +159,7 @@ async def test_controller_joins_latest_drone_worker_after_each_sensor_cache_repl
 
 
 def test_repeated_pixels_save_inference_without_retiming_cached_sensor_packets():
+    pytest.importorskip('cv2')
     from maicon_sim.perception.combat import CombatVisionDetector
     detector = CombatVisionDetector()
     calls = []
