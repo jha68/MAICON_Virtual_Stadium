@@ -199,7 +199,8 @@ class ServerService:
         watcher=asyncio.create_task(disconnected())
         polling=asyncio.create_task(self.waiters.wait(
             lambda:self.submit(kind,slot,engine=engine,session_id=match_id), int(raw),
-            match_id,lambda:engine.match_id))
+            match_id,lambda:engine.match_id,
+            terminal=lambda answer:answer.get("reason")=="이 경기에 편성되지 않은 팀입니다"))
         try:
             done,_=await asyncio.wait((watcher,polling),return_when=asyncio.FIRST_COMPLETED)
             if polling in done:
@@ -240,6 +241,7 @@ class ServerService:
         return copy.deepcopy({"front_camera":sensors["front_camera"],
                  "gimbal_pivot_m":geom["gimbal_pivot_m"],
                  "camera_offset_gimbal_m":geom["camera_offset_gimbal_m"],
+                 "laser_offset_camera_m":[a-b for a,b in zip(geom["laser_offset_gimbal_m"],geom["camera_offset_gimbal_m"])],
                  "pan_deg_per_unit":.5,"tilt_deg_per_unit":.15,
                  "lidar":sensors["lidar"]})
 

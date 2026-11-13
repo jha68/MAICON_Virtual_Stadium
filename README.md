@@ -30,7 +30,7 @@ bash scripts/bootstrap.sh
 
 ## 브라우저에서 경기 운영
 
-Oracle 배포의 기본 주소는 `https://maicon.junununseo.com`입니다. DNS A 레코드를 VM 공인 IP로 지정하고 OCI 인바운드 TCP 80·443을 허용해야 합니다. Caddy가 HTTPS 인증서를 자동 발급·갱신합니다. 로그인 사용자명은 `admin`, 최초 배포 시 생성되는 비밀번호는 VM에서 `cat ~/maicon-data/web.password`로 확인합니다. 비밀번호를 채팅이나 저장소에 올리지 마세요.
+Oracle 배포의 기본 주소는 `https://maicon.junununseo.com`입니다. DNS A 레코드를 VM 공인 IP로 지정하고 OCI 인바운드 TCP 80·443을 허용해야 합니다. Caddy가 HTTPS 인증서를 자동 발급·갱신합니다. 아이디 없이 비밀번호만 입력합니다. 최소10자이며 기존 비밀번호는 유지됩니다. 웹 화면과 API는 비밀번호 변경 기능을 제공하지 않습니다. 최초 배포 시 생성되는10자 비밀번호는 VM에서 `cat ~/maicon-data/web.password`로 확인합니다. 비밀번호를 채팅이나 저장소에 올리지 마세요.
 
 정책 선택 → 준비 시작 → 여섯 팀 준비 완료 → 경기 시작 순서입니다. 실제 참가팀 프로세스 여섯 개를 실행하며 pose를 직접 움직이지 않습니다. 일시정지·재개·종료 후 점수 JSON 확인, 다음 경기 초기화를 지원합니다. 세팅/준비 중에는 제한 시간이 줄어들지 않습니다. 준비가 실패하면 초기화로 취소할 수 있습니다. 기본 순찰 데모와 실제 LLM을 쓰지 않는 baseline을 구분하세요.
 
@@ -84,6 +84,12 @@ curl -H 'Content-Type: application/json' -d '{"mission_code":"SIMB0001","target"
 2D 의미 관측은 합성 인식 이후 로직 시험입니다. 3D는 기본적으로 semantic endpoint를 닫고 실제 RGB에 contour/원근 보정/template 검출기를 적용합니다. 합성 여섯 도형 gallery의 성공은 실물 인쇄물 일반화 성능이 아닙니다. 기본 `FixtureLLM`은 통합용 stub이며 실제 LLM 성능이나 대회 LLM 의무 준수 증거가 아닙니다. 별도 비동기 `LLMPort`를 주입할 수 있고 오류·시간 초과는 제어 heartbeat를 막지 않습니다.
 
 사용 권한이 있는 실제 이미지는 `generator: import`, 상대 `path`, SHA256, source/license/split 메타데이터로 등록할 수 있습니다. 해시가 틀리면 실패합니다. 공식 이미지나 모델은 자동으로 내려받지 않습니다. 카메라·레이저·수광부·LiDAR, FOV, 노이즈, fog는 센서 프로필에서 바꾸며 새 프로필과 회귀 결과를 함께 보존합니다.
+
+`generate`의 기본 `--layout-mode competition`은 BLUE/RED 지정표적을 시설 코드로 짝지어 위치·표적면·수광부를 반사 대칭으로 배치합니다. 비시설 박스와 M3 객체 종류까지 동일하게 만들지는 않습니다. 비대칭 스트레스 시험은 `--layout-mode stress`로 명시하며 생성 YAML에도 모드를 기록합니다. 기존 수동 시나리오는 그대로 사용합니다.
+
+참가팀 컨트롤러는 필수 센서 프레임이 진행하지 않으면 주행과 새 조준 명령을 중단합니다. 기본 만료시간은 odom/LiDAR 0.5초, baseline 영상 1초, 2Hz 상태·경기 신호 1.5초입니다. 같은 캐시 프레임의 재수신은 시간을 갱신하지 않습니다. 센서 복구 뒤 새 정책 판단부터 동작하며, 센서 중단 중에도 M6 보고는 계속 처리합니다. 이 시간은 컨트롤러의 `sensor_timeout_s`(기본0.5초)를 기준으로 설정합니다.
+
+baseline 공격·M3 시간 정합/면 추적·M6 시각 증거·실제 LLM 선택·카메라 보정 사용법은 [후속 기능](docs/FOLLOWUP_FEATURES.md)에, 설계 배경은 [개선 설계안](docs/COMPETITION_IMPROVEMENT_IDEAS.md)에 정리했습니다.
 
 ## 기록과 재현
 

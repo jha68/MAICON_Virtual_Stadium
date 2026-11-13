@@ -92,3 +92,43 @@ def test_fake_ROS_fire_timeout_not_retried():
         with pytest.raises(asyncio.TimeoutError): await port.fire()
         assert calls==[{}]
     asyncio.run(case())
+
+
+@pytest.mark.contract
+@pytest.mark.parametrize("mode",["practice","mission"])
+@pytest.mark.parametrize("cmd",["idle","standby","start","pause","resume","report","stop"])
+def test_fake_ROS_motion_phase_lock_depends_on_mode(mode,cmd):
+    async def case():
+        transport=FakeRosTransport()
+        port=ROS2RobotPort(transport)
+        # A new phase can stop an already moving robot only in mission mode.
+        transport.publish("/mil/match",{"mode":"mission","cmd":"start"},MATCH_QOS)
+        await port.command_velocity(.2,.1)
+        transport.publish("/mil/match",{"mode":mode,"cmd":cmd},MATCH_QOS)
+        allowed=mode=="practice" or cmd in ("start","resume")
+        if allowed:
+            assert transport.published[-1][0]=="/mil/match"
+        else:
+            assert transport.published[-1]==("/cmd_vel",{"linear_x_mps":0.0,"angular_z_rps":0.0})
+        await port.command_velocity(.2,.1)
+        assert transport.published[-1]==("/cmd_vel",{
+            "linear_x_mps":.2 if allowed else 0.0,
+            "angular_z_rps":.1 if allowed else 0.0})
+        await port.close()
+    asyncio.run(case())
+
+
+@pytest.mark.contract
+@pytest.mark.parametrize("match",[None,{}, {"mode":"unknown","cmd":"start"},
+                                       {"mode":"mission","cmd":"unknown"},
+                                       {"cmd":"start"}])
+def test_fake_ROS_motion_waits_for_a_known_control_mode(match):
+    async def case():
+        transport=FakeRosTransport()
+        if match is not None:
+            transport.publish("/mil/match",match,MATCH_QOS)
+        port=ROS2RobotPort(transport)
+        await port.command_velocity(.2,.1)
+        assert transport.published[-1]==("/cmd_vel",{"linear_x_mps":0.0,"angular_z_rps":0.0})
+        await port.close()
+    asyncio.run(case())

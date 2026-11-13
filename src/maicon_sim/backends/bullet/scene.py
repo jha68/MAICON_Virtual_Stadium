@@ -7,6 +7,17 @@ from maicon_sim.core.geometry2d import pose_values
 from maicon_sim.core.geometry3d import FACE_AXES, rotation_z
 
 
+# Documented hit-state colours, rendered on a dedicated device rather than
+# encoding HP in the camp-coloured chassis. Placement remains a SIM fixture.
+HP_LED_COLORS = {
+    4: (.08, .25, 1., 1.),
+    3: (.08, .95, .12, 1.),
+    2: (1., .90, .06, 1.),
+    1: (1., .42, .06, 1.),
+    0: (1., .06, .06, 1.),
+}
+
+
 def _pose(value):
     if isinstance(value,dict) and 'pose' in value:value=value['pose']
     return pose_values(value)
@@ -23,7 +34,7 @@ class BulletScene:
     def __init__(self,p,client,config,assets):
         self.p=p;self.client=client;self.config=config;self.assets=assets
         self.registry={};self.faces={};self.robot_parts={};self.box_parts={};self.gimbal_parts={}
-        self.textures={};self._meshes={};self.led_parts={};self.facility_parts={};self._mesh_root=assets.root/'meshes';self._mesh_root.mkdir(exist_ok=True)
+        self.textures={};self._meshes={};self.led_parts={};self.facility_parts={};self.hp_led_parts={};self._mesh_root=assets.root/'meshes';self._mesh_root.mkdir(exist_ok=True)
         self._build()
 
     def _box(self,key,half,position,color,collision=True,orientation=(0,0,0,1)):
@@ -138,6 +149,13 @@ class BulletScene:
                 body=self._sphere(slot+f'/ammo_led{i}',.004,[0,0,0],[.15,.85,.15,1])
                 parts.append((body,np.array([.095,-.063+i*.018,.138]),[0,0,0,1]));leds.append(body)
             self.led_parts[slot]=leds
+            hp_leds=[]
+            for sign in (-1,1):
+                body=self._sphere(slot+f'/hp_led{sign}',.012,[0,0,0],HP_LED_COLORS[4])
+                # Keep the front indicator behind the camera optical origin;
+                # a device in front of it would obscure the robot's own image.
+                parts.append((body,np.array([.02 if sign>0 else -.119,0,.19]),[0,0,0,1]));hp_leds.append(body)
+            self.hp_led_parts[slot]=hp_leds
             self.robot_parts[slot]=parts
         self.sync({'robots':{a['slot']:{'pose':a['start_pose'],'pan':0.,'tilt':0.} for a in cfg.scenario['agents']}})
 
@@ -161,10 +179,8 @@ class BulletScene:
             for i,led in enumerate(self.led_parts.get(slot,[])):
                 p.changeVisualShape(led,-1,rgbaColor=[.15,.85,.15,1] if i<ammo else [.08,.1,.08,1],physicsClientId=c)
             hp=robot.get('hp',4) if isinstance(robot,dict) else robot.hp
-            color=[.12,.27,.73,1] if slot.startswith('B-') else [.75,.14,.11,1]
-            # Synthetic HP external appearance only, not an opponent state DTO.
-            color=[component*(.35+.65*hp/4) for component in color[:3]]+[1]
-            p.changeVisualShape(self.registry[slot+'/chassis'],-1,rgbaColor=color,physicsClientId=c)
+            for led in self.hp_led_parts.get(slot,[]):
+                p.changeVisualShape(led,-1,rgbaColor=HP_LED_COLORS[max(0,min(4,int(hp)))],physicsClientId=c)
             pan=robot.get('pan',0) if isinstance(robot,dict) else robot.pan
             tilt=robot.get('tilt',0) if isinstance(robot,dict) else robot.tilt
             # yaw + pan + tilt composition in quaternion form matches shared matrix.

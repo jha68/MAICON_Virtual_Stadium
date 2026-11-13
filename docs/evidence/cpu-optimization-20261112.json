@@ -1,0 +1,82 @@
+{
+  "measured_at": "2026-11-12",
+  "environment": {
+    "os": "Linux x86_64",
+    "python": "3.10.22",
+    "cpu": "Intel Xeon Platinum 8573C",
+    "process_cpu_affinity_count": 2,
+    "gpu": false
+  },
+  "scenario": "smoke_six",
+  "scenario_seed": 20261107,
+  "policy": "patrol",
+  "camera_hz": 10,
+  "resolution": [
+    640,
+    480
+  ],
+  "cprofile_enabled": false,
+  "before_commit": "a6ba790953ae7f7e1d270f6689cf1f742160138d",
+  "after_source_sha256": {
+    "gateway": "052dc73cf23d14f1f7c45f942d714c78fd2a9871e72eb2bdfc3e3ec8afac9f19",
+    "policy": "602d79fb799cb0b1d2f7abe3dfd979f038d44806526c26f5280294c0c359cc28"
+  },
+  "measurements": [
+    {
+      "case": "cpu-before-patrol-unprofiled",
+      "wall_s": 20.034863018001488,
+      "simulated_s": 8.84,
+      "real_time_factor": 0.44123086801527855,
+      "core_tick_p50_ms": 2.6777300008689053,
+      "core_tick_p95_ms": 68.26827809927637,
+      "render_p50_ms": 567.3507040010008,
+      "movement_m": {
+        "B-1": 0.01199950125412881,
+        "B-2": 0.14230340269355923,
+        "B-3": 0.0,
+        "R-1": 0.10788369129037688,
+        "R-2": 0.0,
+        "R-3": 0.0
+      }
+    },
+    {
+      "case": "cpu-after-patrol-unprofiled",
+      "wall_s": 20.018017572001554,
+      "simulated_s": 19.97,
+      "real_time_factor": 0.9976012823533178,
+      "core_tick_p50_ms": 0.22409099983633496,
+      "core_tick_p95_ms": 34.73175200088008,
+      "render_p50_ms": 445.817451000039,
+      "movement_m": {
+        "B-1": 0.0,
+        "B-2": 0.15279304565036117,
+        "B-3": 0.0,
+        "R-1": 0.17831886855433585,
+        "R-2": 0.0,
+        "R-3": 0.0
+      }
+    },
+    {
+      "case": "cpu-after-patrol-no-vision",
+      "wall_s": 20.110142991998146,
+      "simulated_s": 17.28,
+      "real_time_factor": 0.8592678832207079,
+      "core_tick_p50_ms": 0.24597750052635092,
+      "core_tick_p95_ms": 45.30462325001271,
+      "render_p50_ms": 504.2360959996586,
+      "movement_m": {
+        "B-1": 0.028493318945324808,
+        "B-2": 0.24118883683664516,
+        "B-3": 0.0,
+        "R-1": 0.3170578648244525,
+        "R-2": 0.0,
+        "R-3": 0.0
+      }
+    }
+  ],
+  "limits": [
+    "One short sample per case; scheduling and robot trajectories vary.",
+    "Local x86 CPU affinity is not a benchmark of the production ARM server.",
+    "Camera renderer remains CPU TinyRenderer and can still drop requested frames."
+  ]
+}

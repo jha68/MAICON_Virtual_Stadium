@@ -13,9 +13,8 @@ from importlib.resources import files
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from maicon_sim.core.types import SLOTS
 from maicon_sim.sensors.gateway import SensorUnavailable
@@ -102,18 +101,9 @@ class DashboardManager:
 
 
 def create_dashboard(manager, password):
-    if len(password) < 24:
-        raise ValueError('Dashboard password is too short')
-    basic = HTTPBasic()
-
-    def authenticate(credentials: HTTPBasicCredentials = Depends(basic)):
-        valid_user = hmac.compare_digest(credentials.username.encode(), b'admin')
-        valid_password = hmac.compare_digest(credentials.password.encode(), password.encode())
-        if not (valid_user and valid_password):
-            raise HTTPException(401, '로그인이 필요합니다.', headers={'WWW-Authenticate': 'Basic realm="MAICON operator"'})
-
-    app = FastAPI(title='MAICON operator', docs_url=None, redoc_url=None, openapi_url=None,
-                  dependencies=[Depends(authenticate)])
+    app = FastAPI(title='MAICON operator', docs_url=None, redoc_url=None, openapi_url=None)
+    from .web_auth import install_auth
+    install_auth(app, password)
     web_root = Path(str(files('maicon_sim') / 'resources/web'))
     @lru_cache(maxsize=32)
     def texture_bytes(generator, label, path, digest):

@@ -27,10 +27,14 @@ docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
     --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
     -c 'import maicon_sim.config.loader; import pathlib,tempfile; d=tempfile.TemporaryDirectory(dir="/data/runs"); pathlib.Path(d.name,"probe").write_text("ok"); d.cleanup()'
 web_args=()
+participant_env=()
+if [[ -f "$data_dir/participant.env" ]]; then
+    participant_env=(--env-file "$data_dir/participant.env")
+fi
 if [[ -n "$web_domain" ]]; then
     docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
         --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
-        -c 'import os,secrets,pathlib; p=pathlib.Path("/data/web.password"); f=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600) if not p.exists() else None; f is not None and os.write(f,(secrets.token_urlsafe(32)+"\n").encode()); f is not None and os.close(f); assert len(p.read_text().strip())>=24; p.chmod(0o600)'
+        -c 'import os,secrets,pathlib; p=pathlib.Path("/data/web.password"); f=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600) if not p.exists() else None; f is not None and os.write(f,("".join(secrets.choice("abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789") for _ in range(10))+"\n").encode()); f is not None and os.close(f); assert len(p.read_text().strip())>=10; p.chmod(0o600)'
     mkdir -p "$data_dir/proxy"
     printf '%s {\n  reverse_proxy 127.0.0.1:8080\n}\n' "$web_domain" > "$data_dir/proxy/Caddyfile.next"
     docker pull caddy:2.10.2
@@ -65,6 +69,7 @@ run_id="$(date -u +%Y%m%dT%H%M%S)-${image##*:}-$$"
 docker run -d --name maicon-sim --restart unless-stopped --network host \
     --user "$runtime_uid:$runtime_gid" \
     --env MAICON_WEB_PASSWORD_FILE=/data/web.password \
+    "${participant_env[@]}" \
     --mount "type=bind,src=$data_dir,dst=/data" \
     "$image" serve --example reference_stadium --backend 3d \
     --public-port 8000 --admin-port 8001 --out "/data/runs/$run_id" "${web_args[@]}" >/dev/null
@@ -73,7 +78,7 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
         'http://127.0.0.1:8000/sim/session?mission_code=SIMB0001' \
         | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["capabilities"]["rgb"] and d["slot"]=="B-1"' 2>/dev/null; then
         if [[ -n "$web_domain" ]]; then
-            if ! docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib; p=pathlib.Path("/data/web.password").read_text().strip(); r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}); assert urllib.request.urlopen(r,timeout=5).status==200'; then
+            if ! docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib; p=pathlib.Path("/data/web.password").read_text().strip(); h={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}; r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers=h); assert urllib.request.urlopen(r,timeout=5).status==200; page=urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8080/",headers=h),timeout=5).read().decode(); assert not any(marker in page for marker in ("id=\"change-password\"","id=\"password-form\"","id=\"logout\""))'; then
                 sleep "$health_interval"
                 continue
             fi
@@ -87,7 +92,7 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
                     --mount type=volume,src=maicon-caddy-config,dst=/config caddy:2.10.2 >/dev/null
             fi
             echo "Operator URL: https://$web_domain (TLS issuance requires DNS and inbound TCP 80/443)."
-            echo 'Username: admin. Read the password only on the VM: cat ~/maicon-data/web.password'
+            echo 'Password-only login. Read the password only on the VM: cat ~/maicon-data/web.password'
         fi
         trap - ERR
         printf '%s\n' "$image" > "$data_dir/deployed-image.txt"

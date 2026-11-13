@@ -214,6 +214,10 @@ class MatchEngine:
             robot.ready = True
             return {'accepted': True}
         if kind in {'order', 'target'}:
+            # Admission is decided at start. Before that, assigned teams may
+            # wait for publication even though admitted is still false.
+            if self.phase in {'running', 'reporting', 'finished'} and not robot.admitted:
+                return {'accepted': False, 'reason': '이 경기에 편성되지 않은 팀입니다'}
             if kind == 'order' and self.order_published:
                 return {'accepted': True, 'order': {'tactical_command': self.orders[slot]['tactical_command'], 'issued_at': self.order_issued_at}}
             if kind == 'target' and self.target_published:

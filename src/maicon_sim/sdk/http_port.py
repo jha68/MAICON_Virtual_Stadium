@@ -96,7 +96,8 @@ class HTTPPort:
             if value is not None: self.cache.observations["rgb" if channel=="camera" else channel]=value
         return dict(self.cache.observations)
     async def drone(self,camera=None):
-        response=await self._request("GET",self.prefix+"/drone",params={"camera":camera} if camera else {},raw=True)
+        # Rehearsal changes report routes only; cameras keep their report URL.
+        response=await self._request("GET","/api/report/drone",params={"camera":camera} if camera else {},raw=True)
         return response.content,dict(response.headers)
     async def close(self):
         if self._owns_client: await self.client.aclose()

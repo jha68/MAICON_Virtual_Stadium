@@ -48,6 +48,26 @@ def parser():
     agent.add_argument("--policy", choices=("idle", "baseline", "patrol", "blocker", "capture_runner"), default="baseline")
     agent.add_argument("--server", required=True)
     agent.add_argument("--out", default=".")
+    agent.add_argument("--llm-provider", choices=("fixture", "json-http", "openai-compatible"))
+    agent.add_argument("--llm-endpoint")
+    agent.add_argument("--llm-model")
+    agent.add_argument("--llm-key-env", help="Environment variable name, never a credential value")
+    agent.add_argument("--llm-timeout-s", type=float, default=5.)
+    agent.add_argument("--camera-calibration", default=os.environ.get("MAICON_CAMERA_CALIBRATION"))
+    agent.add_argument("--vision-stress-seed", type=int, default=None)
+    calibrate = subs.add_parser("calibrate-camera", help="Fit measured checkerboard images; writes a new camera JSON")
+    calibrate.add_argument("--images", nargs="+", required=True)
+    calibrate.add_argument("--board-cols", type=int, required=True)
+    calibrate.add_argument("--board-rows", type=int, required=True)
+    calibrate.add_argument("--square-size-m", type=float, required=True)
+    calibrate.add_argument("--out", required=True)
+    augment = subs.add_parser("augment-image", help="Deterministic photometric stress image, outside source assets")
+    augment.add_argument("--image", required=True)
+    augment.add_argument("--out", required=True)
+    augment.add_argument("--seed", type=int, required=True)
+    augment.add_argument("--brightness", type=float, default=.9)
+    augment.add_argument("--blur-sigma", type=float, default=.5)
+    augment.add_argument("--noise-sigma", type=float, default=2.)
     replay = subs.add_parser("replay", help="Verify checksums and re-inject recorded inputs")
     replay.add_argument("--run", required=True)
     replay.add_argument("--backend", choices=("2d", "3d"), default="2d")
@@ -70,6 +90,8 @@ def parser():
     generate.add_argument("--seed", type=int, required=True)
     generate.add_argument("--count", type=int, default=1)
     generate.add_argument("--out", required=True)
+    generate.add_argument("--layout-mode", choices=("competition", "stress"), default="competition",
+                          help="Mirror M2 facility pairs (default) or place independently for asymmetric stress tests")
     benchmark = subs.add_parser("benchmark", help="Measure actual throughput; never skip ticks")
     scenario_args(benchmark)
     benchmark.add_argument("--backend", choices=("2d", "3d"), default="2d")
@@ -140,12 +162,32 @@ def execute(args):
         code = os.environ.get("MAICON_SIM_MISSION_CODE")
         if not code:
             raise ValueError("MAICON_SIM_MISSION_CODE must be supplied in the environment")
-        return asyncio.run(run_agent(args.server, args.slot, args.policy, code, args.out))
+        options = {name: value for name, value in (("provider", args.llm_provider), ("endpoint", args.llm_endpoint),
+                   ("model", args.llm_model), ("key_env", args.llm_key_env), ("timeout_s", args.llm_timeout_s)) if value is not None}
+        return asyncio.run(run_agent(args.server, args.slot, args.policy, code, args.out, llm_options=options,
+                                     camera_calibration=args.camera_calibration, vision_stress_seed=args.vision_stress_seed))
+    if args.command == "calibrate-camera":
+        import glob
+        from maicon_sim.perception.calibration import calibrate_camera
+        paths = sorted({path for pattern in args.images for path in glob.glob(pattern)})
+        return calibrate_camera(paths, (args.board_cols, args.board_rows), args.square_size_m, args.out)
+    if args.command == "augment-image":
+        from PIL import Image
+        import numpy as np
+        from maicon_sim.perception.augmentation import augment_image
+        target = Path(args.out)
+        if target.exists():
+            raise ValueError("output already exists; choose a new image path")
+        image = np.asarray(Image.open(args.image).convert("RGB"))[..., ::-1].copy()
+        result = augment_image(image, args.seed, brightness=args.brightness, blur_sigma=args.blur_sigma, noise_sigma=args.noise_sigma)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(result[..., ::-1]).save(target)
+        return {"image": str(target), "seed": args.seed}
     if args.command == "generate":
         from maicon_sim.evaluation.generate import generate
         if args.count < 1 or args.seed < 0:
             raise ValueError("seed must be nonnegative and count positive")
-        return {"scenarios": generate(args.template, args.seed, args.count, args.out)}
+        return {"scenarios": generate(args.template, args.seed, args.count, args.out, layout_mode=args.layout_mode)}
     if args.command == "compare":
         from maicon_sim.evaluation.compare import compare
         result = compare(args.left, args.right, args.mode)

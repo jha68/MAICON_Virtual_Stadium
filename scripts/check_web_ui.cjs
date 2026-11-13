@@ -1,11 +1,11 @@
 const { chromium }=require('playwright');
 const fs=require('fs'); // Run against a disposable local 3D serve instance on ports 18000/18001/18080.
 fs.mkdirSync('artifacts/evidence',{recursive:true});
-(async()=>{let ready=false;for(let i=0;i<120;i++){try{const r=await fetch('http://127.0.0.1:18080/');if(r.status===401){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('Disposable web test server did not start');const browser=await chromium.launch({executablePath:process.env.CHROMIUM_BIN||undefined,headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-const context=await browser.newContext({viewport:{width:1440,height:1120},httpCredentials:{username:'admin',password:'test-only-browser-password-0123456789'}});
+(async()=>{let ready=false;for(let i=0;i<120;i++){try{const r=await fetch('http://127.0.0.1:18080/');if(r.status===200){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('Disposable web test server did not start');const browser=await chromium.launch({executablePath:process.env.CHROMIUM_BIN||undefined,headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const context=await browser.newContext({viewport:{width:1440,height:1120}});
 const page=await context.newPage(), errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- await page.goto('http://127.0.0.1:18080/');await page.waitForSelector('#connection.online');
+ await page.goto('http://127.0.0.1:18080/');await page.fill('#password','test-only-browser-password-0123456789');await page.click('#login button');await page.waitForSelector('#connection.online');
  const initial=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
  if(initial.scenario_id!=='reference_stadium'||initial.boxes.length!==20)throw Error('Expected the reference stadium');
  await page.waitForFunction(()=>document.querySelectorAll('.asset-card img').length===13&&[...document.querySelectorAll('.asset-card img')].every(i=>i.complete&&i.naturalWidth>0));
@@ -34,7 +34,11 @@ try{
  await page.click('[data-action=finish]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 종료',null,{timeout:45000});
  const result=await (await context.request.get('http://127.0.0.1:18080/api/result')).json();
  page.once('dialog',d=>d.accept());await page.click('[data-action=reset]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='세팅 중');
+ if(await page.locator('#change-password, #password-form, #logout').count())throw Error('Removed account controls remain');
+ const change=await context.request.post('http://127.0.0.1:18080/auth/password',{headers:{'X-Maicon-Operator':'1'},data:{current_password:'test-only-browser-password-0123456789',new_password:'NewPass123'}});if(change.status()!==404)throw Error('Password change API remains');
+ const logout=await context.request.post('http://127.0.0.1:18080/auth/logout',{headers:{'X-Maicon-Operator':'1'}});if(logout.status()!==404)throw Error('Logout API remains');
+ await context.clearCookies();await page.goto('http://127.0.0.1:18080/');await page.waitForSelector('#login');await page.fill('#password','test-only-browser-password-0123456789');await page.click('#login button');await page.waitForSelector('#connection.online');
  if(errors.length)throw Error('Browser errors: '+errors.join(';'));
- fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',referenceBoxes:20,pdfTextures:13,facilityReceivers:6,realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,browserErrors:errors},null,2));
+ fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',referenceBoxes:20,pdfTextures:13,facilityReceivers:6,realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,passwordChangeRemoved:true,logoutRemoved:true,samePasswordRelogin:true,browserErrors:errors},null,2));
  console.log('Browser E2E passed: real RGB, WebGL, six processes, movement, pause/resume, finish/result, reset.');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
