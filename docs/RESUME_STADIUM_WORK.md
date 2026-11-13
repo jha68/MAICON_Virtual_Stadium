@@ -106,3 +106,10 @@ NODE_PATH=/workspace/maicon-browser/node_modules CHROMIUM_BIN=/usr/bin/chromium 
 ### 여전히 완료되지 않은 실물 항목
 
 실제 카메라/출력물/조명 일반화, 공식 `rclpy` 메시지·서비스·QoS 및 최종 SDK 통합, 실제 바퀴 슬립·전력/배터리 소모, 레이저 확산·수광 감도/각도 응답은 장비·공식 타입·측정자료가 없어 완료로 표시하지 않는다. 드론 차체 중심으로 발사하거나 관측되지 않은 상대 HP/탄약/방향을 추정하지 않는다. H-01~H-07은 `HARDWARE_VALIDATION.md`의 not_run을 유지한다. M1은 계속 mock이고 모바일 대응은 범위 밖이다.
+
+
+### ARM64 이미지 빌드 캐시
+
+기능 커밋 `abf21eb`의 최종 CI43375325714는 전체 회귀·wheel·데스크톱·6개 baseline 드론 연결까지 성공했고, Codex 공개 앱도 이 revision으로 전환해 실제 맵/6대 RGB를 재검증했다. 전환 전 finished 상태를 다시 확인했고 운영 결과2개를 해시로 보존했다. main은 병합하지 않았다. Oracle 갱신은 feature ref의 수동 workflow를 사용한다.
+
+Oracle ARM64 빌드 중 Dockerfile의 revision ARG/ENV/LABEL이 의존성 설치보다 앞에 있어 커밋마다 의존성 캐시를 무효화하는 구조를 확인했다. 메타데이터 설정을 모든 빌드 RUN 뒤로 옮겼다. 런타임 ENV와 OCI revision label은 유지한다. 이 변경은 앱 동작 변경이 아니며, 공개 앱의 현재 revision과 ARM64 배포 workflow의 실제 성공 상태는 각각 확인한다. 진행 중인 경기는 재시작하지 않는다.
