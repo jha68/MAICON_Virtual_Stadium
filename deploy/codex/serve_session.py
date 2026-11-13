@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import subprocess
 import sys
 
 
@@ -20,9 +21,15 @@ def main():
         raise ValueError('Invalid operator password file')
     os.sched_setaffinity(0, sorted(os.sched_getaffinity(0))[:4])
     os.environ['MAICON_WEB_PASSWORD_FILE'] = str(password)
+    os.environ['MAICON_LLM_PROVIDER'] = 'fixture'
+    os.environ.pop('MAICON_RELAY_CREDENTIALS_JSON', None)
+    revision = subprocess.run(['git','-C',str(Path(__file__).resolve().parents[2]),'rev-parse','HEAD'],
+                              text=True,capture_output=True)
+    if revision.returncode == 0:
+        os.environ['MAICON_BUILD_REVISION'] = revision.stdout.strip()
     run = root/('run-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(4))
     (root/'current-run.json').write_text(json.dumps({'run':str(run),'pid':os.getpid()}))
-    os.execv(sys.executable, [sys.executable,'-m','maicon_sim','serve','--example','smoke_six','--backend','3d',
+    os.execv(sys.executable, [sys.executable,'-m','maicon_sim','serve','--example','reference_stadium','--backend','3d',
                             '--public-port','18000','--admin-port','18001','--web-port','18080','--out',str(run)])
 
 

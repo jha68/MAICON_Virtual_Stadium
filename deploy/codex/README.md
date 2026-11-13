@@ -10,6 +10,15 @@ Oracle gateway는 기본적으로 기존 서버를 제공한다. Codex 작업자
 
 현재 세션의 개인키 파일이 있는 환경에서 bootstrap을 가져온 뒤 다음을 실행한다.
 
+게시한 환경에 `MAICON_RELAY_CREDENTIALS_JSON`이 설정돼 있으면 개인키 복원 없이 아래 명령으로 동일 세션 자격 증명을 준비할 수 있다. 값은 출력하지 않는다. 저장소의 `session_id`·`domain`과 다르면 덮어쓰지 않고 중단한다.
+
+```bash
+.venv/bin/python deploy/codex/prepare_session.py --from-environment \
+  --out artifacts/codex-domain-session/private
+```
+
+암호화 bootstrap을 사용하는 대안:
+
 ```bash
 SESSION=$(python -c 'import json; print(json.load(open("deploy/codex/session.json"))["session_id"])')
 .venv/bin/python deploy/codex/prepare_session.py \
@@ -21,6 +30,8 @@ SESSION=$(python -c 'import json; print(json.load(open("deploy/codex/session.jso
 ```
 
 앱은 loopback18080, 참가팀 API18000, 관리자 API18001에서 실행한다. 운영자 비밀번호 파일은 private 폴더에0600으로 보존하며 기본 자율 정책·실제 RGB·2D/3D 화면은 기존 앱 그대로다. 비밀번호 변경·로그아웃 UI나 API를 다시 추가하지 않는다.
+
+실행 예제는 `reference_stadium`, M1은 `fixture`로 고정한다. 서버에는 현재 Git revision을 전달하고 relay 환경 변수는 참가팀 자식 프로세스에 상속하지 않는다. `/api/state`에서 맵·revision을 검증한 뒤 도메인에 연결한다.
 
 ## 네트워크와 작업자
 

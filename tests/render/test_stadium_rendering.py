@@ -41,7 +41,11 @@ def test_reference_receivers_match_hit_geometry_and_invalidate_rgb_cache():
         after = backend.capture_pose(origin, rotation, tick=1)['data'].copy()
         changed = np.max(abs(before.astype(int)-after.astype(int)), axis=2) > 30
         assert changed.sum() > 20
-        assert np.any((after[..., 2] > 180) & (after[..., 1] < 70) & changed)
+        # Only the roof LED changes. Its shaded side can be darker than the
+        # previously colour-changing spherical lens; require a red signal.
+        colour = after.astype(float)
+        assert np.any((colour[...,2] > 100) & (colour[...,2] > 3*colour[...,1]) &
+                      (colour[...,2] > 3*colour[...,0]) & changed)
         backend.sync_scene(engine.snapshot())
         reset = backend.capture_pose(origin, rotation, tick=2)['data']
         np.testing.assert_array_equal(reset, before)
