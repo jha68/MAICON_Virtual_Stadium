@@ -106,7 +106,9 @@ class BulletBackend:
         # Capture no mutable engine references. Tick fields do not change geometry.
         robots={slot:{k:copy.deepcopy(value[k]) for k in ('pose','pan','tilt','hp','ammo') if k in value} for slot,value in snapshot['robots'].items()}
         boxes=copy.deepcopy(snapshot.get('boxes',self.config.scenario['boxes']))
-        current={'robots':robots,'boxes':boxes}
+        current={'robots':robots,'boxes':boxes,
+                 'destroyed':copy.deepcopy(snapshot.get('destroyed',[])),
+                 'facility_signals':copy.deepcopy(snapshot.get('facility_signals',{}))}
         key=hashlib.sha256(json.dumps(current,sort_keys=True,allow_nan=False).encode()).digest()
         self.snapshot=current
         if key!=self._scene_key:

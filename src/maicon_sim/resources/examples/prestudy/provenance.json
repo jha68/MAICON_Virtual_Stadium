@@ -1,0 +1,163 @@
+{
+  "source_file": "prestudy(1)_2026MAICON.pdf",
+  "source_sha256": "444919b8c7b7c8a3fe0049921757f95d7bdf9d6dec2456f24bba4ac68f5ee624",
+  "method": "Lossless PNG extraction of individual illustrated panels from embedded PDF JPEGs; remove whitespace and captions only. No generated replacement artwork.",
+  "assets": [
+    {
+      "asset_id": "facility_OUTPOST",
+      "page": 12,
+      "embedded_image": "target-003.jpg",
+      "crop_xyxy_px": [
+        1,
+        2,
+        351,
+        352
+      ],
+      "sha256": "5517c0c73c64fa429582b6487a6f37568a44aaf1b2089018daca105ec7b4557f"
+    },
+    {
+      "asset_id": "facility_RADAR",
+      "page": 12,
+      "embedded_image": "target-003.jpg",
+      "crop_xyxy_px": [
+        370,
+        2,
+        721,
+        353
+      ],
+      "sha256": "75382e4998ec6f6a42f8fd99fb940b4692a44c72291c0fee32cd784e3648f243"
+    },
+    {
+      "asset_id": "facility_COMMS",
+      "page": 12,
+      "embedded_image": "target-003.jpg",
+      "crop_xyxy_px": [
+        741,
+        2,
+        1091,
+        352
+      ],
+      "sha256": "3b35ad0d016c50808f2a9e9caec3b406fff014758c729fdf8cc25b6e6915f08d"
+    },
+    {
+      "asset_id": "object_ammo_box",
+      "page": 13,
+      "embedded_image": "target-011.jpg",
+      "crop_xyxy_px": [
+        0,
+        2,
+        294,
+        295
+      ],
+      "sha256": "e2ce8d8e327b5f081b05742800964eca940d97ec3b2f74f1f2a22ab6fe4d7183"
+    },
+    {
+      "asset_id": "object_drum",
+      "page": 13,
+      "embedded_image": "target-011.jpg",
+      "crop_xyxy_px": [
+        310,
+        2,
+        604,
+        295
+      ],
+      "sha256": "93ea4479917383a7cf1104484d977656609ba27513a484a5bf09eea6c6f60896"
+    },
+    {
+      "asset_id": "object_mortar",
+      "page": 13,
+      "embedded_image": "target-011.jpg",
+      "crop_xyxy_px": [
+        621,
+        2,
+        915,
+        295
+      ],
+      "sha256": "7e01ce459d4a38c89405d826c57800ac1b82ba9daddc2d5f3ac0a488af378a68"
+    },
+    {
+      "asset_id": "object_military_truck",
+      "page": 13,
+      "embedded_image": "target-012.jpg",
+      "crop_xyxy_px": [
+        1,
+        0,
+        296,
+        291
+      ],
+      "sha256": "68c243fb8a27e53dec8665e1f000af9ad56630471bc1b9097d56fca3a2b11d97"
+    },
+    {
+      "asset_id": "object_tank",
+      "page": 13,
+      "embedded_image": "target-012.jpg",
+      "crop_xyxy_px": [
+        312,
+        0,
+        606,
+        291
+      ],
+      "sha256": "7d93b6b825781ff232f094a71bcbfb2acf75fed6c7531eb0497607db55ecddb4"
+    },
+    {
+      "asset_id": "object_missile",
+      "page": 13,
+      "embedded_image": "target-012.jpg",
+      "crop_xyxy_px": [
+        623,
+        0,
+        913,
+        291
+      ],
+      "sha256": "0a1872fe2fb887107bdd0d96f32af49e26a9829223b89fbe7ce3eae1960570b4"
+    },
+    {
+      "asset_id": "decoy_urban_tree",
+      "page": 25,
+      "embedded_image": "decoy-005.jpg",
+      "crop_xyxy_px": [
+        3,
+        5,
+        239,
+        241
+      ],
+      "sha256": "0c7f10008469fc5108c6d384917ca43cf0bc28f7a5ef12c573756130206eacd5"
+    },
+    {
+      "asset_id": "decoy_barrier",
+      "page": 25,
+      "embedded_image": "decoy-005.jpg",
+      "crop_xyxy_px": [
+        265,
+        5,
+        502,
+        242
+      ],
+      "sha256": "de5424d6d06ae1578b3a706f0143ca57334f492284c05c069dbe11249f2a2b72"
+    },
+    {
+      "asset_id": "decoy_field_position",
+      "page": 25,
+      "embedded_image": "decoy-005.jpg",
+      "crop_xyxy_px": [
+        530,
+        5,
+        766,
+        241
+      ],
+      "sha256": "62ae2c43427508f003cd6603f9ed1708bb9ded15523ee00b8d462a8232d07189"
+    },
+    {
+      "asset_id": "decoy_ruined_building",
+      "page": 25,
+      "embedded_image": "decoy-005.jpg",
+      "crop_xyxy_px": [
+        790,
+        5,
+        1027,
+        242
+      ],
+      "sha256": "083f94ff43ca98e9d04ce64870b8b6a0cd2b65c1f830b42101d55e15dce593e0"
+    }
+  ]
+}

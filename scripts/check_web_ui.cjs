@@ -6,6 +6,10 @@ const context=await browser.newContext({viewport:{width:1440,height:1120},httpCr
 const page=await context.newPage(), errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
  await page.goto('http://127.0.0.1:18080/');await page.waitForSelector('#connection.online');
+ const initial=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
+ if(initial.scenario_id!=='reference_stadium'||initial.boxes.length!==20)throw Error('Expected the reference stadium');
+ await page.waitForFunction(()=>document.querySelectorAll('.asset-card img').length===13&&[...document.querySelectorAll('.asset-card img')].every(i=>i.complete&&i.naturalWidth>0));
+ if(await page.locator('#receiver-status span').count()!==6)throw Error('Expected six facility receivers');
  await page.waitForFunction(()=>document.querySelector('#camera').naturalWidth===640,null,{timeout:30000});
  await page.screenshot({path:'artifacts/evidence/web-2d.png',fullPage:true});
  await page.click('#view-3d');await page.waitForSelector('#world canvas',{state:'visible'});await page.waitForTimeout(400);
@@ -13,10 +17,14 @@ try{
  await page.click('[data-action=ready]');await page.waitForFunction(()=>!document.querySelector('[data-action=start]').disabled,null,{timeout:45000});
  await page.click('[data-action=start]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 진행');
  const first=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
- await page.waitForTimeout(2500);
- const moved=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
- const distances=Object.keys(first.robots).map(s=>Math.hypot(first.robots[s].pose.x_m-moved.robots[s].pose.x_m,first.robots[s].pose.y_m-moved.robots[s].pose.y_m));
- if(!distances.some(d=>d>.01))throw Error('Patrol demo did not move');
+ let distances=[];
+ const movementDeadline=Date.now()+20000;
+ do{
+  await page.waitForTimeout(500);
+  const moved=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
+  distances=Object.keys(first.robots).map(s=>Math.hypot(first.robots[s].pose.x_m-moved.robots[s].pose.x_m,first.robots[s].pose.y_m-moved.robots[s].pose.y_m));
+ }while(!distances.every(d=>d>.01)&&Date.now()<movementDeadline);
+ if(!distances.every(d=>d>.01))throw Error('Not all six patrol robots left their starts: '+JSON.stringify(distances));
  await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:'artifacts/evidence/web-running-3d.png',fullPage:true});
  await page.click('[data-action=pause]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='일시정지');
  const paused=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();await page.waitForTimeout(350);
@@ -27,6 +35,6 @@ try{
  const result=await (await context.request.get('http://127.0.0.1:18080/api/result')).json();
  page.once('dialog',d=>d.accept());await page.click('[data-action=reset]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='세팅 중');
  if(errors.length)throw Error('Browser errors: '+errors.join(';'));
- fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,browserErrors:errors},null,2));
+ fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',referenceBoxes:20,pdfTextures:13,facilityReceivers:6,realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,browserErrors:errors},null,2));
  console.log('Browser E2E passed: real RGB, WebGL, six processes, movement, pause/resume, finish/result, reset.');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

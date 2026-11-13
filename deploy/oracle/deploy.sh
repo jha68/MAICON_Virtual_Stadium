@@ -66,7 +66,7 @@ docker run -d --name maicon-sim --restart unless-stopped --network host \
     --user "$runtime_uid:$runtime_gid" \
     --env MAICON_WEB_PASSWORD_FILE=/data/web.password \
     --mount "type=bind,src=$data_dir,dst=/data" \
-    "$image" serve --example smoke_six --backend 3d \
+    "$image" serve --example reference_stadium --backend 3d \
     --public-port 8000 --admin-port 8001 --out "/data/runs/$run_id" "${web_args[@]}" >/dev/null
 for ((attempt=0; attempt<health_attempts; attempt++)); do
     if [[ "$(docker inspect --format '{{.State.Running}}' maicon-sim)" == true ]] && curl --fail --silent --max-time 3 \

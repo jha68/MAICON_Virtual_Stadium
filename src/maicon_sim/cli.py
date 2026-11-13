@@ -85,7 +85,7 @@ def parser():
 def scenario_args(p):
     group = p.add_mutually_exclusive_group(required=True)
     group.add_argument("--scenario", help="Scenario YAML path")
-    group.add_argument("--example", choices=("smoke_six", "perception_gallery", "pause_and_drone_faults"), help="Packaged example, works outside the checkout")
+    group.add_argument("--example", choices=("reference_stadium", "smoke_six", "perception_gallery", "pause_and_drone_faults"), help="Packaged example, works outside the checkout")
 
 
 def scenario_path(args):

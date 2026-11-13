@@ -64,6 +64,9 @@ assert importlib.util.find_spec('pybullet') is None
 assert importlib.util.find_spec('pygame') is None
 assert importlib.util.find_spec('rclpy') is None
 assert 'pybullet' not in sys.modules and 'pygame' not in sys.modules
+reference=load_scenario(r.files('maicon_sim').joinpath('resources/examples/scenario_reference_stadium.yaml'))
+assert len(reference.scenario['boxes'])==20 and len(reference.assets['assets'])==13
+assert all((reference.path.parent/a['path']).is_file() for a in reference.assets['assets'])
 print(json.dumps({'scenario':cfg.scenario['scenario_id'],'core_only':True,'packaged_lock':True}))
 """
     result=command([python,"-c",code],cwd=outside,env=env)

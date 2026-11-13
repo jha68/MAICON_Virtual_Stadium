@@ -1,0 +1,220 @@
+schema_version: '1.0'
+arena_id: reference_stadium_2026
+assumption_ids:
+- SIM-ARENA
+- SIM-START-PRIOR
+- SIM-REFERENCE-LAYOUT
+bounds:
+  width_m: 6.12
+  height_m: 5.0
+  wall_height_m: 0.4
+sectors:
+- sector_id: B-S1
+  polygon_xy_m:
+  - - 0.82
+    - 3.3333333333333335
+  - - 2.45
+    - 3.3333333333333335
+  - - 2.45
+    - 5.0
+  - - 0.82
+    - 5.0
+- sector_id: B-S2
+  polygon_xy_m:
+  - - 0.82
+    - 1.6666666666666667
+  - - 2.45
+    - 1.6666666666666667
+  - - 2.45
+    - 3.3333333333333335
+  - - 0.82
+    - 3.3333333333333335
+- sector_id: B-S3
+  polygon_xy_m:
+  - - 0.82
+    - 0.0
+  - - 2.45
+    - 0.0
+  - - 2.45
+    - 1.6666666666666667
+  - - 0.82
+    - 1.6666666666666667
+- sector_id: CM
+  polygon_xy_m:
+  - - 2.45
+    - 0
+  - - 3.67
+    - 0
+  - - 3.67
+    - 5.0
+  - - 2.45
+    - 5.0
+- sector_id: R-S1
+  polygon_xy_m:
+  - - 3.67
+    - 3.3333333333333335
+  - - 5.3
+    - 3.3333333333333335
+  - - 5.3
+    - 5.0
+  - - 3.67
+    - 5.0
+- sector_id: R-S2
+  polygon_xy_m:
+  - - 3.67
+    - 1.6666666666666667
+  - - 5.3
+    - 1.6666666666666667
+  - - 5.3
+    - 3.3333333333333335
+  - - 3.67
+    - 3.3333333333333335
+- sector_id: R-S3
+  polygon_xy_m:
+  - - 3.67
+    - 0.0
+  - - 5.3
+    - 0.0
+  - - 5.3
+    - 1.6666666666666667
+  - - 3.67
+    - 1.6666666666666667
+bases:
+- base_id: base_B1
+  code: BLUE_COMMAND_POST
+  camp: BLUE
+  polygon_xy_m:
+  - - 0.04
+    - 3.77
+  - - 0.42
+    - 3.77
+  - - 0.42
+    - 4.57
+  - - 0.04
+    - 4.57
+  trigger_segment_xy_m:
+  - - 0.42
+    - 3.97
+  - - 0.42
+    - 4.37
+- base_id: base_B2
+  code: BLUE_MAINTENANCE
+  camp: BLUE
+  polygon_xy_m:
+  - - 0.04
+    - 2.1
+  - - 0.42
+    - 2.1
+  - - 0.42
+    - 2.9
+  - - 0.04
+    - 2.9
+  trigger_segment_xy_m:
+  - - 0.42
+    - 2.3
+  - - 0.42
+    - 2.7
+- base_id: base_B3
+  code: BLUE_SUPPLY_DEPOT
+  camp: BLUE
+  polygon_xy_m:
+  - - 0.04
+    - 0.43
+  - - 0.42
+    - 0.43
+  - - 0.42
+    - 1.23
+  - - 0.04
+    - 1.23
+  trigger_segment_xy_m:
+  - - 0.42
+    - 0.63
+  - - 0.42
+    - 1.03
+- base_id: base_R1
+  code: RED_COMMAND_POST
+  camp: RED
+  polygon_xy_m:
+  - - 5.7
+    - 3.77
+  - - 6.08
+    - 3.77
+  - - 6.08
+    - 4.57
+  - - 5.7
+    - 4.57
+  trigger_segment_xy_m:
+  - - 5.7
+    - 3.97
+  - - 5.7
+    - 4.37
+- base_id: base_R2
+  code: RED_MAINTENANCE
+  camp: RED
+  polygon_xy_m:
+  - - 5.7
+    - 2.1
+  - - 6.08
+    - 2.1
+  - - 6.08
+    - 2.9
+  - - 5.7
+    - 2.9
+  trigger_segment_xy_m:
+  - - 5.7
+    - 2.3
+  - - 5.7
+    - 2.7
+- base_id: base_R3
+  code: RED_SUPPLY_DEPOT
+  camp: RED
+  polygon_xy_m:
+  - - 5.7
+    - 0.43
+  - - 6.08
+    - 0.43
+  - - 6.08
+    - 1.23
+  - - 5.7
+    - 1.23
+  trigger_segment_xy_m:
+  - - 5.7
+    - 0.63
+  - - 5.7
+    - 1.03
+nominal_starts:
+- slot: B-1
+  pose:
+    x_m: 0.3
+    y_m: 4.17
+    yaw_rad: 0.0
+- slot: B-2
+  pose:
+    x_m: 0.3
+    y_m: 2.5
+    yaw_rad: 0.0
+- slot: B-3
+  pose:
+    x_m: 0.3
+    y_m: 0.83
+    yaw_rad: 0.0
+- slot: R-1
+  pose:
+    x_m: 5.82
+    y_m: 4.17
+    yaw_rad: 3.141592653589793
+- slot: R-2
+  pose:
+    x_m: 5.82
+    y_m: 2.5
+    yaw_rad: 3.141592653589793
+- slot: R-3
+  pose:
+    x_m: 5.82
+    y_m: 0.83
+    yaw_rad: 3.141592653589793
+public_prior:
+  sector_geometry: true
+  base_geometry: true
+  nominal_start_poses: true
+  dynamic_boxes: false

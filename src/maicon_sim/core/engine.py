@@ -719,11 +719,14 @@ class MatchEngine:
                             _ingress_seq=p.get('ingress_seq'))
 
     def snapshot(self):
+        receiving = {self._receiver_owner(receiver) for _, receiver in self.dwell}
         return {'match_id': self.match_id, 'episode_index': self.episode_index, 'phase': self.phase,
                 'paused': self.paused, 'match_command': self.cmd, 'sim_tick': self.sim_tick, 'match_elapsed_ticks': self.match_elapsed_ticks,
                 'reporting_elapsed_ticks': self.reporting_elapsed_ticks, 'robot_effect_ticks': self.robot_effect_ticks,
                 'robots': {s: asdict(r) for s, r in self.robots.items()}, 'boxes': deepcopy(self.boxes),
                 'destroyed': sorted(self.destroyed), 'reports': deepcopy(self.reports), 'scores': deepcopy(self.scores),
+                'facility_signals': {code: 'hit' if code in self.destroyed else 'receiving' if code in receiving else 'idle'
+                                     for code in FACILITIES},
                 'capture_camp': self.capture_camp, 'end_reason': self.end_reason,
                 'target_published': self.target_published, 'order_published': self.order_published}
 

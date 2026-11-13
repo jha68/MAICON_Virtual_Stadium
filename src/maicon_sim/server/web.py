@@ -3,7 +3,11 @@ from __future__ import annotations
 
 import asyncio
 from copy import deepcopy
+from functools import lru_cache
+import hashlib
 import hmac
+import io
+import json
 import threading
 from importlib.resources import files
 from pathlib import Path
@@ -111,6 +115,27 @@ def create_dashboard(manager, password):
     app = FastAPI(title='MAICON operator', docs_url=None, redoc_url=None, openapi_url=None,
                   dependencies=[Depends(authenticate)])
     web_root = Path(str(files('maicon_sim') / 'resources/web'))
+    @lru_cache(maxsize=32)
+    def texture_bytes(generator, label, path, digest):
+        if generator == 'import':
+            data = Path(path).read_bytes()
+            if hashlib.sha256(data).hexdigest() != digest:
+                raise HTTPException(503, '경기장 이미지 검증에 실패했습니다.')
+            from PIL import Image
+            picture = Image.open(io.BytesIO(data)).convert('RGB')
+        else:
+            from maicon_sim.backends.bullet.asset_builder import synthetic_image
+            picture = synthetic_image(label)
+        output = io.BytesIO()
+        picture.save(output, format='PNG')
+        return output.getvalue()
+
+    @lru_cache(maxsize=1)
+    def floor_bytes(arena_json):
+        from maicon_sim.backends.arena_art import arena_floor
+        output = io.BytesIO()
+        arena_floor(json.loads(arena_json)).save(output, format='PNG')
+        return output.getvalue()
 
     @app.middleware('http')
     async def headers(request, call_next):
@@ -135,15 +160,39 @@ def create_dashboard(manager, password):
     @app.get('/api/state')
     async def state():
         snap = await manager.service.submit('snapshot')
+        config = manager.service.engine.config
         # This is evaluator truth behind operator auth, never a participant DTO.
         snap.pop('reports', None)
-        snap['arena'] = {key: deepcopy(manager.service.engine.config.arena[key]) for key in ('bounds', 'sectors', 'bases')}
+        snap['arena'] = {key: deepcopy(config.arena[key]) for key in ('arena_id', 'bounds', 'sectors', 'bases')}
+        snap['arena']['floor_url'] = '/api/arena-floor.png'
+        snap['scenario_id'] = config.scenario['scenario_id']
+        snap['visual_assets'] = {a['asset_id']: {'kind': a['kind'], 'label': a['label'],
+                                               'url': '/api/textures/' + a['asset_id'] + '.png'}
+                                 for a in config.assets['assets']}
+        snap['render_geometry'] = {key: config.sensors['geometry'][key] for key in
+                                   ('facility_receiver_z_m', 'facility_receiver_radius_m',
+                                    'facility_receiver_offset_m', 'wall_thickness_m')}
         snap['timing'] = deepcopy(manager.service.engine.config.rules['timing'])
         snap['capabilities'] = dict(manager.service.gateway.capabilities)
         runtime = getattr(manager.service.engine, '_runtime', None)
         snap['performance'] = {'max_lag_s': runtime.max_lag_s if runtime else 0,
                                'frame_drops': manager.service.gateway.dropped}
         return snap
+
+    @app.get('/api/arena-floor.png')
+    def floor_texture():
+        arena = manager.service.engine.config.arena
+        return Response(floor_bytes(json.dumps(arena, sort_keys=True)), media_type='image/png')
+
+    @app.get('/api/textures/{asset_id}.png')
+    def face_texture(asset_id: str):
+        config = manager.service.engine.config
+        asset = next((a for a in config.assets['assets'] if a['asset_id'] == asset_id), None)
+        if asset is None:
+            raise HTTPException(404, '알 수 없는 경기장 이미지입니다.')
+        root = (config.path.parent / config.scenario['assets_file']).parent
+        path = str(root / asset['path']) if asset['path'] else None
+        return Response(texture_bytes(asset['generator'], asset['label'], path, asset['sha256']), media_type='image/png')
 
     @app.post('/api/command')
     async def command(request: Request):

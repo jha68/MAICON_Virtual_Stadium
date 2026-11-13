@@ -24,9 +24,9 @@ class Processes:
     def close(self): self.closed = True
 
 
-@pytest.fixture
-def harness(tmp_path):
-    config = load_scenario('examples/scenario_smoke_six.yaml')
+@pytest.fixture(params=['smoke_six', 'reference_stadium'])
+def harness(tmp_path, request):
+    config = load_scenario(f'examples/scenario_{request.param}.yaml')
     engine = MatchEngine(config)
     gateway = SensorGateway(config)
     public, admin = create_apps(engine, gateway, admin_token='test-supervisor')
@@ -44,7 +44,8 @@ def test_operator_auth_assets_and_participant_boundary(harness):
     engine, gateway, manager, app, public, root = harness
     async def run():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://dashboard') as c:
-            for path in ('/', '/api/state', '/assets/app.js', '/api/camera/B-1.jpg'):
+            for path in ('/', '/api/state', '/assets/app.js', '/api/camera/B-1.jpg',
+                         '/api/textures/facility_RADAR.png', '/api/arena-floor.png'):
                 assert (await c.get(path)).status_code == 401
                 assert (await c.get(path, auth=('admin', 'wrong'))).status_code == 401
             c.auth = ('admin', PASSWORD)
@@ -52,16 +53,25 @@ def test_operator_auth_assets_and_participant_boundary(harness):
             assert home.status_code == 200 and '가상 경기장' in home.text
             assert "frame-ancestors 'none'" in home.headers['content-security-policy']
             assert home.headers['cache-control'] == 'no-store'
-            for asset in ('app.js', 'world.js', 'vendor/three.module.min.js', 'vendor/three.core.min.js'):
+            for asset in ('app.js', 'arena-map.js', 'world.js', 'vendor/three.module.min.js', 'vendor/three.core.min.js'):
                 assert (await c.get('/assets/' + asset)).status_code == 200
             assert (await c.get('/assets/%2e%2e/%2e%2e/cli.py')).status_code == 404
             state = (await c.get('/api/state')).json()
             assert len(state['robots']) == 6 and state['phase'] == 'waiting'
+            assert set(state['facility_signals'].values()) == {'idle'}
+            assert len(state['facility_signals']) == 6
+            for asset in state['visual_assets'].values():
+                texture = await c.get(asset['url'])
+                assert texture.status_code == 200 and texture.content.startswith(b'\x89PNG')
+            floor = await c.get(state['arena']['floor_url'])
+            assert floor.status_code == 200 and floor.content.startswith(b'\x89PNG')
+            assert (await c.get('/api/textures/unknown.png')).status_code == 404
             assert 'mission_code' not in json.dumps(state) and 'test-supervisor' not in json.dumps(state)
             assert (await c.get('/api/camera/B-1.jpg')).status_code == 503
             assert (await c.get('/api/camera/B-1.jpg?match_id=previous')).status_code == 409
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=public), base_url='http://participant') as c:
             assert (await c.get('/api/state', auth=('admin', PASSWORD))).status_code == 404
+            assert (await c.get('/api/textures/facility_RADAR.png', auth=('admin', PASSWORD))).status_code == 404
     asyncio.run(run())
 
 
@@ -112,6 +122,24 @@ def test_operator_lifecycle_saves_result_and_clears_next_match(harness):
 
 def test_web_password_required():
     with pytest.raises(ValueError): create_dashboard(None, 'short')
+
+
+def test_operator_artwork_changes_when_supervisor_reconfigures(harness):
+    engine, gateway, manager, app, public, root = harness
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://dashboard', auth=('admin', PASSWORD)) as c:
+            original = engine.config.scenario['scenario_id']
+            target = 'smoke_six' if original == 'reference_stadium' else 'reference_stadium'
+            first_texture = (await c.get('/api/textures/facility_RADAR.png')).content
+            first_floor = (await c.get('/api/arena-floor.png')).content
+            await manager.service.submit('stop')
+            await manager.service.submit('configure', payload={'config': load_scenario(f'examples/scenario_{target}.yaml')})
+            state = (await c.get('/api/state')).json()
+            assert state['scenario_id'] == target
+            assert len(state['boxes']) == (20 if target == 'reference_stadium' else 7)
+            assert (await c.get('/api/textures/facility_RADAR.png')).content != first_texture
+            assert (await c.get('/api/arena-floor.png')).content != first_floor
+    asyncio.run(run())
 
 
 def test_operator_can_cancel_preparation(harness):

@@ -23,7 +23,7 @@ class BulletScene:
     def __init__(self,p,client,config,assets):
         self.p=p;self.client=client;self.config=config;self.assets=assets
         self.registry={};self.faces={};self.robot_parts={};self.box_parts={};self.gimbal_parts={}
-        self.textures={};self._meshes={};self.led_parts={};self._mesh_root=assets.root/'meshes';self._mesh_root.mkdir(exist_ok=True)
+        self.textures={};self._meshes={};self.led_parts={};self.facility_parts={};self._mesh_root=assets.root/'meshes';self._mesh_root.mkdir(exist_ok=True)
         self._build()
 
     def _box(self,key,half,position,color,collision=True,orientation=(0,0,0,1)):
@@ -69,13 +69,8 @@ class BulletScene:
         w,h=bounds['width_m'],bounds['height_m'];wall_h=bounds.get('wall_height_m',.4);thick=g['wall_thickness_m']
         self._box('floor_solid',[w/2,h/2,.005],[w/2,h/2,-.005],[.78,.79,.78,1],collision=False)
         # Public geometric floor markings; no hidden object or scoring annotation.
-        from PIL import Image,ImageDraw
-        scale=200;floor_image=Image.new('RGB',(round(w*scale),round(h*scale)),(208,209,207));draw=ImageDraw.Draw(floor_image)
-        for i in range(round(w/.2)+1):draw.line((round(i*.2*scale),0,round(i*.2*scale),round(h*scale)),fill=(188,190,187),width=1)
-        for i in range(round(h/.2)+1):draw.line((0,round(i*.2*scale),round(w*scale),round(i*.2*scale)),fill=(188,190,187),width=1)
-        for sector in cfg.arena['sectors']:
-            points=[(round(x*scale),round((h-y)*scale)) for x,y in sector['polygon_xy_m']]
-            draw.line(points+[points[0]],fill=(150,170,200) if sector['sector_id'].startswith('B-') else (200,165,150),width=2)
+        from maicon_sim.backends.arena_art import arena_floor
+        floor_image=arena_floor(cfg.arena)
         floor_texture=self._mesh_root/'floor.png';floor_image.save(floor_texture)
         self._quad('floor',[w/2,h/2,.00001],[1,0,0],[0,1,0],w,h,texture=floor_texture)
         for name,half,pos in [('west',[thick/2,h/2,wall_h/2],[-thick/2,h/2,wall_h/2]),
@@ -86,7 +81,7 @@ class BulletScene:
         for box in cfg.scenario['boxes']:
             key=box['box_id'];sx,sy,sz=box['size_m'];x,y,yaw=_pose(box['pose'])
             quat=p.getQuaternionFromEuler([0,0,yaw]);origin=np.array([x,y,0.])
-            body=self._box(key,[sx/2,sy/2,sz/2],[x,y,sz/2],[.58,.52,.40,1],orientation=quat)
+            body=self._box(key,[sx/2,sy/2,sz/2],[x,y,sz/2],[.38,.40,.43,1],orientation=quat)
             parts=[(body,np.array([0.,0.,sz/2]))]
             for face in box['faces']:
                 side=face['side'];n,u,v,axis,sign=FACE_AXES[side]
@@ -96,8 +91,17 @@ class BulletScene:
                 self.faces[face_key]=body;parts.append((body,np.zeros(3)))
                 if face['kind']=='facility':
                     center=np.array([0.,0.,g['facility_receiver_z_m']]);center[axis]=sign*(box['size_m'][axis]/2+g['facility_receiver_offset_m'])
-                    receiver=self._sphere(face['facility_code']+'/receiver',g['facility_receiver_radius_m'],[0,0,0],[.15,.08,.08,1])
+                    code=face['facility_code'];radius=g['facility_receiver_radius_m']
+                    housing=self._sphere(code+'/housing',radius*1.4,[0,0,0],[.82,.84,.86,1])
+                    parts.append((housing,center-np.asarray(n)*radius*.6))
+                    receiver=self._sphere(code+'/receiver',radius,[0,0,0],[.48,.57,.63,1])
                     parts.append((receiver,center))
+                    led_center=np.array([0.,0.,sz+.018]);led_center[axis]=sign*box['size_m'][axis]*.35
+                    mount=self._box(code+'/signal_mount',[.055,.035,.008],[0,0,0],[.12,.14,.16,1],collision=False)
+                    parts.append((mount,led_center-np.array([0,0,.01])))
+                    led=self._box(code+'/signal_led',[.04,.022,.012],[0,0,0],[.16,.06,.05,1],collision=False)
+                    parts.append((led,led_center))
+                    self.facility_parts[code]=(receiver,led)
             self.box_parts[key]=parts
             for part,offset in parts:p.resetBasePositionAndOrientation(part,(origin+rotation_z(yaw)@offset).tolist(),quat,physicsClientId=c)
         for agent in cfg.scenario['agents']:
@@ -140,6 +144,11 @@ class BulletScene:
     def sync(self,snapshot):
         p=self.p;c=self.client;g=self.config.sensors['geometry']
         from maicon_sim.core.geometry3d import gimbal_rotation
+        for code,(receiver,led) in self.facility_parts.items():
+            signal=snapshot.get('facility_signals',{}).get(code,'hit' if code in snapshot.get('destroyed',[]) else 'idle')
+            color={'idle':[.16,.06,.05,1],'receiving':[1.,.58,.05,1],'hit':[1.,.02,.03,1]}[signal]
+            p.changeVisualShape(led,-1,rgbaColor=color,physicsClientId=c)
+            p.changeVisualShape(receiver,-1,rgbaColor=[.48,.57,.63,1] if signal=='idle' else color,physicsClientId=c)
         for slot,robot in snapshot.get('robots',{}).items():
             x,y,yaw=_pose(robot);R=rotation_z(yaw);origin=np.array([x,y,0.]);quat=p.getQuaternionFromEuler([0,0,yaw])
             for body,offset,localquat in self.robot_parts.get(slot,[]):

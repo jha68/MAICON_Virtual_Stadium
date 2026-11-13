@@ -84,11 +84,11 @@ def test_backend_requirements_are_not_silently_replaced(workspace):
 
 
 def test_input_resources_stay_unchanged_and_hashes_stable(workspace):
-    before={p.name:p.read_bytes() for p in workspace.iterdir()}
+    before={str(p.relative_to(workspace)):p.read_bytes() for p in workspace.rglob('*') if p.is_file()}
     a=load_scenario(workspace/"scenario_smoke_six.yaml")
     b=load_scenario(workspace/"scenario_smoke_six.yaml")
     assert a.hashes==b.hashes
-    assert before=={p.name:p.read_bytes() for p in workspace.iterdir()}
+    assert before=={str(p.relative_to(workspace)):p.read_bytes() for p in workspace.rglob('*') if p.is_file()}
 
 
 def test_jitter_is_reproducible_and_realization_recorded(workspace):
