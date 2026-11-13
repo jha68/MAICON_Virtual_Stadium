@@ -95,7 +95,7 @@ def check(base, password_file, episodes_dir=None):
             time.sleep(.5)
         evidence = {'status': 'passed', 'participants': statuses, 'manual_interventions': 0, 'm1_mode': 'direct_order', 'm6_mode': 'mock'}
         Path('artifacts/six-baseline-drone-evidence.json').write_text(json.dumps(evidence, indent=2))
-        print('Six real baseline processes used calibrated public drone navigation; M1 mock, local match finished.')
+        print('Six real mission processes used public drone navigation; M1 direct orders, M6 mock, local match finished.')
 
 
 if __name__ == '__main__':

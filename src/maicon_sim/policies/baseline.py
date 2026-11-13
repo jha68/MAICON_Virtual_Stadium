@@ -347,5 +347,5 @@ class ParticipantPolicy:
         if recovery is not None:
             velocity = recovery
             self.path = []
-            diagnostics['recovery'] = 'fresh_scan_reverse'
+            diagnostics['recovery'] = 'fresh_scan_'+self.recovery.mode
         return PolicyDecision(velocity, gimbal, reports, diagnostics, fire)
