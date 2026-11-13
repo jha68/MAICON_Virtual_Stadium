@@ -1,0 +1,80 @@
+{
+  "status": "passed",
+  "url": "https://maicon.junununseo.com",
+  "compute": "codex-cloud",
+  "match_id": "reference_stadium-0001",
+  "phase": "waiting",
+  "revision": "e7a8081238e3020263e945bbf0ef8aff7d58cfe2",
+  "scenario_id": "reference_stadium",
+  "boxes": 20,
+  "images": 16,
+  "basePanels": 6,
+  "receivers": 6,
+  "llm_mode": "mock",
+  "passwordPreserved": true,
+  "tlsVerification": true,
+  "operatorCommandsSent": 0,
+  "webgl": {
+    "width": 876,
+    "height": 540,
+    "context": true
+  },
+  "cameras": [
+    {
+      "slot": "B-1",
+      "status": 200,
+      "bytes": 33083
+    },
+    {
+      "slot": "B-2",
+      "status": 200,
+      "bytes": 39521
+    },
+    {
+      "slot": "B-3",
+      "status": 200,
+      "bytes": 32350
+    },
+    {
+      "slot": "R-1",
+      "status": 200,
+      "bytes": 30483
+    },
+    {
+      "slot": "R-2",
+      "status": 200,
+      "bytes": 36935
+    },
+    {
+      "slot": "R-3",
+      "status": 200,
+      "bytes": 29543
+    }
+  ],
+  "browserErrors": [],
+  "serverErrors": [],
+  "public_m5_pixels_equal_source": true,
+  "local_regression": {
+    "passed": 598,
+    "skipped": 5,
+    "deselected": 12
+  },
+  "local_baseline_6_processes": {
+    "wall_s": 90.016,
+    "match_s": 88.8,
+    "exit_wall_s_range": [
+      6.01,
+      7.08
+    ],
+    "motion_stale_decisions": 1,
+    "decisions": 2700,
+    "opponent_camp_entries": 0,
+    "remaining_issue": "central traffic/path deadlock"
+  },
+  "gateway_workflow_run": 43379250566,
+  "ci": {
+    "workflow_run": 43379039507,
+    "conclusion": "success",
+    "revision": "e7a8081238e3020263e945bbf0ef8aff7d58cfe2"
+  }
+}

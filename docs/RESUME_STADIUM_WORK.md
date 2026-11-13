@@ -1,5 +1,26 @@
 # 새 실행 환경 인수인계
 
+## 최신 운영 반영: UGV 반복 정지·M5 사진 (2026-11-13)
+
+- 실제 공개 앱 revision은 `e7a8081238e3020263e945bbf0ef8aff7d58cfe2`, `X-Maicon-Compute: codex-cloud`, `reference_stadium`이다. 이후 bootstrap/문서 커밋은 앱 동작을 바꾸지 않는다. main은 변경하지 않았다.
+- 카메라 만료와 주행 센서 만료를 분리하고 거점 센서 계산을 줄였다. 최신 overhead 드론/스레드 제한 코드는 유지했다. 4코어·6개 baseline 로컬 표본에서 출발구역 이탈은 실제 6.01~7.08초이며, 중앙 교행/경로 정체는 남는다.
+- PDF 15쪽 원본 3장으로 양 진영 M5 거점 6곳의 벽면 표지판을 구현했다. 전체 이미지 16종, 2D/3D/UGV RGB에 반영되며 기존 진입 센서·채점 기하는 유지한다. 공개 이미지의 디코딩된 픽셀도 원본과 일치한다.
+- 로컬 회귀 598 passed, 5 skipped, 12 deselected. 실제 여섯 참가팀 브라우저 조작·별도 baseline 드론 검사 통과. 공개 주소에서는 비밀번호 로그인·16개 이미지·WebGL·6대 RGB를 읽기 전용으로 확인했다. 운영 경기 조작은 보내지 않았다.
+- CI의 1초 간격 화면 샘플링이 짧은 드론 판단을 놓치는 문제를 실제 실패 로그로 확인했다. 해당 경기의 참가팀 공개 transcript와 캡처 시각도 검증하도록 검사기를 수정했다.
+- 최종 앱 CI `43379039507` 성공: core/contracts, integration/render/wheel, 실제 브라우저·6개 baseline 드론 검증을 통과했다.
+- gateway 전환 Actions: `43379250566` 성공. 당시 운영 경기가 finished인 것을 확인했고, 이전 경기 결과·상태는 `work/deploy/preserved/`와 새 실행의 `private/previous-session/`에 보관했다.
+
+### 현재 실행과 인증 파일
+
+기존 운영 비밀번호는 그대로다. 기존 작업자가 새 작업자의 요청을 가져가지 않도록 relay 세션을 교체했다. 세션은 현재 `deploy/codex/session.json`이 기준이며 새 암호화 bootstrap은 같은 저장소 `deploy/codex/bootstrap/`에 있다.
+
+- 현재 서버 PID 기록: `work/deploy/server-pid`; relay PID 기록: `work/deploy/worker-pid`. PID를 쓰기 전에 실제 명령이 일치하는지 확인한다.
+- 현재 서버 실행 기록: `work/deploy/previous-private/current-run.json`. 이름의 previous는 비밀번호를 보존한 디렉터리이며 이 서버가 현재 공개 앱이다.
+- **새 relay 자격 증명**: `work/deploy/private/credentials.json`, 비밀번호: `work/deploy/private/web.password`, 개인키: `work/deploy/private-key.pem`. 값을 출력하거나 Git에 넣지 않는다.
+- 환경 변수 `MAICON_RELAY_CREDENTIALS_JSON`에는 이전 세션 값이 남아 있을 수 있다. 현재 session_id와 다르면 기존 환경 값으로 worker를 시작하지 않는다. 먼저 위 새 private 파일을 재사용하고, 없으면 보존된 개인키로 현재 bootstrap을 해독한다. 개인키도 없을 때만 기존 Actions 경로로 새 세션 bootstrap을 준비한다. 운영 중 경기는 강제로 종료하지 않는다.
+
+---
+
 사용자가 환경 설정을 게시했으나 이전 실행 인스턴스에는 반영되지 않아, 현재 구현을 브랜치에 보존하고 새 환경에서 이어가기로 했다. 아래는 사용자 요청과 확인된 상태다. 미완료 항목을 완료로 취급하지 않는다.
 
 ## 사용자 목표와 제약
