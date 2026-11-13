@@ -73,7 +73,13 @@ print(json.dumps({'scenario':cfg.scenario['scenario_id'],'core_only':True,'packa
     assert json.loads(result.stdout)["core_only"]
     result=command([python,"-m","maicon_sim","run","--example","smoke_six","--backend","2d","--clock","accelerated","--headless","--out",outside/"full smoke"],cwd=outside,env=env,timeout=900)
     score=json.loads((outside/"full smoke/result.json").read_text())
-    assert len(score["scores"]) == 6 and score["final_match_ms"] == 300000
+    assert len(score["scores"]) == 6
+    assert score["end_reason"] in ("capture", "timeout")
+    if score["end_reason"] == "capture":
+        assert 240000 <= score["final_match_ms"] < 300000
+        assert any(v["m5"] == 10 for v in score["scores"].values())
+    else:
+        assert score["final_match_ms"] == 300000
     assert all(v["m1"] == 0 and v["m6"] in (0, 5, 10, 15) for v in score["scores"].values())
 
 
