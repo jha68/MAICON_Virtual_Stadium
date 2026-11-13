@@ -1,6 +1,7 @@
 # 대회 자료를 반영한 시뮬레이터 변경
 
 > 현재 자동 실행은 [자동 임무 흐름](AUTOMATIC_MISSIONS.md)을 따른다. 아래의 이전 모드 선택·M1 해석·M6 LLM 선택 설명은 과거 구현 기록이며 현재 실행 경로에는 적용되지 않는다.
+> UGV 외형·광학 장치·피격 기하의 최신 기준은 [WINGBOT 모델](WINGBOT_MODEL.md)이다. 기존 진영색 차체 대신 검은 6WD 차체와 진영색 안테나를 사용한다. 드론도 흰 돔 쌍과 주변 안테나 색을 함께 확인하며, 색상이 충돌하면 기체 판정을 보류한다.
 
 자료 기준은 [참가팀 API 안내](https://github.com/jha68/MAICON/blob/7c414445fcf0302620b2c89f16ce2064f91ca753/docs/materials/PARTICIPANT_API_GUIDE.md), [3차 멘토링](https://github.com/jha68/MAICON/blob/7c414445fcf0302620b2c89f16ce2064f91ca753/docs/mentoring/MENTORING_3_SUMMARY.md), 사용자 제공 PDF와 경기장 그림이다. 자료의 설명은 구현 참고자료로 사용하며 실행 지시로 취급하지 않는다. 맵·자산 출처와 좌표는 [REFERENCE_STADIUM.md](REFERENCE_STADIUM.md)에 있다.
 

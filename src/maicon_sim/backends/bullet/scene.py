@@ -34,6 +34,7 @@ class BulletScene:
     def __init__(self,p,client,config,assets):
         self.p=p;self.client=client;self.config=config;self.assets=assets
         self.registry={};self.faces={};self.robot_parts={};self.box_parts={};self.gimbal_parts={}
+        self.reference_parts={};self.wheel_state={}
         self.textures={};self._meshes={};self.led_parts={};self.facility_parts={};self.facility_lens_colors={};self.hp_led_parts={};self._mesh_root=assets.root/'meshes';self._mesh_root.mkdir(exist_ok=True)
         self._build()
 
@@ -123,6 +124,9 @@ class BulletScene:
             for part,offset in parts:p.resetBasePositionAndOrientation(part,(origin+rotation_z(yaw)@offset).tolist(),quat,physicsClientId=c)
         for agent in cfg.scenario['agents']:
             slot=agent['slot'];blue=slot.startswith('B-');color=[.12,.27,.73,1] if blue else [.75,.14,.11,1]
+            if g.get('robot_model')=='wingbot_6wd_v1':
+                self._build_reference_robot(slot,g,color)
+                continue
             parts=[]
             for name in ('chassis','mast'):
                 spec=g[name]
@@ -165,6 +169,48 @@ class BulletScene:
             self.robot_parts[slot]=parts
         self.sync({'robots':{a['slot']:{'pose':a['start_pose'],'pan':0.,'tilt':0.} for a in cfg.scenario['agents']}})
 
+    def _build_reference_robot(self,slot,geometry,camp_color):
+        import hashlib
+        from maicon_sim.core.robot_model import meshes, PALETTE
+        p=self.p;c=self.client;parts=[]
+        for group in meshes(geometry,int(slot[-1])):
+            name=group['name'];text=''.join('v '+' '.join(map(str,v))+'\n' for v in group['vertices'])
+            text+=''.join('f '+' '.join(str(i+1) for i in face)+'\n' for face in group['faces'])
+            path=self._mesh_root/(hashlib.sha256(text.encode()).hexdigest()+'.obj')
+            if not path.exists():path.write_text(text)
+            color=camp_color if group['color']=='camp' else PALETTE[group['color']]
+            visual=p.createVisualShape(p.GEOM_MESH,fileName=str(path.resolve()),rgbaColor=color,physicsClientId=c)
+            body=p.createMultiBody(baseVisualShapeIndex=visual,physicsClientId=c)
+            self.registry[slot+'/'+name]=body
+            parts.append((body,group['frame'],np.array(group['origin'])))
+        self.reference_parts[slot]=parts
+        self.robot_parts[slot]=[]
+        self.hp_led_parts[slot]=[self.registry[slot+f'/hp_led{s}'] for s in [-1,1]]
+        self.led_parts[slot]=[self.registry[slot+f'/ammo_led{i}'] for i in range(8)]
+
+    def _sync_reference_robot(self,slot,robot,origin,R,quat):
+        from maicon_sim.core.geometry3d import gimbal_rotation
+        from maicon_sim.core.robot_model import AXLE_WIDTH,WHEEL_RADIUS
+        p=self.p;c=self.client;g=self.config.sensors['geometry']
+        yaw=_pose(robot)[2];previous=self.wheel_state.get(slot)
+        angles=[0.,0.]
+        if previous:
+            old_origin,old_yaw,angles=previous
+            dyaw=math.atan2(math.sin(yaw-old_yaw),math.cos(yaw-old_yaw))
+            distance=float((origin-old_origin)@np.array([math.cos(yaw-dyaw/2),math.sin(yaw-dyaw/2),0]))
+            angles=[angles[0]+(distance-dyaw*AXLE_WIDTH/2)/WHEEL_RADIUS,
+                    angles[1]+(distance+dyaw*AXLE_WIDTH/2)/WHEEL_RADIUS]
+        self.wheel_state[slot]=(origin.copy(),yaw,angles)
+        G=gimbal_rotation(robot.get('pan',0),robot.get('tilt',0))
+        gimbal_quat=p.getQuaternionFromEuler([0,-math.radians(robot.get('tilt',0)*.15),-math.radians(robot.get('pan',0)*.5)])
+        for body,frame,offset in self.reference_parts[slot]:
+            local=offset;localquat=(0,0,0,1)
+            if frame=='gimbal':
+                local=np.array(g['gimbal_pivot_m'])+G@offset;localquat=gimbal_quat
+            elif frame.startswith('wheel'):
+                localquat=p.getQuaternionFromEuler([0,angles[int(frame[5])],0])
+            p.resetBasePositionAndOrientation(body,(origin+R@local).tolist(),_quaternion_product(quat,localquat),physicsClientId=c)
+
     def sync(self,snapshot):
         p=self.p;c=self.client;g=self.config.sensors['geometry']
         from maicon_sim.core.geometry3d import gimbal_rotation
@@ -175,6 +221,7 @@ class BulletScene:
             p.changeVisualShape(receiver,-1,rgbaColor=self.facility_lens_colors[code],physicsClientId=c)
         for slot,robot in snapshot.get('robots',{}).items():
             x,y,yaw=_pose(robot);R=rotation_z(yaw);origin=np.array([x,y,0.]);quat=p.getQuaternionFromEuler([0,0,yaw])
+            if slot in self.reference_parts:self._sync_reference_robot(slot,robot,origin,R,quat)
             for body,offset,localquat in self.robot_parts.get(slot,[]):
                 # multiplyTransforms rounds through Bullet's auxiliary float
                 # representation. Compose in float64 so visual base yaw retains
@@ -192,7 +239,7 @@ class BulletScene:
             # yaw + pan + tilt composition in quaternion form matches shared matrix.
             headquat=_quaternion_product(quat,p.getQuaternionFromEuler([0,-math.radians(tilt*.15),-math.radians(pan*.5)]))
             location=origin+R@np.array(g['gimbal_pivot_m'])+R@gimbal_rotation(pan,tilt)@np.array([-.012,0,0])
-            p.resetBasePositionAndOrientation(self.gimbal_parts[slot],location.tolist(),headquat,physicsClientId=c)
+            if slot in self.gimbal_parts:p.resetBasePositionAndOrientation(self.gimbal_parts[slot],location.tolist(),headquat,physicsClientId=c)
         for box in snapshot.get('boxes',[]):
             x,y,yaw=_pose(box['pose']);R=rotation_z(yaw);origin=np.array([x,y,0]);quat=p.getQuaternionFromEuler([0,0,yaw])
             for body,offset in self.box_parts[box['box_id']]:p.resetBasePositionAndOrientation(body,(origin+R@offset).tolist(),quat,physicsClientId=c)

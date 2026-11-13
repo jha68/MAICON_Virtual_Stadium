@@ -240,6 +240,7 @@ class ServerService:
         geom=sensors["geometry"]
         return copy.deepcopy({"capture_clock_epoch":self.active_engine.config.scenario["epoch_kst"], "front_camera":sensors["front_camera"], "drone_camera":sensors["drone"],
                  "artwork_profile": "prestudy" if self.active_engine.config.assets["manifest_id"] == "prestudy_reference_v1" else "synthetic", "actuation": sensors.get('actuation', {}),
+                 "robot_model":geom.get('robot_model','synthetic'),
                  "gimbal_pivot_m":geom["gimbal_pivot_m"],
                  "camera_offset_gimbal_m":geom["camera_offset_gimbal_m"],
                  "laser_offset_camera_m":[a-b for a,b in zip(geom["laser_offset_gimbal_m"],geom["camera_offset_gimbal_m"])],

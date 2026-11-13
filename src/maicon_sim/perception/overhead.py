@@ -43,7 +43,7 @@ class OverheadProjection:
 
 
 class OverheadPixelDetector:
-    """Conservative rectangular box tops and coloured UGV bodies, no call signs.
+    """Conservative box tops, coloured bodies or white dome pairs, no call signs.
 
     A top-down body colour cannot reveal band count, HP, ammo, receiver position,
     or heading sign. Ambiguous candidates remain anonymous navigation hazards.
@@ -94,4 +94,50 @@ class OverheadPixelDetector:
                                        'bbox_xyxy_px': [x, y, x+w, y+h],
                                        'navigation_point_px': list(rectangle[0]), 'projection_plane_z_m': height,
                                        'view_model': 'overhead'})
+        detections.extend(self._dome_pairs(hsv))
         return detections
+
+    def _dome_pairs(self,hsv):
+        """Photo model's black body: pair white domes with nearby camp sleeves.
+
+        These are anonymous navigation cues, never an M4 aim point or call sign.
+        Small coloured sleeves must survive; opening with the old body-sized
+        9px kernel would erase them entirely.
+        """
+        cv2=self.cv2;anchors=[];white=[]
+        for camp,mask in [('RED',((hsv[...,0]<10)|(hsv[...,0]>173))&(hsv[...,1]>140)&(hsv[...,2]>45)),
+                          ('BLUE',(hsv[...,0]>100)&(hsv[...,0]<130)&(hsv[...,1]>140)&(hsv[...,2]>45)),
+                          (None,(hsv[...,1]<55)&(hsv[...,2]>145))]:
+            _,_,stats,centers=cv2.connectedComponentsWithStats(mask.astype(np.uint8),8)
+            for stat,center in zip(stats[1:],centers[1:]):
+                x,y,w,h,area=map(int,stat)
+                if camp:
+                    if 3<=area<=120 and max(w,h)<=25:anchors.append((camp,center))
+                elif 8<=area<=160 and 3<=min(w,h)<=max(w,h)<=20 and max(w,h)/min(w,h)<2.5:
+                    patch=hsv[max(0,y-3):y+h+3,max(0,x-3):x+w+3,2]
+                    if np.mean(patch<80)>.25:white.append(center)
+        candidates=[]
+        for i,a in enumerate(white):
+            for b in white[i+1:]:
+                pair=self.projection.intersect([a,b],.13)
+                if pair is None or not .12<np.linalg.norm(pair[0]-pair[1])<.23:continue
+                center=(a+b)/2;span=np.linalg.norm(a-b);scale=span/.166;across=(a-b)/span
+                # Sleeves lie near the two sides. A central HP lamp (blue at
+                # full health even on a red robot) is not a camp marker.
+                nearby=[(camp,float(np.linalg.norm(point-center))) for camp,point in anchors
+                        if np.linalg.norm(point-center)<scale*.27 and .30*span<abs((point-center)@across)<.95*span]
+                if not nearby:continue
+                camps={camp for camp,_ in nearby}
+                # Conflicting colour evidence can be an HP lamp or nearby
+                # printed artwork. Abstain; LiDAR still supplies obstacles.
+                if len(camps)!=1:continue
+                camp=next(iter(camps))
+                candidates.append((min(d for _,d in nearby),center,scale,camp))
+        selected=[]
+        for _,center,scale,camp in sorted(candidates,key=lambda item:item[0]):
+            if any(np.linalg.norm(center-np.array(d['navigation_point_px']))<scale*.20 for d in selected):continue
+            radius=scale*.14
+            selected.append({'kind':'ugv','confidence':.8,'camp_observation':camp,
+                'bbox_xyxy_px':[float(center[0]-radius),float(center[1]-radius),float(center[0]+radius),float(center[1]+radius)],
+                'navigation_point_px':center.tolist(),'projection_plane_z_m':.13,'view_model':'overhead'})
+        return selected

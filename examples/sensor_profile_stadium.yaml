@@ -9,6 +9,7 @@ assumption_ids:
 - SIM-GEOMETRY
 - SIM-NOISE
 - SIM-ACTUATION-UNCALIBRATED
+- SIM-WINGBOT-PHOTO
 geometry:
   footprint_length_m: 0.23
   footprint_width_m: 0.25
@@ -17,57 +18,66 @@ geometry:
     center_m:
     - 0
     - 0
-    - 0.1
+    - 0.073
     half_extents_m:
-    - 0.115
-    - 0.09
-    - 0.03
+    - 0.105
+    - 0.078
+    - 0.025
   mast:
     center_m:
-    - -0.04
+    - -0.025
     - 0
-    - 0.19
+    - 0.169
     half_extents_m:
-    - 0.025
-    - 0.025
-    - 0.06
+    - 0.022
+    - 0.024
+    - 0.043
   gimbal_pivot_m:
-  - 0.02
+  - -0.025
   - 0
-  - 0.23
+  - 0.229
   camera_offset_gimbal_m:
-  - 0.025
+  - 0.037
   - 0
-  - 0
+  - 0.002
   laser_offset_gimbal_m:
-  - 0.025
+  - 0.037
   - 0
-  - 0.02
+  - 0.054
   receivers:
   - center_m:
-    - 0
-    - 0.11
-    - 0.16
-    radius_m: 0.015
+    - 0.005
+    - 0.083
+    - 0.143
+    radius_m: 0.026
+    normal_body:
+    - 0.25
+    - 0.65
+    - 0.72
   - center_m:
-    - 0
-    - -0.11
-    - 0.16
-    radius_m: 0.015
+    - 0.005
+    - -0.083
+    - 0.143
+    radius_m: 0.026
+    normal_body:
+    - 0.25
+    - -0.65
+    - 0.72
   facility_receiver_offset_m: 0.021
   facility_receiver_z_m: 0.32
   facility_receiver_radius_m: 0.02
   marker_center_m:
-  - -0.08
-  - 0.018
-  - 0.27
-  marker_width_m: 0.06
-  marker_height_m: 0.08
+  - -0.069
+  - 0.083
+  - 0.236
+  marker_width_m: 0.02
+  marker_height_m: 0.064
   marker_normal_body:
   - 1
   - 0
   - 0
   marker_band_height_m: 0.004
+  robot_model: wingbot_6wd_v1
 front_camera:
   width_px: 640
   height_px: 480
@@ -98,9 +108,9 @@ drone:
   far_m: 10.0
 lidar:
   origin_body_m:
+  - 0.048
   - 0
-  - 0
-  - 0.145
+  - 0.15
   angle_min_rad: -3.141592653589793
   ray_count: 360
   range_min_m: 0.05

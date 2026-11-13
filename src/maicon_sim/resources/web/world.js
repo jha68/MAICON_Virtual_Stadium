@@ -1,4 +1,5 @@
 import * as T from './vendor/three.module.min.js';
+import {buildRobot, updateRobot} from './robot.js';
 
 // Local axes match core.geometry3d.FACE_AXES (right, up, outward).
 const faces = {
@@ -32,8 +33,16 @@ export class World {
     this.group = new T.Group();
     this.scene.add(this.group);
     this.signature = null;
+    this.lasers = new T.Group(); this.scene.add(this.lasers);
+    this.focusSlot = null;
     let pointer = null;
     const canvas = this.renderer.domElement;
+    canvas.title = '드래그: 회전 · 휠: 확대 · 더블클릭: 선택 UGV / 경기장 전환';
+    canvas.addEventListener('dblclick', () => {
+      this.focusSlot = this.focusSlot ? null : this.selected;
+      this.distance = this.focusSlot ? .8 : 9.2;
+      this.render();
+    });
     canvas.style.touchAction = 'none';
     canvas.addEventListener('pointerdown', e => {
       pointer = [e.clientX, e.clientY];
@@ -50,7 +59,7 @@ export class World {
     });
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
-      this.distance = Math.max(3, Math.min(20, this.distance * Math.exp(e.deltaY * .001)));
+      this.distance = Math.max(.45, Math.min(20, this.distance * Math.exp(e.deltaY * .001)));
       this.render();
     }, {passive: false});
   }
@@ -96,6 +105,7 @@ export class World {
     this.robots.clear();
     this.boxes.clear();
     this.receivers.clear();
+    this.focusSlot=null;
   }
 
   label(text, color) {
@@ -172,6 +182,10 @@ export class World {
       const color = slot[0] === 'B' ? 0x5089ef : 0xe7616d;
       const group = new T.Group();
       this.group.add(group);
+      if (state.render_geometry.robot_model === 'wingbot_6wd_v1') {
+        this.robots.set(slot, {group, label: this.label(slot, slot[0] === 'B' ? '#99c3ff' : '#ffb3b9'), color});
+        continue;
+      }
       const body = this.box(.23, .25, .12, color, 0, 0, .09, group);
       this.box(.055, .055, .18, color, 0, 0, .22, group);
       this.box(.055, .07, .04, 0xc4cbd1, .04, 0, .25, group);
@@ -185,9 +199,19 @@ export class World {
       }
       this.robots.set(slot, {group, body, label: this.label(slot, slot[0] === 'B' ? '#99c3ff' : '#ffb3b9'), color});
     }
+    if (state.render_geometry.robot_model === 'wingbot_6wd_v1') {
+      const signature=this.signature;
+      fetch(state.robot_model_url).then(r => { if (!r.ok) throw new Error('robot model'); return r.json(); }).then(manifest => {
+        if (this.signature !== signature) return;
+        for (const [slot, robot] of this.robots) robot.model = buildRobot(robot.group, manifest, slot);
+        this.element.dataset.robotModel = manifest.model;
+        this.update(this.lastState, this.selected);
+      }).catch(() => this.element.dispatchEvent(new CustomEvent('modelerror')));
+    }
   }
 
   update(state, selected) {
+    this.lastState=state;this.selected=selected;
     if (state.match_id !== this.signature) {
       this.clear();
       this.signature = state.match_id;
@@ -206,12 +230,18 @@ export class World {
       lens.material.color.setHex(signal === 'idle' ? 0x7b91a1 : color);
     }
     for (const [slot, r] of Object.entries(state.robots)) {
-      const {group, body, label, color} = this.robots.get(slot), p = r.pose;
+      const {group, body, label, color, model} = this.robots.get(slot), p = r.pose;
       group.position.set(p.x_m, p.y_m, 0);
       group.rotation.z = p.yaw_rad;
       label.position.set(p.x_m, p.y_m, .45);
-      body.material.color.setHex(r.hp ? color : 0x606b7b);
-      body.material.emissive.setHex(slot === selected ? 0x1e4940 : 0);
+      if (body) { body.material.color.setHex(r.hp ? color : 0x606b7b); body.material.emissive.setHex(slot === selected ? 0x1e4940 : 0); }
+      if (model) updateRobot(model,r,state.render_geometry);
+    }
+    for (const line of [...this.lasers.children]) { line.geometry.dispose(); line.material.dispose(); this.lasers.remove(line); }
+    for (const ray of state.laser_segments || []) {
+      const line=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(...ray.start),new T.Vector3(...ray.end)]),
+        new T.LineBasicMaterial({color:0xff3030,transparent:true,opacity:.75}));
+      line.name=`${ray.slot}/laser-guide`;this.lasers.add(line);
     }
     this.render();
   }
@@ -222,10 +252,11 @@ export class World {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    const [x, y] = this.center, d = this.distance;
+    const focused=this.focusSlot && this.lastState?.robots[this.focusSlot]?.pose;
+    const [x, y] = focused ? [focused.x_m,focused.y_m] : this.center, d = this.distance, z=focused ? .16 : 0;
     this.camera.position.set(x + d * Math.cos(this.angle) * Math.cos(this.pitch),
-      y + d * Math.sin(this.angle) * Math.cos(this.pitch), d * Math.sin(this.pitch));
-    this.camera.lookAt(x, y, 0);
+      y + d * Math.sin(this.angle) * Math.cos(this.pitch), z+d * Math.sin(this.pitch));
+    this.camera.lookAt(x, y, z);
     this.renderer.render(this.scene, this.camera);
   }
 }

@@ -17,18 +17,22 @@ try{
  await page.waitForFunction(()=>document.querySelector('#camera').naturalWidth===640,null,{timeout:30000});
  await page.screenshot({path:'artifacts/evidence/web-2d.png',fullPage:true});
  await page.click('#view-3d');await page.waitForSelector('#world canvas',{state:'visible'});await page.waitForTimeout(400);
+ await page.waitForFunction(()=>document.querySelector('#world').dataset.robotModel==='wingbot_6wd_v1');
  await page.locator('#world canvas').screenshot({path:'artifacts/evidence/web-3d-canvas.png'});
  await page.click('[data-action=ready]');await page.waitForFunction(()=>!document.querySelector('[data-action=start]').disabled,null,{timeout:45000});
  await page.click('[data-action=start]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 진행');
  const first=await (await context.request.get(base+'/api/state')).json();
  if(Object.values(first.participant_policies).some(p=>p!=='mission')||Object.values(first.mission_orders).some(o=>!o.target||!o.search_sectors||!o.base)||Object.keys(first.mission_orders).length!==6)throw Error('Missing six direct mission assignments');
  if(Object.values(first.reports).some(r=>r.m1))throw Error('Unexpected M1 submission');
- let distances=[];
- const movementDeadline=Date.now()+20000;
+ let distances=Object.keys(first.robots).map(()=>0);
+ // CPU-constrained CI can render much slower than match time. Retain a
+ // bounded wall deadline and record peak displacement, including a robot
+ // that subsequently returns toward its start during a turn.
+ const movementDeadline=Date.now()+60000;
  do{
   await page.waitForTimeout(500);
   const moved=await (await context.request.get(base+'/api/state')).json();
-  distances=Object.keys(first.robots).map(s=>Math.hypot(first.robots[s].pose.x_m-moved.robots[s].pose.x_m,first.robots[s].pose.y_m-moved.robots[s].pose.y_m));
+  distances=Object.keys(first.robots).map((s,i)=>Math.max(distances[i],Math.hypot(first.robots[s].pose.x_m-moved.robots[s].pose.x_m,first.robots[s].pose.y_m-moved.robots[s].pose.y_m)));
  }while(!distances.every(d=>d>.01)&&Date.now()<movementDeadline);
  if(!distances.every(d=>d>.01))throw Error('Not all six mission robots left their starts: '+JSON.stringify(distances));
  await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:'artifacts/evidence/web-running-3d.png',fullPage:true});

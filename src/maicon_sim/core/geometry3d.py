@@ -66,6 +66,7 @@ class Primitive:
     radius: float = 0.
     owner: str = ''
     receiver: bool = False
+    normal: object = None
 
 @dataclass(frozen=True)
 class RayHit:
@@ -99,6 +100,16 @@ def ray_sphere(origin,direction,center,radius):
     if t<=EPS: t=-b+root
     return float(t) if t>EPS else None
 
+def ray_hemisphere(origin,direction,center,radius,normal):
+    """Only exposed curved dome counts; the opaque base is a separate solid."""
+    q=np.asarray(origin)-center;d=np.asarray(direction)
+    b=float(q@d);disc=b*b-float(q@q-radius*radius)
+    if disc < -EPS:return None
+    root=math.sqrt(max(0.,disc))
+    for t in (-b-root,-b+root):
+        if t>EPS and float((q+t*d)@normal)>=-EPS:return float(t)
+    return None
+
 def ray_rectangle(origin,direction,center,u_axis,v_axis,half_width,half_height):
     u,v=np.asarray(u_axis),np.asarray(v_axis); n=np.cross(u,v)
     denom=float(np.dot(direction,n))
@@ -113,7 +124,9 @@ def raycast(origin,direction,primitives,max_distance=math.inf,exclude_owner=None
     hits=[]
     for p in primitives:
         if exclude_owner and p.owner==exclude_owner:continue
-        t=ray_sphere(origin,d,p.center,p.radius) if p.kind=='sphere' else ray_obb(origin,d,p.center,p.half_extents,p.rotation)
+        if p.kind=='hemisphere':t=ray_hemisphere(origin,d,p.center,p.radius,p.normal)
+        elif p.kind=='sphere':t=ray_sphere(origin,d,p.center,p.radius)
+        else:t=ray_obb(origin,d,p.center,p.half_extents,p.rotation)
         if t is not None and t<=max_distance:
             hits.append(RayHit(t,p.geometry_id,p.owner,p.kind,p.receiver))
     if not hits:return None
@@ -142,6 +155,10 @@ def raycast_distances(origin,directions,primitives,max_distance=math.inf,exclude
 
 def canonical_solids(robots,boxes,bounds,geometry):
     out=[]
+    reference_specs=None
+    if geometry.get('robot_model')=='wingbot_6wd_v1':
+        from .robot_model import solid_specs
+        reference_specs=solid_specs(geometry)
     for b in boxes:
         p,R=body_transform(b['pose']); size=np.asarray(b['size_m'])
         out.append(Primitive(b['box_id'],'obb',p+[0,0,size[2]/2],size/2,R,owner=b['box_id']))
@@ -152,6 +169,12 @@ def canonical_solids(robots,boxes,bounds,geometry):
         out.append(Primitive('wall_'+key,'obb',np.asarray(c),np.asarray(e),np.eye(3),owner='wall'))
     for slot,r in sorted(robots.items()):
         p,R=body_transform(r.pose)
+        if reference_specs is not None:
+            for name,center,half,local_rotation,frame in reference_specs:
+                G=gimbal_rotation(getattr(r,'pan',0),getattr(r,'tilt',0)) if frame=='gimbal' else np.eye(3)
+                pivot=np.asarray(geometry['gimbal_pivot_m']) if frame=='gimbal' else np.zeros(3)
+                out.append(Primitive(slot+'/'+name,'obb',p+R@(pivot+G@center),np.asarray(half),R@G@local_rotation,owner=slot))
+            continue
         for name in ('chassis','mast'):
             spec=geometry.get(name,{'center_m':[0,0,.10],'half_extents_m':[.115,.09,.03]})
             out.append(Primitive(slot+'/'+name,'obb',p+R@np.asarray(spec['center_m']),
@@ -176,8 +199,10 @@ def receiver_primitives(robots,boxes,geometry):
     for slot,r in sorted(robots.items()):
         p,R=body_transform(r.pose)
         for i,receiver in enumerate(geometry.get('receivers',[])):
-            out.append(Primitive(slot+'/receiver/'+str(i),'sphere',p+R@np.asarray(receiver['center_m']),
-                                 radius=receiver['radius_m'],owner=slot,receiver=True))
+            normal=receiver.get('normal_body')
+            if normal is not None:normal=R@(np.asarray(normal)/np.linalg.norm(normal))
+            out.append(Primitive(slot+'/receiver/'+str(i),'hemisphere' if normal is not None else 'sphere',p+R@np.asarray(receiver['center_m']),
+                                 radius=receiver['radius_m'],owner=slot,receiver=True,normal=normal))
     for box in boxes:
         for face in box['faces']:
             if face['kind']!='facility':continue

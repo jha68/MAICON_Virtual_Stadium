@@ -61,8 +61,10 @@ def test_real_rgb_facility_tracking_fire_causes_actual_engine_destruction():
     assert engine.robots["B-1"].ammo == 7
 
 
-def test_real_rgb_tracks_a_moving_identified_opponent_and_causes_engine_hit():
-    config = load_scenario("examples/scenario_smoke_six.yaml")
+@pytest.mark.parametrize('scenario',['scenario_smoke_six','scenario_reference_stadium'])
+def test_real_rgb_tracks_a_moving_identified_opponent_and_causes_engine_hit(scenario):
+    config = load_scenario(f"examples/{scenario}.yaml")
+    if scenario=='scenario_reference_stadium':config.scenario['boxes']=[]
     starts = {"B-1": {"x_m": 3.6, "y_m": 3.4, "yaw_rad": 0.},
               "R-1": {"x_m": 4.8, "y_m": 3.4, "yaw_rad": math.pi}}
     for slot, start in starts.items():
@@ -72,9 +74,10 @@ def test_real_rgb_tracks_a_moving_identified_opponent_and_causes_engine_hit():
     for slot in starts:
         engine.request("ready", slot)
     engine.request("start")
-    calibration = {"front_camera": config.sensors["front_camera"], "laser_offset_camera_m": [0., 0., .02]}
+    from maicon_sim.evaluation.runner import calibration as public_calibration
+    calibration = public_calibration(config)
     detector = CombatVisionDetector(calibration)
-    policy, estimate = CombatPolicy("B-1"), GimbalEstimate()
+    policy, estimate = CombatPolicy("B-1"), GimbalEstimate(acceleration_gain=config.sensors.get('actuation',{}).get('gimbal_acc_deg_s2_per_unit',0))
     fired, diagnostics = [], []
     with BulletBackend(config) as backend:
         for tick in range(700):
@@ -90,7 +93,7 @@ def test_real_rgb_tracks_a_moving_identified_opponent_and_causes_engine_hit():
                 if result.gimbal:
                     pan, tilt, speed, acc = result.gimbal
                     response = engine.request("gimbal", "B-1", {"pan": pan, "tilt": tilt, "speed": speed, "acc": acc})
-                    estimate.accepted(pan, tilt, speed, tick)
+                    estimate.accepted(pan, tilt, speed, tick, acc)
                     policy.acknowledge_gimbal(result.gimbal, response, tick)
                 if result.fire:
                     response = engine.request("fire", "B-1")

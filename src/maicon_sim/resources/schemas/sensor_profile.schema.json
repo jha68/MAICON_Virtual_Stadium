@@ -127,6 +127,21 @@
               "radius_m": {
                 "type": "number",
                 "minimum": 1e-06
+              },
+              "normal_body": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "not": {
+                  "const": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
               }
             },
             "required": [
@@ -177,6 +192,11 @@
         "marker_band_height_m": {
           "type": "number",
           "minimum": 0.001
+        },
+        "robot_model": {
+          "enum": [
+            "wingbot_6wd_v1"
+          ]
         }
       },
       "required": [
@@ -198,7 +218,27 @@
         "marker_normal_body",
         "marker_band_height_m"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "robot_model"
+            ]
+          },
+          "then": {
+            "properties": {
+              "receivers": {
+                "items": {
+                  "required": [
+                    "normal_body"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "front_camera": {
       "type": "object",

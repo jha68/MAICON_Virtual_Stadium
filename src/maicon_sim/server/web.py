@@ -170,15 +170,34 @@ def create_dashboard(manager, password):
         snap['visual_assets'] = {a['asset_id']: {'kind': a['kind'], 'label': a['label'],
                                                'url': '/api/textures/' + a['asset_id'] + '.png'}
                                  for a in config.assets['assets']}
-        snap['render_geometry'] = {key: config.sensors['geometry'][key] for key in
-                                   ('facility_receiver_z_m', 'facility_receiver_radius_m',
-                                    'facility_receiver_offset_m', 'wall_thickness_m')}
+        snap['render_geometry'] = deepcopy(config.sensors['geometry'])
+        snap['robot_model_url'] = '/api/robot-model.json'
+        from maicon_sim.core.geometry3d import canonical_solids, receiver_primitives, laser_transform, raycast
+        from types import SimpleNamespace
+        # Engine advances on its own thread. Rays must use this atomic snapshot,
+        # otherwise the guide could be drawn from a later pose than the robot.
+        robots={slot:SimpleNamespace(**r) for slot,r in snap['robots'].items()}
+        solids=None;snap['laser_segments']=[]
+        for slot,r in robots.items():
+            if r.laser_until<=snap['robot_effect_ticks']:continue
+            if solids is None:solids=canonical_solids(robots,snap['boxes'],config.arena['bounds'],config.sensors['geometry'])+receiver_primitives(robots,snap['boxes'],config.sensors['geometry'])
+            origin,direction=laser_transform(r.pose,r.pan,r.tilt,config.sensors['geometry'])
+            hit=raycast(origin,direction,solids,max_distance=20,exclude_owner=slot)
+            snap['laser_segments'].append({'slot':slot,'start':origin.tolist(),'end':(origin+direction*(hit.distance if hit else 20)).tolist()})
         snap['timing'] = deepcopy(manager.service.engine.config.rules['timing'])
         snap['capabilities'] = dict(manager.service.gateway.capabilities)
         runtime = getattr(manager.service.engine, '_runtime', None)
         snap['performance'] = {'max_lag_s': runtime.max_lag_s if runtime else 0,
                                'frame_drops': manager.service.gateway.dropped}
         return snap
+
+    @app.get('/api/robot-model.json')
+    def robot_model():
+        from maicon_sim.core.robot_model import MODEL, meshes, PALETTE, WHEEL_RADIUS, AXLE_WIDTH
+        geometry=manager.service.engine.config.sensors['geometry']
+        if geometry.get('robot_model')!=MODEL:return {'model':None}
+        return {'model':MODEL,'palette':PALETTE,'wheel_radius_m':WHEEL_RADIUS,'axle_width_m':AXLE_WIDTH,
+                'models':{str(i):meshes(geometry,i) for i in [1,2,3]}}
 
     @app.get('/api/arena-floor.png')
     def floor_texture():

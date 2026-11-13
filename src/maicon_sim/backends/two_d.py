@@ -22,7 +22,7 @@ class TwoDBackend:
         from types import SimpleNamespace
         from ..core.geometry3d import canonical_solids,raycast
         snapshot=self.snapshot or {'robots':{},'boxes':self.config.scenario['boxes']}
-        robots={slot:SimpleNamespace(pose=r['pose']) for slot,r in snapshot['robots'].items()}
+        robots={slot:SimpleNamespace(pose=r['pose'],pan=r.get('pan',0),tilt=r.get('tilt',0)) for slot,r in snapshot['robots'].items()}
         solids=canonical_solids(robots,snapshot['boxes'],self.config.arena['bounds'],self.config.sensors['geometry'])
         results=[]
         for ray in rays:

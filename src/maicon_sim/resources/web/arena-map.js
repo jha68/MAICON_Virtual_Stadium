@@ -108,14 +108,28 @@ export class ArenaMap {
         c.stroke();
       }
       c.rotate(-p.yaw_rad);
-      c.fillStyle = r.hp ? color : '#66707c';
+      c.fillStyle = state.render_geometry.robot_model ? '#242a30' : (r.hp ? color : '#66707c');
       c.fillRect(-.1 * scale, -.12 * scale, .2 * scale, .24 * scale);
+      if (state.render_geometry.robot_model) {
+        for (const x of [-.075,0,.075]) for (const y of [-.1025,.1025]) {
+          c.fillStyle='#101418';c.fillRect((x-.04)*scale,(y-.0225)*scale,.08*scale,.045*scale);
+        }
+        for (const receiver of state.render_geometry.receivers) {
+          c.beginPath();c.arc(receiver.center_m[0]*scale,-receiver.center_m[1]*scale,receiver.radius_m*scale,0,Math.PI*2);
+          c.fillStyle='#e4eaf3';c.fill();
+        }
+        for (const y of [-.083,.083]) {c.fillStyle=color;c.fillRect(-.08*scale,y*scale-.01*scale,.02*scale,.02*scale);}
+      }
       c.strokeStyle = '#eaf4ff';
       c.beginPath();
       c.moveTo(0, 0);
-      c.lineTo(.2 * scale, 0);
+      c.lineTo(.2 * scale*Math.cos(r.pan*.5*Math.PI/180), .2*scale*Math.sin(r.pan*.5*Math.PI/180));
       c.stroke();
       c.restore();
+    }
+    c.strokeStyle='#ff4d4d';
+    for (const ray of state.laser_segments || []) {
+      c.beginPath();c.moveTo(...P(...ray.start));c.lineTo(...P(...ray.end));c.stroke();
     }
   }
 

@@ -32,9 +32,10 @@ def semantic_candidates(robots,boxes,bounds,sensors,slot,solids=None):
         visible=[]
         for receiver in receivers:
             if receiver.owner!=owner:continue
-            delta=receiver.center-origin;distance=float(np.linalg.norm(delta))
+            point=receiver.center if receiver.normal is None else receiver.center+receiver.normal*receiver.radius*.65
+            delta=point-origin;distance=float(np.linalg.norm(delta))
             if distance<=1e-6:continue
-            xy,z=project_points([receiver.center],origin,R,intrinsics)
+            xy,z=project_points([point],origin,R,intrinsics)
             if not intrinsics.get('near_m',.02)<z[0]<intrinsics.get('far_m',10):continue
             x,y=xy[0]
             if not (0<=x<intrinsics.get('width_px',640) and 0<=y<intrinsics.get('height_px',480)):continue
@@ -73,9 +74,16 @@ def semantic_candidates(robots,boxes,bounds,sensors,slot,solids=None):
         aim=receiver_aim(other)
         if aim is not None:candidate['aim_point_px']=aim
         if 'marker_center_m' in geometry:
-            mc=p+RB@np.asarray(geometry['marker_center_m'])
-            marker_rect=(mc,RB[:,0] if np.dot(RB[:,0],origin-mc)>0 else -RB[:,0],RB[:,1],RB[:,2],geometry['marker_width_m']/2,geometry['marker_height_m']/2)
-            marker=visible_rectangle(origin,R,intrinsics,marker_rect,solids)
+            marker=None
+            for side in ([1,-1] if geometry.get('robot_model')=='wingbot_6wd_v1' else [1]):
+                local=np.array(geometry['marker_center_m']);local[1]*=side;mc=p+RB@local
+                if geometry.get('robot_model')=='wingbot_6wd_v1':
+                    normal=origin-mc;normal[2]=0;normal/=max(np.linalg.norm(normal),1e-9)
+                    mc=mc+normal*.015
+                    marker_rect=(mc,normal,np.cross([0,0,1],normal),np.array([0,0,1]),geometry['marker_width_m']/2,geometry['marker_height_m']/2)
+                else:marker_rect=(mc,RB[:,0] if np.dot(RB[:,0],origin-mc)>0 else -RB[:,0],RB[:,1],RB[:,2],geometry['marker_width_m']/2,geometry['marker_height_m']/2)
+                marker=visible_rectangle(origin,R,intrinsics,marker_rect,solids)
+                if marker is not None:break
             if marker is not None:
                 candidate['marker_readout']={'camp':'BLUE' if other.startswith('B') else 'RED','band_count':int(other[-1]),'confidence':1.}
         candidates.append(candidate)

@@ -32,7 +32,7 @@ class InProcessPort:
         return copy.deepcopy({k:arena[k] for k in ("arena_id","bounds","sectors","bases","nominal_starts")})
     async def calibration(self):
         sensor=self._engine.config.sensors
-        return copy.deepcopy({"capture_clock_epoch":self._engine.config.scenario["epoch_kst"], "front_camera":sensor["front_camera"], "drone_camera":sensor["drone"],"gimbal_pivot_m":sensor["geometry"]["gimbal_pivot_m"],
+        return copy.deepcopy({"capture_clock_epoch":self._engine.config.scenario["epoch_kst"], "front_camera":sensor["front_camera"], "drone_camera":sensor["drone"],"robot_model":sensor['geometry'].get('robot_model','synthetic'),"gimbal_pivot_m":sensor["geometry"]["gimbal_pivot_m"],
                               "artwork_profile": 'prestudy' if self._engine.config.assets['manifest_id']=='prestudy_reference_v1' else 'synthetic',
                               "actuation":sensor.get('actuation', {}),
                               "camera_offset_gimbal_m":sensor["geometry"]["camera_offset_gimbal_m"],"pan_deg_per_unit":.5,

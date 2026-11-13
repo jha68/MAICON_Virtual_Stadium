@@ -40,6 +40,7 @@ def public_observations(gateway, slot, recorder=None):
 
 def calibration(config):
     return {"capture_clock_epoch": config.scenario["epoch_kst"], "artwork_profile": "prestudy" if config.assets["manifest_id"] == "prestudy_reference_v1" else "synthetic", "actuation": config.sensors.get("actuation", {}), "front_camera": copy.deepcopy(config.sensors["front_camera"]),
+            "robot_model": config.sensors['geometry'].get('robot_model','synthetic'),
             "gimbal_pivot_m": config.sensors["geometry"]["gimbal_pivot_m"],
             "camera_offset_gimbal_m": config.sensors["geometry"]["camera_offset_gimbal_m"],
             "laser_offset_camera_m": [a-b for a,b in zip(config.sensors["geometry"]["laser_offset_gimbal_m"], config.sensors["geometry"]["camera_offset_gimbal_m"])],

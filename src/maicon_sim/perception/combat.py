@@ -83,6 +83,7 @@ class CombatVisionDetector:
         return result
 
     def _robot_cues(self,bgr):
+        if self.calibration.get('robot_model')=='wingbot_6wd_v1':return self._wingbot_cues(bgr)
         cv2=self.cv2;hsv=cv2.cvtColor(np.ascontiguousarray(bgr),cv2.COLOR_BGR2HSV)
         camera=self.calibration.get('front_camera',self.calibration)
         fx=float(camera.get('fx_px',320.));fy=float(camera.get('fy_px',fx))
@@ -163,6 +164,61 @@ class CombatVisionDetector:
                 selected.append(item)
         for item in selected:item['bbox_xyxy_px']=list(map(float,item['bbox_xyxy_px']))
         return selected
+
+    def _wingbot_cues(self,bgr):
+        """Image-only sleeve identity and white dome evidence, never body truth.
+
+        A sleeve alone cannot license a shot. Require a compact white surface
+        below it, at the public model's scale, with a dark housing boundary.
+        HP/ammo remain unknown unless their devices are actually resolved.
+        """
+        cv2=self.cv2;hsv=cv2.cvtColor(bgr,cv2.COLOR_BGR2HSV);gray=cv2.cvtColor(bgr,cv2.COLOR_BGR2GRAY)
+        camera=self.calibration.get('front_camera',{});fx=camera.get('fx_px',320.);fy=camera.get('fy_px',fx)
+        height,width=gray.shape;result=[]
+        for camp,mask in [('RED',((hsv[...,0]<10)|(hsv[...,0]>173))&(hsv[...,1]>140)&(hsv[...,2]>45)),
+                          ('BLUE',(hsv[...,0]>100)&(hsv[...,0]<130)&(hsv[...,1]>140)&(hsv[...,2]>45))]:
+            joined=cv2.morphologyEx(mask.astype(np.uint8),cv2.MORPH_CLOSE,np.ones((5,1),np.uint8))
+            for stat,_ in self._components(joined,minimum=12):
+                x,y,w,h,_=map(int,stat)
+                if h<12 or w<3 or not .18<w/h<.55:continue
+                columns=gray[y:y+h,x+max(0,w//4):x+max(1,w-w//4)]
+                dark=np.mean(columns<min(38,float(np.percentile(columns,75))*.5),axis=1)>.6
+                dark[:2]=False;dark[-2:]=False
+                rows=np.flatnonzero(dark)
+                if not len(rows):continue
+                runs=np.split(rows,np.flatnonzero(np.diff(rows)>1)+1);bands=len(runs)
+                if bands not in (1,2,3):continue
+                positions=np.array([r.mean()/h for r in runs])
+                if np.any(abs(positions-(.5+(np.arange(bands)-(bands-1)/2)*.014/.064))>.13):continue
+                distance=fx*.020/max(w,1)
+                top=max(0,int(y+h+fy*.015/distance));bottom=min(height,int(y+h+fy*.14/distance))
+                left=max(0,int(x-fx*.21/distance));right=min(width,int(x+w+fx*.21/distance))
+                roi=hsv[top:bottom,left:right]
+                if not roi.size:continue
+                white=(roi[...,1]<55)&(roi[...,2]>145)
+                candidates=[];diameter=fx*.052/distance
+                for rec,center in self._components(white,minimum=4):
+                    rx,ry,rw,rh,area=map(int,rec)
+                    # Front lamps are also white, but only 18mm across; they
+                    # must never be accepted as the 52mm receiving dome.
+                    if not .55*diameter<rw<1.5*diameter or not .35*diameter<rh<1.5*diameter or area/(rw*rh)<.4:continue
+                    px,py=map(int,np.array(center)+[left,top])
+                    border=gray[max(0,top+ry-2):min(height,top+ry+rh+3),max(0,left+rx-2):min(width,left+rx+rw+3)]
+                    if np.mean(border<70)<.15:continue
+                    candidates.append((px,py))
+                item={'kind':'ugv','class_probs':{'UGV':1.},'confidence':.85,
+                      'marker_readout':{'camp':camp,'band_count':bands,'confidence':.85},
+                      'marker_bbox_xyxy_px':[float(x),float(y),float(x+w),float(y+h)],
+                      'bbox_xyxy_px':[float(left),float(y),float(right),float(bottom)],
+                      'range_m':distance,'range_source':'photo_sleeve_width_prior',
+                      'visual_state':{'hp':None,'ammo':None,'confidence':0.}}
+                if candidates:
+                    aim=min(candidates,key=lambda q:abs(q[0]-camera.get('cx_px',319.5)))
+                    item.update(aim_point_px=list(map(float,aim)),aim_confidence=.8)
+                # Two sleeves on one robot must not manufacture two targets.
+                if not any(d['marker_readout']==item['marker_readout'] and abs(d['marker_bbox_xyxy_px'][1]-y)<h/2 and
+                           abs(d['marker_bbox_xyxy_px'][0]-x)<fx*.22/distance for d in result):result.append(item)
+        return result
 
     def _visual_state(self,bgr,receiver_center,receiver_span,range_m,fx,fy):
         # The fixture's HP device is30mm above the receiver centre. Estimate
