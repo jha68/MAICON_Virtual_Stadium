@@ -148,3 +148,20 @@ Oracle 배포 검사를 최신 구성인 박스20·시설 수광부6·이미지1
 실행하는 회귀 시험으로 정상16종, 구형13종, 패널 누락, 잘못된 build revision을 검증한다.
 main CI 성공 후 기존 immutable image/rollback 절차로 Oracle만 갱신하며 진행 중 경기 보호는 유지한다.
 공개 Codex의 빌드 표시는 e7a8081로 남을 수 있으나 앱 소스의 동일성을 Git tree로 확인한다.
+
+
+## 자동 임무 실행과 M6 mock 적용 (2026-11-13, 최신)
+
+사용자 요청으로 모든 UGV를 `mission` 한 가지 실행 흐름으로 통합했다. `idle/baseline/patrol/blocker/capture_runner` 선택 메뉴·CLI 옵션·구현을 제거했다. M1의 세 필드 `target/search_sectors/base`를 시작 시 직접 받으며 LLM 호출과 interpretation 제출은 생략한다. M2는 target, M3는 상대 세 구역+CM, M5는 기준 경기장 240초에 실제 게시된 objective를 사용한다. M6는 상대 호출부호 1/2/3 순서 mock이다. 자세한 계약은 [자동 임무 흐름](AUTOMATIC_MISSIONS.md)을 따른다.
+
+공개 Codex 앱은 `f34c74bc366116c8cee6af2a60c81d0508df2966`으로 전환했다. `waiting` 상태에서 기존 결과/상태를 보존했으며 비밀번호·중계 세션·작업자는 그대로다. 이 작업에서는 main/Oracle을 변경하지 않았다. 공개 URL에서 같은 비밀번호, 로컬과 같은 revision/match, 실제 6대 RGB, WebGL, 이미지16종과 M5 패널6개를 읽기 전용 브라우저로 확인했다. 운영 경기를 시험 목적으로 시작하지 않았다.
+
+이 환경의 앱은 편집 가능한 checkout 대신 `work/releases/mission-5b752ba/venv/bin/python`의 고정 소스를 실행한다. 이 디렉터리의 앱 소스는 f34c74b와 동일하며 두 커밋 차이는 패키지 시험뿐이다. `work/releases/mission-5b752ba/deployment.json`과 `work/deploy/server-pid`가 실제 실행 정보를 가진다. 변경한 checkout이 다음 참가 프로세스에 섞이지 않는다. 활성 자격 증명은 `work/deploy/private/credentials.json`, 비밀번호는 같은 디렉터리 `web.password`다. 환경변수에 남은 오래된 relay 자격 증명으로 덮어쓰지 않는다. 비밀 값은 출력하거나 Git에 올리지 않는다.
+
+검증 자료는 무시되는 `work/mission-validation-summary.json`, `work/mission-validated-match`, `artifacts/public-stadium-evidence.json`에 있다. 6개 실제 3D 참가 프로세스 경기에서 경기 시계267.73초(실제325.47초)에 M5 점령으로 종료했고, 모든 기체가 초기 SUPPLY와 다른 MAINTENANCE 목표를 받았으며 M6 mock을 제출했다. M1 제출과 LLM 호출은 모두0회였다. 200ms로 따라잡기 폭을 제한해 과부하 뒤 마지막60초를 몇 초에 소모하지 않으며, 물리 틱과 누적 지연 계측은 유지한다.
+
+남은 성능 한계를 성공으로 기록하지 않는다. 이 경기에서 네 구역을 모두 방문한 기체는4/6이고, B-1과 R-2는 중앙 교행·경로 정체로 일부 구역을 방문하지 못했다. 시설 타격 M2 점수는 전원0으로, 대상 전달과 개별 타격 폐루프 회귀 통과가 실제 경기장 인식·타격 성공을 의미하지 않는다. RGB 지연, 중앙 경로 추종, 시설 관측 위치를 다음 개선 대상으로 남긴다. M3 보고는 실제 관측 증거만 반영한다.
+
+최종 변경 CI: https://github.com/jha68/MAICON_Virtual_Stadium/actions/runs/43393951330 . 완료 상태는 아래 추가 기록을 확인한다. 이전 실패는 직접 명령 DTO와 활성 M3/M6 점수에 대한 과거 기대값, 그리고 M5 점령으로 정상 조기 종료된 wheel 경기를 반드시300초라고 검사한 항목이었다. 관련 기대값은 현재 임무 계약에 맞게 갱신했다.
+
+최종 CI43393951330은 성공했다. core-contracts, 전체 integration/render 회귀, wheel 격리 설치, 실제6개 프로세스 Chromium 조작과 공개 드론 연결 검사가 통과했다. real-longpoll은 push 기본 조건에 따라 실행 대상에서 제외됐다. 운영 앱 f34c74b는 이 성공한 CI의 앱 소스와 같고, 이후 인수인계 커밋은 문서만 바꾼다.
