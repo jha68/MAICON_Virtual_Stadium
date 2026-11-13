@@ -50,3 +50,9 @@ PDF에 명시된 방식대로 박스의 수직 측면에 이미지를 붙입니�
 ## 검증
 
 `tests/unit/test_reference_stadium.py`는 배치·패키지 자료 동일성·40cm 통행·비인식 객체 제외와 시설 6개 각각의 실제 레이저 판정을 검사합니다. `tests/render/test_stadium_rendering.py`는 수광부의 렌더 좌표/반경과 판정 기하의 일치, LED 상태의 RGB 변화 및 초기화를 검사합니다. `tests/integration/test_web_dashboard.py`는 기존/신규 경기장 모두에서 운영자 인증과 이미지 API를 검사합니다.
+
+## M5 목표거점 사진 (2026-11-13)
+
+PDF 15쪽의 작전지휘소·정비소·군수보급소 원본 이미지를 추가했다. 양 진영 각 3곳, 총 6개 거점의 뒤쪽 벽 안쪽에 붙이며 2D 지도·WebGL·참가팀 RGB에 동일한 사진이 나온다. 1.2m 폭·0.4m 높이의 수직 장착 위치는 SIM 가정이며 기존 거점 진입 센서·충돌·채점 기하는 유지한다. 출처와 SHA256은 `prestudy/provenance.json`에 기록했다.
+
+사진 자산은 16종이 되었다. 새 `kind: base`는 M2 시설이나 M3 수량 객체가 아니며 기존 인쇄물 검출 템플릿에 추가하지 않는다. `test_base_panels.py`에서 양쪽 벽의 6개 사진이 실제 UGV RGB에 노출되고 빈 단색 면이 아닌지 검사한다.

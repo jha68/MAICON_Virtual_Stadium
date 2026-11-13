@@ -158,6 +158,27 @@
         242
       ],
       "sha256": "083f94ff43ca98e9d04ce64870b8b6a0cd2b65c1f830b42101d55e15dce593e0"
+    },
+    {
+      "asset_id": "base_COMMAND_POST",
+      "page": 15,
+      "embedded_image": "pdfimages -f 15 -l 15 -png: image 3",
+      "method": "Full embedded image decoded losslessly to PNG; no crop or generated replacement",
+      "sha256": "b65638ad945e9f1874b5c465f1cbda1b70ddcf4fc5bdee3596dcf6f3baebb4b3"
+    },
+    {
+      "asset_id": "base_MAINTENANCE",
+      "page": 15,
+      "embedded_image": "pdfimages -f 15 -l 15 -png: image 4",
+      "method": "Full embedded image decoded losslessly to PNG; no crop or generated replacement",
+      "sha256": "46645cbcd0ad1e56bab0cf03cf9f7a657aef04285403ee89bd6ac1b541ec4106"
+    },
+    {
+      "asset_id": "base_SUPPLY_DEPOT",
+      "page": 15,
+      "embedded_image": "pdfimages -f 15 -l 15 -png: image 5",
+      "method": "Full embedded image decoded losslessly to PNG; no crop or generated replacement",
+      "sha256": "5c278a1091f86f1fc9b668e1cc8d3525e0183e918ad31372ecfcc4cccca953b0"
     }
   ]
 }

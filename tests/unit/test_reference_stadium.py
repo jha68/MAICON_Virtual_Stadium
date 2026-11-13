@@ -36,7 +36,9 @@ def test_reference_geometry_and_packaged_assets(reference):
     faces = [f for b in boxes for f in b['faces']]
     assert {f['facility_code'] for f in faces if f['kind'] == 'facility'} == set(FACILITIES)
     assert {f['object_class'].upper() for f in faces if f['kind'] == 'object'} == set(OBJECT_CLASSES)
-    assert {a['asset_id'] for a in reference.assets['assets']} == {f['asset_id'] for f in faces}
+    assert {a['asset_id'] for a in reference.assets['assets'] if a['kind'] != 'base'} == {f['asset_id'] for f in faces}
+    assert {a['label'] for a in reference.assets['assets'] if a['kind'] == 'base'} == {
+        'COMMAND_POST', 'MAINTENANCE', 'SUPPLY_DEPOT'}
     inventory = inventory_from_boxes(boxes)
     assert inventory['CM'] == {'MILITARY_TRUCK': 1, 'MORTAR': 2, 'TANK': 3,
                                'MISSILE': 1, 'AMMO_BOX': 2, 'DRUM': 3}

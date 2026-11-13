@@ -170,3 +170,42 @@ assets:
   split: fixture
   assumption_ids:
   - SIM-PRESTUDY-ART
+- asset_id: base_COMMAND_POST
+  kind: base
+  label: COMMAND_POST
+  generator: import
+  path: prestudy/base_COMMAND_POST.png
+  sha256: b65638ad945e9f1874b5c465f1cbda1b70ddcf4fc5bdee3596dcf6f3baebb4b3
+  source: User-provided prestudy(1)_2026MAICON.pdf, page 15; reference illustration,
+    not final competition imagery
+  license: LicenseRef-UserProvided-MAICON-Prestudy
+  split_group: prestudy_2026_reference
+  split: fixture
+  assumption_ids:
+  - SIM-PRESTUDY-ART
+- asset_id: base_MAINTENANCE
+  kind: base
+  label: MAINTENANCE
+  generator: import
+  path: prestudy/base_MAINTENANCE.png
+  sha256: 46645cbcd0ad1e56bab0cf03cf9f7a657aef04285403ee89bd6ac1b541ec4106
+  source: User-provided prestudy(1)_2026MAICON.pdf, page 15; reference illustration,
+    not final competition imagery
+  license: LicenseRef-UserProvided-MAICON-Prestudy
+  split_group: prestudy_2026_reference
+  split: fixture
+  assumption_ids:
+  - SIM-PRESTUDY-ART
+- asset_id: base_SUPPLY_DEPOT
+  kind: base
+  label: SUPPLY_DEPOT
+  generator: import
+  path: prestudy/base_SUPPLY_DEPOT.png
+  sha256: 5c278a1091f86f1fc9b668e1cc8d3525e0183e918ad31372ecfcc4cccca953b0
+  source: User-provided prestudy(1)_2026MAICON.pdf, page 15; reference illustration,
+    not final competition imagery
+  license: LicenseRef-UserProvided-MAICON-Prestudy
+  split_group: prestudy_2026_reference
+  split: fixture
+  assumption_ids:
+  - SIM-PRESTUDY-ART

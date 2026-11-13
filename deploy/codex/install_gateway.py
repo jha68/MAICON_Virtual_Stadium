@@ -78,6 +78,12 @@ def install(source, data, result_dir):
         raise ValueError('Existing Caddy routing needs review; it was not changed')
     previous = False
     if run(['docker','container','inspect',NAME],check=False).returncode == 0:
+        # A new worker session fences the old worker. Do not disconnect a live
+        # Codex match merely because the standby Oracle match is idle.
+        auth = base64.b64encode(('admin:'+password).encode()).decode()
+        status, _, body = request('/api/state', {'Authorization':'Basic '+auth,'Host':domain})
+        if status != 200 or json.loads(body).get('phase') not in ('waiting', 'finished'):
+            raise RuntimeError('Current public match is active; retry gateway handoff after it finishes')
         run(['docker','rm','-f',NAME+'-previous'],check=False)
         run(['docker','stop','--time','10',NAME])
         run(['docker','rename',NAME,NAME+'-previous'])

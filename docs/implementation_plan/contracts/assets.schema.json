@@ -24,7 +24,8 @@
               "object",
               "facility",
               "decoy",
-              "robot_marker"
+              "robot_marker",
+              "base"
             ]
           },
           "label": {

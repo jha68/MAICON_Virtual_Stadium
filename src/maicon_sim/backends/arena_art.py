@@ -10,6 +10,31 @@ SECTOR_NUMBERS = {'B-S1': '1', 'B-S2': '2', 'B-S3': '3',
                   'R-S1': '4', 'R-S2': '5', 'R-S3': '6', 'CM': '7'}
 
 
+def base_panels(arena, assets):
+    """Public M5 artwork on the inward-facing wall behind each entry zone.
+
+    Mount size/height is a simulator fixture; it does not alter base sensors or
+    collision geometry. The same placements feed Bullet and the operator view.
+    """
+    images = {a['label']: a['asset_id'] for a in assets['assets'] if a['kind'] == 'base'}
+    width = arena['bounds']['width_m']
+    height = min(.4, arena['bounds'].get('wall_height_m', .4))
+    panels = []
+    for base in arena['bases']:
+        asset = images.get(base['code'].split('_', 1)[1])
+        if asset is None:
+            continue
+        poly = base['polygon_xy_m']
+        west = sum(p[0] for p in poly) / len(poly) < width / 2
+        y = (min(p[1] for p in poly) + max(p[1] for p in poly)) / 2
+        panels.append({'base_id': base['base_id'], 'asset_id': asset,
+                       'center': [.002 if west else width-.002, y, height/2],
+                       'right': [0, 1 if west else -1, 0], 'up': [0, 0, 1],
+                       'normal': [1 if west else -1, 0, 0],
+                       'width_m': 1.2, 'height_m': height})
+    return panels
+
+
 def arena_floor(arena, scale=256):
     bounds = arena['bounds']
     w, h = bounds['width_m'], bounds['height_m']

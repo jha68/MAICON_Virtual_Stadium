@@ -158,6 +158,15 @@ export class World {
     this.box(w, wall, wh, 0x444b53, w / 2, h + wall / 2, wh / 2);
     this.box(wall, h, wh, 0x444b53, -wall / 2, h / 2, wh / 2);
     this.box(wall, h, wh, 0x444b53, w + wall / 2, h / 2, wh / 2);
+    for (const placement of state.arena.base_panels || []) {
+      const panel = new T.Mesh(new T.PlaneGeometry(placement.width_m, placement.height_m),
+        new T.MeshBasicMaterial({map: this.texture(state.visual_assets[placement.asset_id].url)}));
+      panel.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(
+        new T.Vector3(...placement.right), new T.Vector3(...placement.up), new T.Vector3(...placement.normal)));
+      panel.position.fromArray(placement.center);
+      panel.name = `base/${placement.base_id}`;
+      this.group.add(panel);
+    }
     for (const box of state.boxes) this.buildBox(box, state);
     for (const slot of Object.keys(state.robots)) {
       const color = slot[0] === 'B' ? 0x5089ef : 0xe7616d;

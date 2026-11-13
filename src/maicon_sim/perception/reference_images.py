@@ -22,6 +22,9 @@ class ReferenceImageDetector:
             if path.suffix != '.png':
                 continue
             kind, label = path.stem.split('_', 1)
+            # M5 wall artwork is not an M2 target or an M3 object report.
+            if kind not in ('facility', 'object', 'decoy'):
+                continue
             pixels = cv2.imdecode(np.frombuffer(path.read_bytes(), np.uint8), cv2.IMREAD_GRAYSCALE)
             pixels = cv2.resize(pixels, (256, 256))
             keypoints, descriptors = self.sift.detectAndCompute(pixels, None)

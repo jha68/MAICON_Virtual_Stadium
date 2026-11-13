@@ -1,4 +1,5 @@
 export const assetNames = {
+  COMMAND_POST: '작전지휘소', MAINTENANCE: '정비소', SUPPLY_DEPOT: '군수보급소',
   COMMS: '통신시설', OUTPOST: '감시초소', RADAR: '레이더시설',
   ammo_box: '탄약상자', drum: '위험물 · 드럼통', mortar: '박격포',
   military_truck: '군용차량 · 군용트럭', tank: '전차', missile: '미사일',
@@ -14,6 +15,7 @@ export class ArenaMap {
     this.canvas = canvas;
     this.floor = null;
     this.floorId = null;
+    this.baseImages = new Map();
   }
 
   update(state, selected, trails) {
@@ -27,6 +29,14 @@ export class ArenaMap {
       this.floor = floor;
       floor.onload = () => this.draw();
       floor.src = state.arena.floor_url;
+      this.baseImages.clear();
+      for (const panel of state.arena.base_panels || []) {
+        if (this.baseImages.has(panel.asset_id)) continue;
+        const image = new Image();
+        this.baseImages.set(panel.asset_id, image);
+        image.onload = () => this.draw();
+        image.src = state.visual_assets[panel.asset_id].url;
+      }
     }
     this.draw();
   }
@@ -47,6 +57,16 @@ export class ArenaMap {
     c.fillRect(ox, oy, a.width_m * scale, a.height_m * scale);
     if (this.floor?.complete && this.floor.naturalWidth) {
       c.drawImage(this.floor, ox, oy, a.width_m * scale, a.height_m * scale);
+    }
+    // Overhead symbols for upright M5 wall panels, facing their entry zones.
+    for (const panel of state.arena.base_panels || []) {
+      const image = this.baseImages.get(panel.asset_id);
+      if (!image?.complete || !image.naturalWidth) continue;
+      c.save();
+      c.translate(...P(panel.center[0], panel.center[1]));
+      c.rotate(panel.normal[0] > 0 ? -Math.PI / 2 : Math.PI / 2);
+      c.drawImage(image, -panel.width_m * scale / 2, 0, panel.width_m * scale, .18 * scale);
+      c.restore();
     }
     for (const box of state.boxes) {
       const p = box.pose, sx = box.size_m[0] * scale, sy = box.size_m[1] * scale;
@@ -139,6 +159,7 @@ export function updateCatalog(element, receivers, state) {
   if (catalogSignature !== state.match_id) {
     catalogSignature = state.match_id;
     const counts = new Map();
+    for (const panel of state.arena.base_panels || []) counts.set(panel.asset_id, (counts.get(panel.asset_id) || 0) + 1);
     for (const box of state.boxes) {
       for (const id of new Set(box.faces.map(f => f.asset_id))) counts.set(id, (counts.get(id) || 0) + 1);
     }
@@ -152,7 +173,7 @@ export function updateCatalog(element, receivers, state) {
       const caption = document.createElement('figcaption');
       caption.textContent = img.alt;
       const info = document.createElement('small');
-      info.textContent = `${{facility: '표적 · 수광부', object: '인식 대상', decoy: '비인식 장애물'}[asset.kind] || asset.kind} · ${counts.get(id) || 0}개 박스`;
+      info.textContent = `${{facility: '표적 · 수광부', object: '인식 대상', decoy: '비인식 장애물', base: 'M5 목표거점'}[asset.kind] || asset.kind} · ${counts.get(id) || 0}${asset.kind === 'base' ? '곳' : '개 박스'}`;
       card.append(img, caption, info);
       return card;
     }));

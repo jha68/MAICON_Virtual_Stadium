@@ -80,7 +80,7 @@ class BulletScene:
         w,h=bounds['width_m'],bounds['height_m'];wall_h=bounds.get('wall_height_m',.4);thick=g['wall_thickness_m']
         self._box('floor_solid',[w/2,h/2,.005],[w/2,h/2,-.005],[.78,.79,.78,1],collision=False)
         # Public geometric floor markings; no hidden object or scoring annotation.
-        from maicon_sim.backends.arena_art import arena_floor
+        from maicon_sim.backends.arena_art import arena_floor, base_panels
         floor_image=arena_floor(cfg.arena)
         floor_texture=self._mesh_root/'floor.png';floor_image.save(floor_texture)
         self._quad('floor',[w/2,h/2,.00001],[1,0,0],[0,1,0],w,h,texture=floor_texture)
@@ -89,6 +89,9 @@ class BulletScene:
                               ('south',[w/2,thick/2,wall_h/2],[w/2,-thick/2,wall_h/2]),
                               ('north',[w/2,thick/2,wall_h/2],[w/2,h+thick/2,wall_h/2])]:
             self._box('wall_'+name,half,pos,[.7,.7,.68,1])
+        for panel in base_panels(cfg.arena, cfg.assets):
+            self._quad('base/'+panel['base_id'], panel['center'], panel['right'], panel['up'],
+                       panel['width_m'], panel['height_m'], texture=self.assets.path_for(panel['asset_id']))
         for box in cfg.scenario['boxes']:
             key=box['box_id'];sx,sy,sz=box['size_m'];x,y,yaw=_pose(box['pose'])
             quat=p.getQuaternionFromEuler([0,0,yaw]);origin=np.array([x,y,0.])

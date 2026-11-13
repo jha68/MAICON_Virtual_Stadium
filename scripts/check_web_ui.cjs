@@ -10,7 +10,7 @@ try{
  if(initial.scenario_id!=='reference_stadium'||initial.boxes.length!==20)throw Error('Expected the reference stadium');
  if(await page.locator('#team-policies select').count()!==6)throw Error('Missing individual team policies');
  if(initial.llm_mode!=='mock')throw Error('Expected mock M1');
- await page.waitForFunction(()=>document.querySelectorAll('.asset-card img').length===13&&[...document.querySelectorAll('.asset-card img')].every(i=>i.complete&&i.naturalWidth>0));
+ await page.waitForFunction(()=>document.querySelectorAll('.asset-card img').length===16&&[...document.querySelectorAll('.asset-card img')].every(i=>i.complete&&i.naturalWidth>0));
  if(await page.locator('#receiver-status span').count()!==6)throw Error('Expected six facility receivers');
  await page.waitForFunction(()=>document.querySelector('#camera').naturalWidth===640,null,{timeout:30000});
  await page.screenshot({path:'artifacts/evidence/web-2d.png',fullPage:true});
@@ -49,6 +49,6 @@ try{
  const logout=await context.request.post('http://127.0.0.1:18080/auth/logout',{headers:{'X-Maicon-Operator':'1'}});if(logout.status()!==404)throw Error('Logout API remains');
  await context.clearCookies();await page.goto('http://127.0.0.1:18080/');await page.waitForSelector('#login');await page.fill('#password','test-only-browser-password-0123456789');await page.click('#login button');await page.waitForSelector('#connection.online');
  if(errors.length)throw Error('Browser errors: '+errors.join(';'));
- fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',referenceBoxes:20,pdfTextures:13,facilityReceivers:6,realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,passwordChangeRemoved:true,logoutRemoved:true,samePasswordRelogin:true,browserErrors:errors},null,2));
+ fs.writeFileSync('artifacts/web-browser-evidence.json',JSON.stringify({status:'passed',referenceBoxes:20,pdfTextures:16,basePanels:6,facilityReceivers:6,realRGB:true,threeWebGL:true,sixActualParticipants:true,distances_m:distances,pauseClockFrozen:true,finishedScores:result.scores,nextMatchReset:true,passwordChangeRemoved:true,logoutRemoved:true,samePasswordRelogin:true,browserErrors:errors},null,2));
  console.log('Browser E2E passed: real RGB, WebGL, six processes, movement, pause/resume, finish/result, reset.');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

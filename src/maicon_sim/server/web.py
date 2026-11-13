@@ -164,6 +164,8 @@ def create_dashboard(manager, password):
         snap['scenario_hash'] = config.hashes['scenario_hash']
         snap['arena'] = {key: deepcopy(config.arena[key]) for key in ('arena_id', 'bounds', 'sectors', 'bases')}
         snap['arena']['floor_url'] = '/api/arena-floor.png'
+        from maicon_sim.backends.arena_art import base_panels
+        snap['arena']['base_panels'] = base_panels(config.arena, config.assets)
         snap['scenario_id'] = config.scenario['scenario_id']
         snap['visual_assets'] = {a['asset_id']: {'kind': a['kind'], 'label': a['label'],
                                                'url': '/api/textures/' + a['asset_id'] + '.png'}
