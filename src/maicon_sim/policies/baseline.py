@@ -63,6 +63,8 @@ class ParticipantPolicy:
         from .combat import CombatPolicy
         from .threat import ThreatEstimator
         from .observations import ObservationHistory, GimbalHistory, SurfaceMapper
+        from .tactics import TacticalNavigator
+        self.tactics = TacticalNavigator(self.camp)
         self.combat = CombatPolicy(slot, public_map)
         self.threat = ThreatEstimator(self.camp)
         self.history, self.gimbal_history = ObservationHistory(), GimbalHistory(acceleration_gain=calibration.get('actuation', {}).get('gimbal_acc_deg_s2_per_unit', 0.))
@@ -170,11 +172,11 @@ class ParticipantPolicy:
         self.gimbal_history.cancel(tick)
         self.combat.cancel(tick)
 
-    def _navigate(self, pose, tick, goal, target_active):
+    def _navigate(self, pose, tick, goal, target_active, hazards=None):
         if goal is None:
             return 0., 0.
         start, endpoint = self.grid.cell(*pose[:2]), self.grid.cell(*goal)
-        forbidden = set()
+        forbidden = set(hazards or ())
         if target_active:
             # After objective publication avoid self-capture of the opposite goal.
             for base in self.public_map.get("bases", []):
@@ -185,7 +187,7 @@ class ParticipantPolicy:
                     forbidden.update((x, y) for x in range(a[0], b[0] + 1) for y in range(a[1], b[1] + 1))
             # A robot initially inside its own strip must be allowed to leave it.
             forbidden.discard(start)
-        if goal != self.goal or tick - self.last_plan_tick >= 50 or not self.path:
+        if goal != self.goal or tick - self.last_plan_tick >= 50 or not self.path or any(c in forbidden for c in self.path):
             self.path = self.grid.astar(start, endpoint, forbidden)
             self.goal, self.last_plan_tick = goal, tick
         while self.path and math.dist(pose[:2], self.grid.center(self.path[0])) < .08:
@@ -293,7 +295,17 @@ class ParticipantPolicy:
                 self.goal = self.grid.frontier(pose, sectors)
                 self.last_frontier_tick = tick
             goal = self.goal
-        velocity = self._navigate(pose, tick, goal, bool(objective))
+        hazards, opponents = set(), []
+        if self.policy == 'baseline':
+            frame = drone.get('visual') or {}
+            captured = frame.get('captured_tick')
+            own_at_capture = self.history.pose_at(captured, self.start) if type(captured) is int else None
+            own_at_capture = self.surface_mapper.localizer.apply(own_at_capture) if own_at_capture else None
+            hazards, opponents, nav_tick = self.tactics.navigation(drone, tick, own_at_capture, self.grid)
+            diagnostics['navigation'] = {'source': 'lidar_and_public_drone' if nav_tick is not None else 'lidar',
+                                         'drone_capture_tick': nav_tick, 'hazard_cells': len(hazards),
+                                         'anonymous_opponents': len(opponents)}
+        velocity = self._navigate(pose, tick, goal, bool(objective), hazards)
         # Immediate front clearance check is independent of slow A*/inference.
         ranges = scan.get("ranges_m", [])
         if velocity[0] > 0 and ranges:
@@ -331,4 +343,20 @@ class ParticipantPolicy:
             elif action.gimbal is not None:
                 gimbal = action.gimbal
             fire = action.fire
+            if action.state in ('search', 'stale') and tick-self.last_gimbal_tick >= 100:
+                cue = self.tactics.cue_gimbal(pose, opponents)
+                if cue is not None:
+                    gimbal = cue
+                    self.last_gimbal_tick = tick
+                    diagnostics['drone_search_cue'] = True
+            escape = self.tactics.evade(pose, observations, semantic, tick, self.grid, hazards, opponents)
+            if escape is not None:
+                # Cancel an undispatched fire intent before suppressing it. Keep
+                # sent/unknown-shot accounting intact; never retry a lost ACK.
+                if fire:
+                    self.combat.discard_unsent_fire(tick)
+                self.combat.cancel(tick)
+                velocity, fire = escape, False
+                self.path = []
+                diagnostics['evasion'] = 'observed_threat_retreat' if escape[0] else 'observed_threat_blocked'
         return PolicyDecision(velocity, gimbal, reports, diagnostics, fire)

@@ -10,9 +10,11 @@ SCRIPT = Path(__file__).resolve().parents[2] / 'deploy/oracle/deploy.sh'
 IMAGE = 'ghcr.io/jha68/maicon_virtual_stadium@sha256:' + 'a' * 64
 
 
-@pytest.mark.parametrize('failure', ['', 'pull', 'run', 'health', 'rename', 'permissions'])
+@pytest.mark.parametrize('failure', ['', 'pull', 'run', 'health', 'rename', 'permissions', 'phase_ready', 'phase_running', 'phase_reporting', 'phase_unknown', 'phase_unavailable'])
 @pytest.mark.parametrize('domain', ['', 'maicon.example.com'])
 def test_deploy_success_or_restores_previous_container(tmp_path, failure, domain):
+    if failure.startswith('phase_') and not domain:
+        pytest.skip('The production operator state guard requires the web deployment')
     bin_dir = tmp_path / 'bin'
     bin_dir.mkdir()
     state_path = tmp_path / 'docker.json'
@@ -40,6 +42,9 @@ elif a[0]=='run':
  if '--rm' in a: sys.exit(1 if fail=='permissions' else 0)
  if fail=='run': sys.exit(1)
  s['maicon-sim']='new-running';save()
+elif a[0]=='exec' and '/api/state' in a[-1] and 'print(json.load' in a[-1]:
+ if fail=='phase_unavailable': sys.exit(1)
+ print(fail[6:] if fail.startswith('phase_') else 'finished')
 elif a[0]=='logs': pass
 ''')
     docker.chmod(0o755)

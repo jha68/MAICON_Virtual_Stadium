@@ -26,6 +26,22 @@ fi
 docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
     --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
     -c 'import maicon_sim.config.loader; import pathlib,tempfile; d=tempfile.TemporaryDirectory(dir="/data/runs"); pathlib.Path(d.name,"probe").write_text("ok"); d.cleanup()'
+verify_idle_match() {
+    if [[ -z "$web_domain" ]] || ! docker container inspect maicon-sim >/dev/null 2>&1; then
+        return 0
+    fi
+    # Check the fallback itself, not the domain (which may be serving Codex).
+    # Failed authentication/unknown state must never be interpreted as idle.
+    phase=$(docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib,json; p=pathlib.Path("/data/web.password").read_text().strip(); h={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}; r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers=h); print(json.load(urllib.request.urlopen(r,timeout=5))["phase"])') || {
+        echo 'Cannot verify existing match state; deployment deferred.' >&2
+        exit 4
+    }
+    if [[ "$phase" != waiting && "$phase" != finished ]]; then
+        echo 'Existing match is active or unknown; deployment deferred without stopping it.' >&2
+        exit 4
+    fi
+}
+verify_idle_match
 web_args=()
 participant_env=()
 if [[ -f "$data_dir/participant.env" ]]; then
@@ -50,6 +66,7 @@ if [[ -n "$web_domain" ]]; then
 fi
 old=false
 if docker container inspect maicon-sim >/dev/null 2>&1; then
+    verify_idle_match # Image/proxy preparation can take time; check again before stopping.
     docker rm -f maicon-sim-previous >/dev/null 2>&1 || true
     docker stop --time 45 maicon-sim >/dev/null
     if ! docker rename maicon-sim maicon-sim-previous; then

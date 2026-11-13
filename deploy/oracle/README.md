@@ -45,7 +45,7 @@ awk '{print "144.24.89.248 " $1 " " $2}' /etc/ssh/ssh_host_ecdsa_key.pub
 
 main push → simulator-validation 성공 → oracle-arm64-deploy → ARM64 이미지 GHCR push → digest로 pull → 새 컨테이너 상태 검사. 수동 실행은 Actions → oracle-arm64-deploy → Run workflow. Secrets 미설정 시 빌드 전에 명확히 실패한다. GitHub Actions/GHCR 사용량은 계정 요금제의 무료 한도에 따른다.
 
-GHCR가 비공개여도 workflow의 일회성 GITHUB_TOKEN으로 VM에서 pull하고 종료 시 logout한다. 패키지에 저장소의 Actions 접근 권한이 있어야 한다. VM에 장기 PAT를 저장하지 않는다. 배포 중에는 기존 컨테이너를 정지하므로 짧은 중단이 있으며 경기 중 자동 배포는 경기를 중단한다. 실제 경기 운영 시에는 main 병합을 세팅 시간에 하거나 배포 workflow를 수동 실행하도록 운영한다.
+GHCR가 비공개여도 workflow의 일회성 GITHUB_TOKEN으로 VM에서 pull하고 종료 시 logout한다. 패키지에 저장소의 Actions 접근 권한이 있어야 한다. VM에 장기 PAT를 저장하지 않는다. 운영 웹 배포는 기존 Oracle 앱 자체의 상태를 인증해 확인하고 waiting/finished에서만 컨테이너를 교체한다. ready/running/reporting 또는 상태 확인 실패이면 기존 컨테이너를 정지하지 않고 배포를 보류한다. 대기/종료 상태에서 교체할 때 짧은 중단이 있으며, main 병합이나 수동 workflow 실행은 세팅 시간에 한다.
 
 산출물은 `~/maicon-data/runs/`에 보존한다. 웹 경기별 최종 결과는 해당 서버 run의 `private/results/`에 저장한다. 실패하면 이전 컨테이너를 복구한다. 직전 이미지와 실행 기록을 자동 삭제하지 않으므로 디스크 사용량을 관찰한다. 배포는 API readiness 검사이며 6대 주행/3D 실시간 성능 시험을 대신하지 않는다.
 
