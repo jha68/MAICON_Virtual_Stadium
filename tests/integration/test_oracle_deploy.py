@@ -80,3 +80,34 @@ def test_deploy_rejects_mutable_image_tag():
     result = subprocess.run(['bash', str(SCRIPT), 'ghcr.io/example/sim:latest'], capture_output=True, text=True)
     assert result.returncode == 2
     assert 'immutable' in result.stderr
+
+
+@pytest.mark.parametrize('change', ['none', 'legacy_images', 'missing_panels', 'wrong_revision'])
+def test_deployed_image_health_accepts_latest_m5_map_and_rejects_stale_builds(monkeypatch, capsys, change):
+    import io
+    import urllib.request
+    source = SCRIPT.read_text().split("<<'PYHEALTH'\n", 1)[1].split('\nPYHEALTH', 1)[0]
+    state = {'scenario_id': 'reference_stadium', 'boxes': [None]*20,
+             'facility_signals': {str(i): 'idle' for i in range(6)},
+             'visual_assets': {str(i): {} for i in range(16)},
+             'arena': {'base_panels': [None]*6}, 'llm_mode': 'mock', 'build_revision': 'a'*40}
+    if change == 'legacy_images':
+        state['visual_assets'] = {str(i): {} for i in range(13)}
+    elif change == 'missing_panels':
+        state['arena']['base_panels'] = []
+    elif change == 'wrong_revision':
+        state['build_revision'] = 'b'*40
+    def response(request, timeout):
+        return io.BytesIO(json.dumps(state).encode() if request.full_url.endswith('/api/state') else b'<html></html>')
+    with monkeypatch.context() as patch:
+        patch.setenv('MAICON_BUILD_REVISION', 'a'*40)
+        patch.setattr(Path, 'read_text', lambda *args, **kwargs: 'test-only-health-password')
+        patch.setattr(urllib.request, 'urlopen', response)
+        if change == 'none':
+            exec(compile(source, str(SCRIPT), 'exec'), {})
+        else:
+            with pytest.raises(AssertionError):
+                exec(compile(source, str(SCRIPT), 'exec'), {})
+    if change == 'none':
+        evidence = json.loads(capsys.readouterr().out)
+        assert evidence['images'] == 16 and evidence['base_panels'] == 6

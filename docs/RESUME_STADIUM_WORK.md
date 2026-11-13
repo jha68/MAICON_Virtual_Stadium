@@ -134,3 +134,17 @@ NODE_PATH=/workspace/maicon-browser/node_modules CHROMIUM_BIN=/usr/bin/chromium 
 기능 커밋 `abf21eb`의 최종 CI43375325714는 전체 회귀·wheel·데스크톱·6개 baseline 드론 연결까지 성공했고, Codex 공개 앱도 이 revision으로 전환해 실제 맵/6대 RGB를 재검증했다. 전환 전 finished 상태를 다시 확인했고 운영 결과2개를 해시로 보존했다. main은 병합하지 않았다. Oracle 갱신은 feature ref의 수동 workflow를 사용한다.
 
 Oracle ARM64 빌드 중 Dockerfile의 revision ARG/ENV/LABEL이 의존성 설치보다 앞에 있어 커밋마다 의존성 캐시를 무효화하는 구조를 확인했다. 메타데이터 설정을 모든 빌드 RUN 뒤로 옮겼다. 런타임 ENV와 OCI revision label은 유지한다. 이 변경은 앱 동작 변경이 아니며, 공개 앱의 현재 revision과 ARM64 배포 workflow의 실제 성공 상태는 각각 확인한다. 진행 중인 경기는 재시작하지 않는다.
+
+
+## 최신 기능 main/Oracle 통합 (2026-11-13)
+
+사용자가 다른 세션의 최신 기능까지 main과 Oracle에 모두 반영하도록 요청했다.
+원격 feature의 f0e65f9까지 보존하며 통합한다. 공개 Codex e7a8081과 이 feature의 앱 코드는 같고,
+이후 추가분은 암호화 bootstrap/배포 증거/인수인계다. 활성 중계 세션을 다시 설치하거나
+이 채팅의 오래된 자격 증명을 덮어쓰지 않는다. 새 Codex 연결과 기존 비밀번호를 유지한다.
+
+Oracle 배포 검사를 최신 구성인 박스20·시설 수광부6·이미지16·M5 패널6으로 갱신했다.
+기존 13종 검사는 최신 이미지의 정상 배포를 거부할 수 있으므로, 실제 배포용 Python 검사를
+실행하는 회귀 시험으로 정상16종, 구형13종, 패널 누락, 잘못된 build revision을 검증한다.
+main CI 성공 후 기존 immutable image/rollback 절차로 Oracle만 갱신하며 진행 중 경기 보호는 유지한다.
+공개 Codex의 빌드 표시는 e7a8081로 남을 수 있으나 앱 소스의 동일성을 Git tree로 확인한다.

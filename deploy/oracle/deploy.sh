@@ -109,13 +109,14 @@ def get(path):
     return urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8080'+path, headers=headers), timeout=5)
 state = json.load(get('/api/state'))
 assert state['scenario_id'] == 'reference_stadium'
-assert len(state['boxes']) == 20 and len(state['facility_signals']) == 6 and len(state['visual_assets']) == 13
+assert len(state['boxes']) == 20 and len(state['facility_signals']) == 6 and len(state['visual_assets']) == 16
+assert len(state['arena']['base_panels']) == 6
 assert state['llm_mode'] == 'mock'
 assert state['build_revision'] == os.environ['MAICON_BUILD_REVISION'] and len(state['build_revision']) == 40
 page = get('/').read().decode()
 assert not any(marker in page for marker in ('id="change-password"', 'id="password-form"', 'id="logout"'))
 print(json.dumps({key: state[key] for key in ('scenario_id', 'build_revision', 'llm_mode')} |
-                 {'boxes': 20, 'receivers': 6, 'images': 13}))
+                 {'boxes': 20, 'receivers': 6, 'images': 16, 'base_panels': 6}))
 PYHEALTH
             ); then
                 sleep "$health_interval"
