@@ -44,8 +44,8 @@ class DroneObserver:
         if bgr is None or bgr.shape[0]*bgr.shape[1] > 4096*4096:
             raise ValueError('invalid drone JPEG')
         # Front-camera range and LED layout are not valid overhead. The built-in
-        # model transfers identity only; an overhead-specific model may supply
-        # calibrated LED evidence. Never infer invisible bands/LEDs from truth.
+        # model extracts anonymous navigation hazards; a custom overhead model
+        # may supply observed identity/LED evidence. Never infer these from truth.
         detections, obstacles, robots = [], [], []
         dimensions_match = self.projection is not None and bgr.shape[:2] == (self.projection.height, self.projection.width)
         for item in self.detector.detect(bgr) if self.detector else []:

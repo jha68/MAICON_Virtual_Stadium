@@ -101,7 +101,23 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
         'http://127.0.0.1:8000/sim/session?mission_code=SIMB0001' \
         | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["capabilities"]["rgb"] and d["slot"]=="B-1"' 2>/dev/null; then
         if [[ -n "$web_domain" ]]; then
-            if ! docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib; p=pathlib.Path("/data/web.password").read_text().strip(); h={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}; r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers=h); assert urllib.request.urlopen(r,timeout=5).status==200; page=urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8080/",headers=h),timeout=5).read().decode(); assert not any(marker in page for marker in ("id=\"change-password\"","id=\"password-form\"","id=\"logout\""))'; then
+            if ! web_health=$(docker exec -i maicon-sim /app/.venv/bin/python - <<'PYHEALTH'
+import base64, json, os, pathlib, urllib.request
+password = pathlib.Path('/data/web.password').read_text().strip()
+headers = {'Authorization': 'Basic '+base64.b64encode(('admin:'+password).encode()).decode()}
+def get(path):
+    return urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8080'+path, headers=headers), timeout=5)
+state = json.load(get('/api/state'))
+assert state['scenario_id'] == 'reference_stadium'
+assert len(state['boxes']) == 20 and len(state['facility_signals']) == 6 and len(state['visual_assets']) == 13
+assert state['llm_mode'] == 'mock'
+assert state['build_revision'] == os.environ['MAICON_BUILD_REVISION'] and len(state['build_revision']) == 40
+page = get('/').read().decode()
+assert not any(marker in page for marker in ('id="change-password"', 'id="password-form"', 'id="logout"'))
+print(json.dumps({key: state[key] for key in ('scenario_id', 'build_revision', 'llm_mode')} |
+                 {'boxes': 20, 'receivers': 6, 'images': 13}))
+PYHEALTH
+            ); then
                 sleep "$health_interval"
                 continue
             fi
@@ -115,7 +131,9 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
                     --mount type=volume,src=maicon-caddy-config,dst=/config caddy:2.10.2 >/dev/null
             fi
             echo "Operator URL: https://$web_domain (TLS issuance requires DNS and inbound TCP 80/443)."
-            echo 'Password-only login. Read the password only on the VM: cat ~/maicon-data/web.password'
+            printf '%s\n' "$web_health" > "$data_dir/deployed-health.json"
+            printf '%s\n' "$web_health"
+            echo 'Password-only login. Existing password file preserved.'
         fi
         trap - ERR
         printf '%s\n' "$image" > "$data_dir/deployed-image.txt"
