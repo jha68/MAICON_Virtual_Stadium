@@ -72,7 +72,7 @@ jobs:
             echo '::error::Disposable six-team desktop operator workflow failed'
             exit 1
           fi
-          if ! .venv/bin/python scripts/check_baseline_drone.py --password-file "$RUNNER_TEMP/maicon-web-password"; then
+          if ! .venv/bin/python scripts/check_baseline_drone.py --password-file "$RUNNER_TEMP/maicon-web-password" --episodes-dir artifacts/web-ci-server/episodes; then
             echo '::error::Disposable six-baseline fresh drone integration failed'
             exit 1
           fi
