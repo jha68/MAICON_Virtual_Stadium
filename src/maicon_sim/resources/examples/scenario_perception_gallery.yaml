@@ -13,7 +13,7 @@ noise_profile: ideal
 agents:
 - slot: B-1
   mission_code: SIMB0001
-  policy: idle
+  policy: mission
   start_pose:
     x_m: 2.5
     y_m: 4.2
@@ -22,7 +22,7 @@ agents:
   jitter_yaw_rad: 0.0
 - slot: B-2
   mission_code: SIMB0002
-  policy: idle
+  policy: mission
   start_pose:
     x_m: 0.4
     y_m: 2.5
@@ -31,7 +31,7 @@ agents:
   jitter_yaw_rad: 0.0
 - slot: B-3
   mission_code: SIMB0003
-  policy: idle
+  policy: mission
   start_pose:
     x_m: 0.4
     y_m: 0.8
@@ -40,7 +40,7 @@ agents:
   jitter_yaw_rad: 0.0
 - slot: R-1
   mission_code: SIMR0001
-  policy: idle
+  policy: mission
   start_pose:
     x_m: 5.72
     y_m: 4.2
@@ -49,7 +49,7 @@ agents:
   jitter_yaw_rad: 0.0
 - slot: R-2
   mission_code: SIMR0002
-  policy: idle
+  policy: mission
   start_pose:
     x_m: 5.72
     y_m: 2.5
@@ -58,7 +58,7 @@ agents:
   jitter_yaw_rad: 0.0
 - slot: R-3
   mission_code: SIMR0003
-  policy: idle
+  policy: mission
   start_pose:
     x_m: 5.72
     y_m: 0.8

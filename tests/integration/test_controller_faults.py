@@ -41,7 +41,7 @@ class DelayedLLM:
 
 
 class ControllerHarness:
-    def __init__(self, *, policy="baseline", llm=None, llm_timeout_s=6., output=None):
+    def __init__(self, *, policy="mission", llm=None, llm_timeout_s=6., output=None):
         self.config = load_scenario(Path(__file__).resolve().parents[2] / "examples/scenario_smoke_six.yaml")
         self.engine = MatchEngine(self.config)
         self.gateway = SensorGateway(self.config)
@@ -102,7 +102,7 @@ class PublicControllerFixturePort:
     async def ready(self):
         return {"accepted": True}
     async def await_order(self, wait_s=120):
-        return {"accepted": True, "order": {"tactical_command": "상대 레이더시설을 타격하고 첫째 탐색구역과 중앙을 정찰하며 상대 군수보급소를 후속 거점으로 설정하라."}}
+        return {"accepted": True, "order": {"target": "RED_RADAR", "search_sectors": ["CM"], "base": "RED_SUPPLY_DEPOT", "tactical_command": "상대 레이더시설을 타격하고 첫째 탐색구역과 중앙을 정찰하며 상대 군수보급소를 후속 거점으로 설정하라."}}
     async def await_target(self, wait_s=120):
         self.target_waiters += 1
         try:
@@ -137,39 +137,23 @@ class PublicControllerFixturePort:
         pass
 
 
-@pytest.mark.parametrize("outcome,timeout_s", [("valid", 6.), ("invalid", 6.), ("timeout", 5.)])
-def test_E2E_008_009_actual_llm_delay_invalid_timeout_and_longpoll_preserve_control(outcome, timeout_s, tmp_path):
+def test_E2E_008_009_direct_orders_never_call_llm_and_longpoll_preserves_control(tmp_path):
     async def run():
-        llm = DelayedLLM(6. if outcome == "timeout" else 5., outcome)
+        llm = DelayedLLM()
         port = PublicControllerFixturePort()
-        controller = TeamController(port, "B-1", llm=llm, llm_timeout_s=timeout_s, output=tmp_path)
+        controller = TeamController(port, "B-1", llm=llm, output=tmp_path)
         await controller.initialize()
         controller.start()
         try:
-            # The actual LLMPort call waits five wall seconds while target wait120
-            # remains pending. This measures controller concurrency in isolation.
-            start = time.monotonic()
-            while not llm.finished.is_set() and time.monotonic() - start < 7.:
-                await asyncio.sleep(.05)
-            await asyncio.sleep(.3)
-            assert llm.parse_calls == 1
-            assert time.monotonic() - start >= 5.
-            assert len(controller.control_times) >= 40
-            gaps = [b - a for a, b in zip(controller.control_times, controller.control_times[1:])]
-            assert max(gaps, default=0.) < .5
+            await asyncio.sleep(1.)
+            assert llm.parse_calls == 0
+            assert controller.llm_calls == controller.llm_completed == 0
+            assert len(controller.control_times) >= 5
+            assert max(b-a for a, b in zip(controller.control_times, controller.control_times[1:])) < .5
             assert port.target_waiters == 1
             assert not controller.done.is_set()
-            if outcome == "valid":
-                for _ in range(20):
-                    if port.reports.get("m1") is not None:
-                        break
-                    await asyncio.sleep(.05)
-                assert port.reports["m1"]["target"] == "RED_RADAR"
-                assert controller.llm_completed == 1
-            else:
-                assert any(e["source"] == "llm_interpretation" for e in controller.errors)
-                assert port.reports.get("m1") is None
-                assert controller.llm_completed == 0
+            assert port.reports.get("m1") is None
+            assert "m1" not in controller.report_workers
         finally:
             await controller.close()
         assert port.target_waiters == 0
@@ -258,7 +242,7 @@ def test_E2E_007_reset_reused_code_new_camp_clears_policy_evidence(tmp_path):
             assert not h.controller.policy.sent_m6
             assert h.controller.order == {} and h.controller.target == {}
             assert h.controller.policy.start == pytest.approx((5.72, .8, math.pi))
-            assert h.controller.report_workers["m1"].latest is None
+            assert "m1" not in h.controller.report_workers
         finally:
             await h.close()
     asyncio.run(run())
@@ -411,7 +395,7 @@ def test_ready_missing_required_sensor_times_out_without_POST_ready():
             return {'accepted': True}
     async def run():
         port = MissingScanPort()
-        controller = TeamController(port, 'B-1', 'idle', required_sensor_timeout_s=.1)
+        controller = TeamController(port, 'B-1', 'mission', required_sensor_timeout_s=.1)
         try:
             with pytest.raises(RuntimeError, match='required participant sensor frames unavailable: scan'):
                 await controller.initialize()

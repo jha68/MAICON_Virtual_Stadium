@@ -85,11 +85,7 @@
           },
           "policy": {
             "enum": [
-              "idle",
-              "baseline",
-              "patrol",
-              "blocker",
-              "capture_runner"
+              "mission"
             ]
           },
           "start_pose": {

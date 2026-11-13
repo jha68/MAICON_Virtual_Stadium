@@ -206,7 +206,8 @@ def test_E2E_010_real_HTTP_composite_stale_drone_pause_process_restart_and_core_
         assert public.state.service.waiters.active == 0
         assert len(engine.journal) < 20000
         runtime.close()
-        assert engine.scores['B-1']['total'] == 24
+        final_score = deepcopy(engine.scores['B-1'])
+        assert final_score['m1'] == 4 and final_score['m6'] == 15
         assert all(engine.scores[s]['total'] == 0 for s in engine.robots if s != 'B-1')
         metrics = {'wall_s': time.monotonic() - started, 'ticks_skipped': 0, 'composite': evidence}
         result = make_result(engine, config, 'combined-fixture', '2d', 'realtime', metrics['wall_s'], gateway)
@@ -225,7 +226,7 @@ def test_E2E_010_real_HTTP_composite_stale_drone_pause_process_restart_and_core_
         effects = read_events(replayed)
         assert sum(e['kind'] == 'paused' for e in effects) == 1
         assert sum(e['kind'] == 'resumed' for e in effects) == 1
-        assert json.loads((replayed / 'result.json').read_text())['scores']['B-1']['total'] == 24
+        assert json.loads((replayed / 'result.json').read_text())['scores']['B-1'] == final_score
     finally:
         children.close()
         servers.close()

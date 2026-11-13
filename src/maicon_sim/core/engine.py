@@ -225,7 +225,7 @@ class MatchEngine:
             if self.phase in {'running', 'reporting', 'finished'} and not robot.admitted:
                 return {'accepted': False, 'reason': '이 경기에 편성되지 않은 팀입니다'}
             if kind == 'order' and self.order_published:
-                return {'accepted': True, 'order': {'tactical_command': self.orders[slot]['tactical_command'], 'issued_at': self.order_issued_at}}
+                return {'accepted': True, 'order': {**deepcopy(self.orders[slot]['expected_m1']), 'tactical_command': self.orders[slot]['tactical_command'], 'issued_at': self.order_issued_at}}
             if kind == 'target' and self.target_published:
                 objective = self.config.scenario['objectives_by_camp'][robot.camp]
                 labels = {'COMMAND_POST': '작전지휘소', 'MAINTENANCE': '정비소', 'SUPPLY_DEPOT': '군수보급소'}

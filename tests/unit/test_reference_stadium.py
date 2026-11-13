@@ -105,7 +105,7 @@ def aim_at_facility(engine, code):
     return robot
 
 
-def test_patrol_can_leave_all_six_reference_starts(reference):
+def test_mission_can_leave_all_six_reference_starts(reference):
     """Real LiDAR wall samples must not inflate over a nominal start cell."""
     from maicon_sim.core.geometry3d import canonical_solids
     from maicon_sim.policies.baseline import ParticipantPolicy
@@ -114,10 +114,10 @@ def test_patrol_can_leave_all_six_reference_starts(reference):
     solids = canonical_solids(engine.robots, engine.boxes, reference.arena['bounds'], reference.sensors['geometry'])
     for slot, robot in engine.robots.items():
         observation = scan(engine.robots, solids, slot, reference.sensors['lidar'], {}, np.random.default_rng(0))
-        policy = ParticipantPolicy(reference.public_map_prior(), {}, slot, 'patrol')
+        policy = ParticipantPolicy(reference.public_map_prior(), {}, slot, 'mission')
         pose = (robot.pose.x_m, robot.pose.y_m, robot.pose.yaw_rad)
         policy.grid.update_scan(pose, observation)
-        goal = policy.waypoints.goal(pose, 0, None)
+        goal = policy.survey.goal(pose, 0, policy.grid)
         assert policy._navigate(pose, 0, goal, False) != (0., 0.), slot
 
 

@@ -118,7 +118,7 @@ def test_full_participant_policy_and_dispatcher_destroy_facility_from_public_rgb
     engine.request("start")
     # The policy receives only public arena geometry and its own nominal start.
     public_map = {k: deepcopy(config.arena[k]) for k in ("bounds", "sectors", "bases", "nominal_starts")}
-    policy = ParticipantPolicy(public_map, calibration(config), "B-1", "baseline")
+    policy = ParticipantPolicy(public_map, calibration(config), "B-1", "mission")
     policy.m1_interpretation = {"target": "RED_RADAR"}
     decisions = []
     with BulletBackend(config) as backend:

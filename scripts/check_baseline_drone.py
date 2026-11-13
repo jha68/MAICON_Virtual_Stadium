@@ -58,12 +58,12 @@ def check(base, password_file, episodes_dir=None):
 
         def command(action):
             response = client.post('/api/command', json={
-                'action': action, 'policy': 'baseline', 'policies': {s: 'baseline' for s in SLOTS}})
+                'action': action})
             response.raise_for_status()
 
         initial = state()
         assert initial['phase'] == 'waiting' and initial['scenario_id'] == 'reference_stadium'
-        assert initial['llm_mode'] == 'mock'
+        assert initial['m1_mode'] == 'direct_order' and initial['m6_mode'] == 'mock'
         command('ready')
         deadline = time.monotonic()+90
         while not all(r['ready'] for r in state()['robots'].values()):
@@ -93,9 +93,9 @@ def check(base, password_file, episodes_dir=None):
             if time.monotonic() > deadline:
                 raise RuntimeError('Local final reports did not finish')
             time.sleep(.5)
-        evidence = {'status': 'passed', 'participants': statuses, 'manual_interventions': 0, 'llm_mode': 'mock'}
+        evidence = {'status': 'passed', 'participants': statuses, 'manual_interventions': 0, 'm1_mode': 'direct_order', 'm6_mode': 'mock'}
         Path('artifacts/six-baseline-drone-evidence.json').write_text(json.dumps(evidence, indent=2))
-        print('Six real baseline processes used calibrated public drone navigation; M1 mock, local match finished.')
+        print('Six real mission processes used public drone navigation; M1 direct orders, M6 mock, local match finished.')
 
 
 if __name__ == '__main__':

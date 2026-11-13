@@ -45,7 +45,9 @@ def test_ISO_001_participant_dtos_have_no_truth_fields():
             assert set(g.get(slot,'state'))=={'hp','hp_max','battery_pct','sequence','captured_tick','received_tick'}
             semantic=g.get(slot,'semantic')
             assert all('sector' not in d and 'world' not in d for d in semantic['detections'])
-            assert set(e.request('order',slot)['order'])=={'tactical_command','issued_at'}
+            order=e.request('order',slot)['order']
+            assert set(order)=={'target','search_sectors','base','tactical_command','issued_at'}
+            assert not forbidden_keys(order)
         with pytest.raises(SensorUnavailable) as err:g.get('B-1','camera')
         assert err.value.status==503
     finally:g.close()

@@ -1359,9 +1359,9 @@
       "id": "E2E-008",
       "source": "base",
       "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
-      "requirement": "LLM 5초 지연·timeout·잘못된 JSON | 제어 루프 유지, 오류 기록. 규칙 기반 대체는 허용 profile에서만 실행",
+      "requirement": "구조화 명령 직접 수신·M6 mock, 지연 LLM 어댑터가 주입되어도 호출 없음 | LLM 호출·M1 제출 0회, 제어 루프 유지. 외부 어댑터 자체의 timeout·JSON 검사는 SDK 계약 시험에서 수행",
       "tests": [
-        "tests/integration/test_controller_faults.py::test_E2E_008_009_actual_llm_delay_invalid_timeout_and_longpoll_preserve_control*",
+        "tests/integration/test_controller_faults.py::test_E2E_008_009_direct_orders_never_call_llm_and_longpoll_preserves_control*",
         "tests/unit/test_policies.py::test_E2E_008_slow_policy_does_not_block_heartbeat_or_step*"
       ],
       "coverage": "mapped"
@@ -1372,7 +1372,7 @@
       "document": "docs/implementation_plan/docs/07_TESTS_AND_ACCEPTANCE.md",
       "requirement": "두 개의 wait120과 camera 추론 병행 | 명시적인 pause를 제외하고 주행 명령 공백이 0.5초를 넘지 않음",
       "tests": [
-        "tests/integration/test_controller_faults.py::test_E2E_008_009_actual_llm_delay_invalid_timeout_and_longpoll_preserve_control*"
+        "tests/integration/test_controller_faults.py::test_E2E_008_009_direct_orders_never_call_llm_and_longpoll_preserves_control*"
       ],
       "coverage": "mapped"
     },

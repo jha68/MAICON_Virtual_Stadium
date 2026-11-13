@@ -125,37 +125,23 @@ def test_text_stub_reads_only_natural_command_not_hidden_m1():
     assert fixture_interpret_order("알 수 없는 명령", "B-1") == {}
 
 
-def test_idle_sends_no_mission_reports_even_reporting():
-    policy = ParticipantPolicy(prior(), {}, "B-1", "idle")
-    assert policy.compute({}, {"phase": "reporting"}).reports == {}
-
-
-@pytest.mark.parametrize('name', ['patrol', 'blocker', 'capture_runner'])
-def test_scripted_navigation_does_not_run_rgb_inference(name, monkeypatch):
-    def unexpected_detector(*args, **kwargs):
-        raise AssertionError('A waypoint policy does not need image inference')
-    monkeypatch.setattr('maicon_sim.perception.combat.CombatVisionDetector', unexpected_detector)
-    observations = {'odom': {'sequence': 1, 'captured_tick': 100,
-                             'local_pose': {'x_m': 0., 'y_m': 0., 'yaw_rad': 0.}},
-                    'match': {'cmd': 'start'}}
-    expected = ParticipantPolicy(prior(), {}, 'B-1', name).compute(observations, {'phase': 'running'})
-    with_rgb = {**observations, 'rgb': {'sequence': 1, 'data': np.zeros((480, 640, 3), dtype=np.uint8)}}
-    actual = ParticipantPolicy(prior(), {}, 'B-1', name).compute(with_rgb, {'phase': 'running'})
-    assert actual.velocity == expected.velocity
-    assert actual.reports == expected.reports
-    assert not actual.fire
+@pytest.mark.parametrize('name', ['idle', 'baseline', 'patrol', 'blocker', 'capture_runner'])
+def test_removed_modes_are_rejected(name):
+    with pytest.raises(ValueError, match="unknown participant policy"):
+        ParticipantPolicy(prior(), {}, "B-1", name)
 
 
 def test_baseline_uses_actual_m5_and_fallback_m6_not_m1_base():
     policy = ParticipantPolicy(prior(), {}, "B-1")
     obs = {"odom": {"sequence": 1, "captured_tick": 100, "local_pose": {"x_m": 0., "y_m": 0., "yaw_rad": 0.}}, "match": {"cmd": "start"}}
-    decision = policy.compute(obs, {"phase": "running"}, {"accepted": True, "order": {"tactical_command": "상대 레이더시설과 군수보급소"}}, {"accepted": True, "order": {"objective": "RED_MAINTENANCE"}})
+    decision = policy.compute(obs, {"phase": "running"}, {"accepted": True, "order": {"target": "RED_RADAR", "search_sectors": ["R-S1"], "base": "RED_SUPPLY_DEPOT"}}, {"accepted": True, "order": {"objective": "RED_MAINTENANCE"}})
     assert policy.target_objective == "RED_MAINTENANCE"
-    assert decision.reports["m1"]["base"] == "RED_SUPPLY_DEPOT"
+    assert "m1" not in decision.reports
+    assert decision.diagnostics["assignment"]["base"] == "RED_SUPPLY_DEPOT"
     report = policy.compute(obs, {"phase": "reporting"})
     assert report.velocity == (0., 0.)
     assert report.reports["m6"] == {"ranking": ["R-1", "R-2", "R-3"]}
-    assert "fallback" in report.diagnostics["rank_confidence"]
+    assert "mock" in report.diagnostics["rank_confidence"]
     policy.acknowledge_report("m6", {"accepted": True, "received": {"ranking": ["R-1", "R-2", "R-3"]}})
     assert policy.compute(obs, {"phase": "reporting"}).reports == {}
 
@@ -230,7 +216,7 @@ def test_controller_end_to_end_inprocess_public_port_ready_reports_and_stop(tmp_
     engine.request("enter_ready", None)
     gateway.update(engine)
     async def run():
-        controller = TeamController(InProcessPort(engine, "B-1", gateway), "B-1", "baseline", output=tmp_path)
+        controller = TeamController(InProcessPort(engine, "B-1", gateway), "B-1", "mission", output=tmp_path)
         await controller.initialize()
         assert engine.robots["B-1"].ready
         engine.request("start", None)
@@ -244,9 +230,10 @@ def test_controller_end_to_end_inprocess_public_port_ready_reports_and_stop(tmp_
                     break
             await asyncio.wait_for(controller.done.wait(), 1.)
             assert engine.phase == "finished"
-            assert engine.reports["B-1"]["m1"] is not None
+            assert engine.reports["B-1"]["m1"] is None
             assert engine.reports["B-1"]["m6"] is not None
-            assert controller.report_workers["m1"].acknowledged_revision is not None
+            assert "m1" not in controller.report_workers
+            assert controller.llm_calls == 0
             assert len(controller.control_times) > 3
         finally:
             await controller.close()

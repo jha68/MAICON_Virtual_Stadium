@@ -20,7 +20,6 @@ from fastapi.responses import FileResponse, Response
 from maicon_sim.core.types import SLOTS
 from maicon_sim.sensors.gateway import SensorUnavailable
 
-POLICIES = ('idle', 'patrol', 'baseline', 'blocker', 'capture_runner')
 
 
 class DashboardManager:
@@ -61,7 +60,7 @@ class DashboardManager:
         finally:
             self.closing = False
 
-    async def command(self, action, policy='idle', policies=None):
+    async def command(self, action):
         engine, service = self.service.engine, self.service
         async with self.operation:
             snap = await service.submit('snapshot')
@@ -73,7 +72,7 @@ class DashboardManager:
                 await service.submit('enter_ready')
                 config = deepcopy(engine.config)
                 for agent in config.scenario['agents']:
-                    agent['policy'] = (policies or {}).get(agent['slot'], policy)
+                    agent['policy'] = 'mission'
                 self.policies = {a['slot']: a['policy'] for a in config.scenario['agents']}
                 factory = self.process_factory
                 if factory is None:
@@ -158,7 +157,8 @@ def create_dashboard(manager, password):
         config = manager.service.engine.config
         # This is evaluator truth behind operator auth, never a participant DTO.
         snap['participant_policies'] = dict(manager.policies)
-        snap['llm_mode'] = 'mock' if os.environ.get('MAICON_LLM_PROVIDER', 'fixture') == 'fixture' else 'external'
+        snap['m1_mode'], snap['m6_mode'] = 'direct_order', 'mock'
+        snap['mission_orders'] = ({slot: deepcopy(order['expected_m1']) for slot, order in manager.service.engine.orders.items()} if snap['order_published'] else {})
         snap['build_revision'] = os.environ.get('MAICON_BUILD_REVISION', 'local')
         snap['profile_id'] = config.rules['profile_id']
         snap['scenario_hash'] = config.hashes['scenario_hash']
@@ -203,15 +203,10 @@ def create_dashboard(manager, password):
         origin = request.headers.get('origin')
         if origin and urlsplit(origin).netloc.lower() != request.headers.get('host', '').lower():
             raise HTTPException(403, '다른 사이트의 조작 요청은 허용하지 않습니다.')
-        body = await manager.service.body(request, {'action', 'policy', 'policies'})
-        if body.get('policy', 'idle') not in POLICIES:
-            raise HTTPException(422, '알 수 없는 정책입니다.')
-        policies = body.get('policies', {})
-        if not isinstance(policies, dict) or any(s not in SLOTS or p not in POLICIES for s,p in policies.items()):
-            raise HTTPException(422, '팀별 정책을 확인하세요.')
+        body = await manager.service.body(request, {'action'})
         if not isinstance(body.get('action'), str):
             raise HTTPException(422, '조작을 지정하세요.')
-        return await manager.command(body['action'], body.get('policy', 'idle'), policies)
+        return await manager.command(body['action'])
 
     @app.post('/api/control/{slot}')
     async def control(slot: str, request: Request):

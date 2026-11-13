@@ -82,7 +82,7 @@ def test_deploy_rejects_mutable_image_tag():
     assert 'immutable' in result.stderr
 
 
-@pytest.mark.parametrize('change', ['none', 'legacy_images', 'missing_panels', 'wrong_revision'])
+@pytest.mark.parametrize('change', ['none', 'legacy_images', 'missing_panels', 'wrong_revision', 'legacy_missions'])
 def test_deployed_image_health_accepts_latest_m5_map_and_rejects_stale_builds(monkeypatch, capsys, change):
     import io
     import urllib.request
@@ -90,11 +90,13 @@ def test_deployed_image_health_accepts_latest_m5_map_and_rejects_stale_builds(mo
     state = {'scenario_id': 'reference_stadium', 'boxes': [None]*20,
              'facility_signals': {str(i): 'idle' for i in range(6)},
              'visual_assets': {str(i): {} for i in range(16)},
-             'arena': {'base_panels': [None]*6}, 'llm_mode': 'mock', 'build_revision': 'a'*40}
+             'arena': {'base_panels': [None]*6}, 'm1_mode': 'direct_order', 'm6_mode': 'mock', 'build_revision': 'a'*40}
     if change == 'legacy_images':
         state['visual_assets'] = {str(i): {} for i in range(13)}
     elif change == 'missing_panels':
         state['arena']['base_panels'] = []
+    elif change == 'legacy_missions':
+        state['m1_mode'] = 'llm'
     elif change == 'wrong_revision':
         state['build_revision'] = 'b'*40
     def response(request, timeout):

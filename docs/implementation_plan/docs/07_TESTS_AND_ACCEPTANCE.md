@@ -268,7 +268,7 @@ RENDER-003의 intrinsics는 투영 단위 시험용이다. 기본 FOV와 다르�
 | E2E-005 | 4번째 비정상 종료 | 무한 재시작 없음. 다른 팀·서버 유지. 실패 원인 기록 |
 | E2E-006 | 보고 직후 응답 유실과 프로세스 재실행 | 저장 보고 보존. 새 보고는 전체 snapshot. 재실행을 새 경기로 오인하지 않음 |
 | E2E-007 | 다음 경기에서 camp·slot 변경, 코드 재사용 profile 적용 | 과거 object·rank·timer·ready·cache 무효화. 새 session 확인 |
-| E2E-008 | LLM 5초 지연·timeout·잘못된 JSON | 제어 루프 유지, 오류 기록. 규칙 기반 대체는 허용 profile에서만 실행 |
+| E2E-008 | 구조화 명령 직접 수신·M6 mock, 지연 LLM 어댑터가 주입되어도 호출 없음 | LLM 호출·M1 제출 0회, 제어 루프 유지. 외부 어댑터 자체의 timeout·JSON 검사는 SDK 계약 시험에서 수행 |
 | E2E-009 | 두 개의 wait120과 camera 추론 병행 | 명시적인 pause를 제외하고 주행 명령 공백이 0.5초를 넘지 않음 |
 | E2E-010 | stale POST·드론 중단·pause·restart를 고정 seed로 복합 주입 | trace 재생 가능. 마감 후 재시도 폭주와 메모리 무한 증가 없음 |
 | E2E-011 | observer UI에서 일시정지·배속 조작 | realtime의 금지 조합 차단. simulation pause와 match pause를 구분해 표시 |

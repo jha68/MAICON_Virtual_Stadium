@@ -45,14 +45,8 @@ def parser():
     serve.add_argument("--web-port", type=int, help="Loopback operator dashboard; requires MAICON_WEB_PASSWORD_FILE")
     agent = subs.add_parser("agent", help="Run one public-port participant process")
     agent.add_argument("--slot", required=True, choices=("B-1", "B-2", "B-3", "R-1", "R-2", "R-3"))
-    agent.add_argument("--policy", choices=("idle", "baseline", "patrol", "blocker", "capture_runner"), default="baseline")
     agent.add_argument("--server", required=True)
     agent.add_argument("--out", default=".")
-    agent.add_argument("--llm-provider", choices=("fixture", "json-http", "openai-compatible"))
-    agent.add_argument("--llm-endpoint")
-    agent.add_argument("--llm-model")
-    agent.add_argument("--llm-key-env", help="Environment variable name, never a credential value")
-    agent.add_argument("--llm-timeout-s", type=float, default=5.)
     agent.add_argument("--camera-calibration", default=os.environ.get("MAICON_CAMERA_CALIBRATION"))
     agent.add_argument("--vision-stress-seed", type=int, default=None)
     calibrate = subs.add_parser("calibrate-camera", help="Fit measured checkerboard images; writes a new camera JSON")
@@ -162,9 +156,7 @@ def execute(args):
         code = os.environ.get("MAICON_SIM_MISSION_CODE")
         if not code:
             raise ValueError("MAICON_SIM_MISSION_CODE must be supplied in the environment")
-        options = {name: value for name, value in (("provider", args.llm_provider), ("endpoint", args.llm_endpoint),
-                   ("model", args.llm_model), ("key_env", args.llm_key_env), ("timeout_s", args.llm_timeout_s)) if value is not None}
-        return asyncio.run(run_agent(args.server, args.slot, args.policy, code, args.out, llm_options=options,
+        return asyncio.run(run_agent(args.server, args.slot, "mission", code, args.out,
                                      camera_calibration=args.camera_calibration, vision_stress_seed=args.vision_stress_seed))
     if args.command == "calibrate-camera":
         import glob
