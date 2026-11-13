@@ -352,7 +352,7 @@ def test_ready_RGB_model_offloop_and_required_frames_precede_ready(monkeypatch):
     initialized = threading.Event()
     main_thread = threading.get_ident()
     class Detector:
-        def __init__(self, calibration=None):
+        def __init__(self, calibration=None, *, robot_only=False):
             assert threading.get_ident() != main_thread
             initialized.set()
         def process(self, frame):

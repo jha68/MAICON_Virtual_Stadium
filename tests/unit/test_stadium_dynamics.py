@@ -1,4 +1,5 @@
 from copy import deepcopy
+import math
 
 import pytest
 
@@ -71,6 +72,26 @@ def test_sensor_interpolation_finds_sub_tick_edge():
     assert fraction == pytest.approx(1., abs=1e-6)
     fraction = crossing_fraction(Pose2(.302, 0, 0), Pose2(.308, 0, 0), [[.42,-.3],[.42,.3]], geometry)
     assert fraction == pytest.approx(.5, abs=1e-6)
+
+
+def test_capture_broad_phase_matches_exact_footprints_including_rotated_touch():
+    from maicon_sim.core.geometry2d import footprint, segment_intersects_polygon
+    engine = running()
+    g = engine.config.sensors['geometry']
+    length, width = g['footprint_length_m'], g['footprint_width_m']
+    bases = engine.config.arena['bases']
+    for base in bases:
+        a, b = base['trigger_segment_xy_m']
+        x, y = (a[0]+b[0])/2, (a[1]+b[1])/2
+        for yaw in (0., math.pi/4, math.pi/2):
+            radius = abs(math.cos(yaw))*length/2 + abs(math.sin(yaw))*width/2
+            for gap in (-.1, 0., 1e-10, 1e-7, .01, 1.):
+                engine.robots['B-1'].pose = Pose2(x-radius-gap, y, yaw)
+                exact = {candidate['code']:any(segment_intersects_polygon(candidate['trigger_segment_xy_m'],
+                            footprint(r.pose, length, width)) for r in engine.robots.values()) for candidate in bases}
+                observed = engine._blocked_bases()
+                assert observed == exact, (base['code'], yaw, gap)
+                engine.base_blocked = observed
 
 
 def test_sensor_tolerance_uses_arrival_not_base_name():

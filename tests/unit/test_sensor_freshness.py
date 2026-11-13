@@ -117,7 +117,7 @@ def test_each_channel_expires_and_only_source_progress_can_refresh_it(monkeypatc
 
 
 @pytest.mark.parametrize("channel", ["semantic", "rgb"])
-def test_baseline_camera_must_progress_independently_of_other_sensors(monkeypatch, channel):
+def test_camera_dropout_blocks_vision_but_preserves_lidar_navigation(monkeypatch, channel):
     clock = [0.]
     monkeypatch.setattr(controller_module, "time", SimpleNamespace(monotonic=lambda: clock[0]))
     c = configured(Port())
@@ -129,12 +129,59 @@ def test_baseline_camera_must_progress_independently_of_other_sensors(monkeypatc
         camera["detections"] = []
     c._observe_sensor_progress({**frames(), channel: camera})
     assert c._check_motion_sensors()
+    assert c._check_vision_sensors()
+    c.policy = Policy(lambda *args: PolicyDecision(velocity=(.2, 0.), gimbal=(10., 0., 30., 20.), fire=True))
     clock[0] = 1.01
     c._observe_sensor_progress({**frames(101), channel: camera})
+    c.observations = frames(101)
     assert c._stale_sensors() == [channel]
-    assert not c._check_motion_sensors()
+    assert c._check_motion_sensors()
+    assert not c._check_vision_sensors()
+    asyncio.run(c._compute_step())
+    assert c.decision.velocity == (.2, 0.)
+    assert c.decision.gimbal is None and not c.decision.fire
+    assert c.decision.diagnostics['stale_sensors'] == [channel]
+    assert 'vision_blocked' in c.decision.diagnostics
+    assert c.port.gimbals == []
     c._observe_sensor_progress({**frames(102), channel: {**camera, "captured_tick": 102}})
     assert c._check_motion_sensors()
+    assert c._check_vision_sensors()
+
+
+def test_camera_dropout_and_recovery_invalidates_inflight_aim_without_stopping_drive(monkeypatch):
+    clock = [0.]
+    monkeypatch.setattr(controller_module, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+    entered, release = threading.Event(), threading.Event()
+    def delayed(*args):
+        entered.set()
+        assert release.wait(2.)
+        return PolicyDecision(velocity=(.2, 0.), gimbal=(10., 0., 30., 20.), fire=True)
+
+    async def run():
+        c = configured(Port())
+        c.session_identity = {'capabilities': {'semantic': True}}
+        camera = {'captured_tick': 0, 'detections': []}
+        c._observe_sensor_progress({**frames(), 'semantic': camera})
+        c.policy = Policy(delayed)
+        task = asyncio.create_task(c._compute_step())
+        try:
+            assert await asyncio.to_thread(entered.wait, 2.)
+            clock[0] = 1.01
+            c.observations = frames(101)
+            c._observe_sensor_progress(c.observations)
+            assert c._check_motion_sensors()
+            assert not c._check_vision_sensors()
+            c._observe_sensor_progress({**frames(102), 'semantic': {**camera, 'captured_tick': 102}})
+            assert c._check_vision_sensors()
+            release.set()
+            await task
+            assert c.decision.velocity == (.2, 0.)
+            assert not c.decision.fire and c.decision.gimbal is None
+            assert c.port.gimbals == []
+        finally:
+            release.set()
+            await task
+    asyncio.run(run())
 
 
 def test_low_rate_state_and_match_have_three_period_grace(monkeypatch):

@@ -14,6 +14,19 @@ class Detector:
                  'visual_state':{'hp':4, 'ammo':8}, 'range_m':2., 'aim_point_px':[20,20]}]
 
 
+def test_default_drone_does_not_load_or_match_unused_printed_panels(monkeypatch):
+    from maicon_sim.perception import reference_images, combat
+    def unused(*args, **kwargs):
+        raise AssertionError('Drone identity observation must not construct a panel detector')
+    monkeypatch.setattr(reference_images, 'ReferenceImageDetector', unused)
+    monkeypatch.setattr(combat, 'SyntheticTemplateDetector', unused)
+    observer = DroneObserver({'artwork_profile': 'prestudy', 'capture_clock_epoch':'2026-11-04T12:00:00+09:00'})
+    blob = cv2.imencode('.jpg', np.zeros((48,64,3), np.uint8))[1].tobytes()
+    observer.process(blob, {'X-Captured-At':'2026-11-04T12:00:01+09:00'}, 100)
+    assert observer.observation(100)['status'] == 'available'
+    assert observer.observation(100)['visual']['detections'] == []
+
+
 def test_drone_clock_dedup_staleness_and_no_front_camera_aim_or_led_geometry():
     detector = Detector()
     observer = DroneObserver({'capture_clock_epoch':'2026-11-04T12:00:00+09:00'}, detector)

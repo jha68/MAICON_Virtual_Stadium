@@ -7,7 +7,10 @@ import numpy as np
 class DroneObserver:
     def __init__(self, calibration, detector=None):
         from .combat import CombatVisionDetector
-        self.detector = detector or CombatVisionDetector(calibration)
+        # The overhead consumer keeps only UGV identity cues. Running all
+        # printed-panel SIFT matches here discards the result while competing
+        # with six drive controllers and the camera renderer for CPU.
+        self.detector = detector or CombatVisionDetector(calibration, robot_only=True)
         self.epoch = calibration.get('capture_clock_epoch')
         self.last_timestamp = None
         self.latest = None

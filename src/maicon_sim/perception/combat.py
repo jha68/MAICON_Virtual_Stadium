@@ -13,10 +13,13 @@ from .synthetic_template import SyntheticTemplateDetector, _iou
 
 
 class CombatVisionDetector:
-    def __init__(self, calibration=None, threshold=.75):
+    def __init__(self, calibration=None, threshold=.75, *, robot_only=False):
         import cv2
         self.cv2 = cv2
         self.calibration = calibration or {}
+        self.robot_only = robot_only
+        if robot_only:
+            return
         from .reference_images import ReferenceImageDetector
         self.reference_images = ReferenceImageDetector(self.calibration) if self.calibration.get("artwork_profile") == "prestudy" else None
         self.objects = SyntheticTemplateDetector(threshold=threshold)
@@ -196,6 +199,8 @@ class CombatVisionDetector:
     def detect(self,bgr):
         if bgr.dtype!=np.uint8 or bgr.ndim!=3 or bgr.shape[2]!=3:
             raise ValueError('CombatVisionDetector expects uint8 HxWx3 BGR pixels')
+        if self.robot_only:
+            return self._robot_cues(bgr)
         reference = self.reference_images.detect(bgr) if self.reference_images else []
         synthetic = [] if self.reference_images else self.objects.detect(bgr)+self._facility_cues(bgr)
         return reference+[d for d in synthetic if all(_iou(d['bbox_xyxy_px'],r['bbox_xyxy_px'])<.45 for r in reference)]+self._robot_cues(bgr)

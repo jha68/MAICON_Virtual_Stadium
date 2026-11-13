@@ -33,6 +33,8 @@ class TeamController:
         self._sensor_seen_at = {}
         self._motion_inhibited = True
         self._motion_generation = 0
+        self._vision_inhibited = True
+        self._vision_generation = 0
         self._initializing_session = False
         self._sensors_ready = False
         self.llm_calls = 0
@@ -70,6 +72,8 @@ class TeamController:
         self._sensor_seen_at.clear()
         self._motion_inhibited = True
         self._motion_generation += 1
+        self._vision_inhibited = True
+        self._vision_generation += 1
         self.decision = PolicyDecision()
         from maicon_sim.sdk.report_worker import ReportWorker
         public_map, calibration = await asyncio.gather(self.port.map_prior(), self.port.calibration())
@@ -189,7 +193,9 @@ class TeamController:
                 if now - self._sensor_seen_at.get(channel, -math.inf) >= timeout]
 
     def _check_motion_sensors(self):
-        stale = self._stale_sensors()
+        # Navigation consumes odometry and LiDAR. A slow RGB renderer must not
+        # repeatedly stop an otherwise observed, obstacle-aware drive path.
+        stale = [channel for channel in self._stale_sensors() if channel not in ("rgb", "semantic")]
         if stale:
             if not self._motion_inhibited:
                 self._motion_generation += 1
@@ -197,6 +203,17 @@ class TeamController:
             self.decision = replace(self.decision, velocity=(0., 0.), gimbal=None, fire=False)
         else:
             self._motion_inhibited = False
+        return not stale
+
+    def _check_vision_sensors(self):
+        stale = [channel for channel in self._stale_sensors() if channel in ("rgb", "semantic")]
+        if stale:
+            if not self._vision_inhibited:
+                self._vision_generation += 1
+            self._vision_inhibited = True
+            self.decision = replace(self.decision, gimbal=None, fire=False)
+        else:
+            self._vision_inhibited = False
         return not stale
 
     async def _acquire_required_observations(self):
@@ -424,6 +441,7 @@ class TeamController:
                 phase = self.me.get("phase")
                 match_cmd = self.observations.get("match", {}).get("cmd")
                 sensors_fresh = self._check_motion_sensors()
+                self._check_vision_sensors()
                 velocity = self.decision.velocity if sensors_fresh and phase == "running" and match_cmd in ("start", "resume") else (0., 0.)
                 await self.port.command_velocity(*velocity)
                 self.control_times.append(time.monotonic())
@@ -443,6 +461,8 @@ class TeamController:
         generation = self._generation
         motion_generation = self._motion_generation
         sensors_were_fresh = self._check_motion_sensors()
+        vision_generation = self._vision_generation
+        vision_was_fresh = self._check_vision_sensors()
         decision = await asyncio.to_thread(self.policy.compute, dict(self.observations), dict(self.me), dict(self.order), dict(self.target))
         if generation != self._generation:
             return
@@ -450,6 +470,10 @@ class TeamController:
         if not sensors_were_fresh or not self._check_motion_sensors() or motion_generation != self._motion_generation:
             decision = replace(decision, velocity=(0., 0.), gimbal=None, fire=False,
                                diagnostics={**decision.diagnostics, "motion_blocked": "required sensor frames stale or unavailable"})
+        if not vision_was_fresh or not self._check_vision_sensors() or vision_generation != self._vision_generation:
+            decision = replace(decision, gimbal=None, fire=False,
+                               diagnostics={**decision.diagnostics, "vision_blocked": "camera frames stale or unavailable"})
+        decision = replace(decision, diagnostics={**decision.diagnostics, "stale_sensors": self._stale_sensors()})
         self.decision = decision
         tick = self.policy.observation_tick(self.observations)
         policy = self.policy
@@ -469,7 +493,8 @@ class TeamController:
         # Firing is an actuation: never retry an unknown outcome. The policy
         # latches intent until acknowledgement or conservative cooldown.
         control_allowed = self.me.get("phase") == "running" and self.observations.get("match", {}).get("cmd") in ("start", "resume")
-        if decision.fire and control_allowed and self._check_motion_sensors() and motion_generation == self._motion_generation:
+        if (decision.fire and control_allowed and self._check_motion_sensors() and motion_generation == self._motion_generation
+                and self._check_vision_sensors() and vision_generation == self._vision_generation):
             try:
                 response = await self.port.fire()
                 if generation != self._generation:

@@ -59,6 +59,8 @@ def test_public_rgb_marker_receiver_and_official_hp_led_colour(hp):
         detections=CombatVisionDetector({'front_camera':config.sensors['front_camera']}).process(frame)
         targets=[d for d in detections['detections'] if d['kind']=='ugv' and d.get('marker_readout',{}).get('camp')=='RED']
         target=next(d for d in targets if d['marker_readout']['band_count']==1)
+        robot_only=CombatVisionDetector({'front_camera':config.sensors['front_camera']}, robot_only=True)
+        assert robot_only.process(frame)['detections']==[d for d in detections['detections'] if d['kind']=='ugv']
         assert target['aim_confidence']>=.8
         assert target['visual_state']['hp']==hp
         assert target['visual_state']['ammo']==5

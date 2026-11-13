@@ -545,9 +545,24 @@ class MatchEngine:
             return dict(self.base_blocked)
         self._base_pose_signature = signature
         g = self.config.sensors['geometry']
-        return {base['code']: any(segment_intersects_polygon(base['trigger_segment_xy_m'],
-                    footprint(r.pose, g['footprint_length_m'], g['footprint_width_m'])) for r in self.robots.values())
-                for base in self.config.arena['bases']}
+        footprints = []
+        for robot in self.robots.values():
+            polygon = footprint(robot.pose, g['footprint_length_m'], g['footprint_width_m'])
+            footprints.append((polygon, polygon.min(axis=0), polygon.max(axis=0)))
+        blocked = {}
+        for base in self.config.arena['bases']:
+            segment = base['trigger_segment_xy_m']
+            ax, ay = segment[0]
+            bx, by = segment[1]
+            left, right, bottom, top = min(ax, bx), max(ax, bx), min(ay, by), max(ay, by)
+            # Reject distant footprints before the exact contact test. The
+            # micrometre slack preserves the exact test's contact tolerances.
+            blocked[base['code']] = any(
+                low[0] <= right + 1e-6 and high[0] >= left - 1e-6
+                and low[1] <= top + 1e-6 and high[1] >= bottom - 1e-6
+                and segment_intersects_polygon(segment, polygon)
+                for polygon, low, high in footprints)
+        return blocked
 
     def _capture_edges(self, blocked):
         if self.config.rules['policy']['m5_capture'] == 'sensor_timestamp_first':
