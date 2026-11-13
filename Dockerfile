@@ -15,9 +15,6 @@ RUN --mount=type=secret,id=proxy_ca,required=false \
     && rm -rf /var/lib/apt/lists/*
 
 FROM build-base AS runtime
-ARG MAICON_BUILD_REVISION=local
-ENV MAICON_BUILD_REVISION=$MAICON_BUILD_REVISION
-LABEL org.opencontainers.image.revision=$MAICON_BUILD_REVISION
 WORKDIR /app
 COPY --chown=1000:1000 pyproject.toml uv.lock .python-version ./
 RUN --mount=type=secret,id=proxy_ca,required=false \
@@ -30,6 +27,12 @@ RUN --mount=type=secret,id=proxy_ca,required=false \
     && scripts/doctor.sh \
     && mkdir -p /app/artifacts && chown 1000:1000 /app/artifacts \
     && chmod -R a+rX /app
+
+# Revision metadata belongs after dependency/build layers so each commit does
+# not force an ARM64 PyBullet rebuild under QEMU. It remains in the runtime image.
+ARG MAICON_BUILD_REVISION=local
+ENV MAICON_BUILD_REVISION=$MAICON_BUILD_REVISION
+LABEL org.opencontainers.image.revision=$MAICON_BUILD_REVISION
 
 USER 1000:1000
 
