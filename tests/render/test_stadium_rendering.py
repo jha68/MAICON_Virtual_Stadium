@@ -30,6 +30,10 @@ def test_reference_receivers_match_hit_geometry_and_invalidate_rgb_cache():
         origin = [2.60, 4.17, .35]
         rotation = np.diag([-1., -1., 1.]) @ R_BO
         before = backend.capture_pose(origin, rotation)['data'].copy()
+        receiving = engine.snapshot()
+        receiving['facility_signals']['BLUE_COMMS'] = 'receiving'
+        backend.sync_scene(receiving)
+        np.testing.assert_array_equal(backend.capture_pose(origin, rotation, tick=1)['data'], before)
         snapshot = engine.snapshot()
         snapshot['destroyed'] = ['BLUE_COMMS']
         snapshot['facility_signals']['BLUE_COMMS'] = 'hit'

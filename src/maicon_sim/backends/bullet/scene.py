@@ -34,7 +34,7 @@ class BulletScene:
     def __init__(self,p,client,config,assets):
         self.p=p;self.client=client;self.config=config;self.assets=assets
         self.registry={};self.faces={};self.robot_parts={};self.box_parts={};self.gimbal_parts={}
-        self.textures={};self._meshes={};self.led_parts={};self.facility_parts={};self.hp_led_parts={};self._mesh_root=assets.root/'meshes';self._mesh_root.mkdir(exist_ok=True)
+        self.textures={};self._meshes={};self.led_parts={};self.facility_parts={};self.facility_lens_colors={};self.hp_led_parts={};self._mesh_root=assets.root/'meshes';self._mesh_root.mkdir(exist_ok=True)
         self._build()
 
     def _box(self,key,half,position,color,collision=True,orientation=(0,0,0,1)):
@@ -103,9 +103,12 @@ class BulletScene:
                 if face['kind']=='facility':
                     center=np.array([0.,0.,g['facility_receiver_z_m']]);center[axis]=sign*(box['size_m'][axis]/2+g['facility_receiver_offset_m'])
                     code=face['facility_code'];radius=g['facility_receiver_radius_m']
-                    housing=self._sphere(code+'/housing',radius*1.4,[0,0,0],[.82,.84,.86,1])
-                    parts.append((housing,center-np.asarray(n)*radius*.6))
-                    receiver=self._sphere(code+'/receiver',radius,[0,0,0],[.48,.57,.63,1])
+                    imported=next(a for a in cfg.assets['assets'] if a['asset_id']==face['asset_id'])['generator']=='import'
+                    self.facility_lens_colors[code]=[.48,.57,.63,1] if imported else [.15,.08,.08,1]
+                    if imported:
+                        housing=self._sphere(code+'/housing',radius*1.4,[0,0,0],[.82,.84,.86,1])
+                        parts.append((housing,center-np.asarray(n)*radius*.6))
+                    receiver=self._sphere(code+'/receiver',radius,[0,0,0],self.facility_lens_colors[code])
                     parts.append((receiver,center))
                     led_center=np.array([0.,0.,sz+.018]);led_center[axis]=sign*box['size_m'][axis]*.35
                     mount=self._box(code+'/signal_mount',[.055,.035,.008],[0,0,0],[.12,.14,.16,1],collision=False)
@@ -164,9 +167,9 @@ class BulletScene:
         from maicon_sim.core.geometry3d import gimbal_rotation
         for code,(receiver,led) in self.facility_parts.items():
             signal=snapshot.get('facility_signals',{}).get(code,'hit' if code in snapshot.get('destroyed',[]) else 'idle')
-            color={'idle':[.16,.06,.05,1],'receiving':[1.,.58,.05,1],'hit':[1.,.02,.03,1]}[signal]
+            color=[1.,.02,.03,1] if signal=='hit' else [.16,.06,.05,1]
             p.changeVisualShape(led,-1,rgbaColor=color,physicsClientId=c)
-            p.changeVisualShape(receiver,-1,rgbaColor=[.48,.57,.63,1] if signal=='idle' else color,physicsClientId=c)
+            p.changeVisualShape(receiver,-1,rgbaColor=self.facility_lens_colors[code],physicsClientId=c)
         for slot,robot in snapshot.get('robots',{}).items():
             x,y,yaw=_pose(robot);R=rotation_z(yaw);origin=np.array([x,y,0.]);quat=p.getQuaternionFromEuler([0,0,yaw])
             for body,offset,localquat in self.robot_parts.get(slot,[]):

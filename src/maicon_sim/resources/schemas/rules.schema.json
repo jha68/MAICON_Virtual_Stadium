@@ -117,7 +117,10 @@
           "const": "image_face"
         },
         "m5_capture": {
-          "const": "post_publish_rising_edge"
+          "enum": [
+            "post_publish_rising_edge",
+            "sensor_timestamp_first"
+          ]
         },
         "m6_ties": {
           "const": "max_over_tied_permutations"
@@ -222,6 +225,38 @@
         "lidar_max_m",
         "drone_intervals_ms"
       ],
+      "additionalProperties": false
+    },
+    "capture": {
+      "type": "object",
+      "properties": {
+        "timestamp_tolerance_ms": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "default_latency_ms": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000
+        },
+        "latency_ms_by_base": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2000
+          }
+        },
+        "sensor_offset_ms_by_base": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": -10,
+            "maximum": 10
+          }
+        }
+      },
       "additionalProperties": false
     }
   },

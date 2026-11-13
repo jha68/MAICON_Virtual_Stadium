@@ -662,6 +662,29 @@
         "stress_v1"
       ],
       "additionalProperties": false
+    },
+    "actuation": {
+      "type": "object",
+      "properties": {
+        "drive_accel_mps2": {
+          "type": "number",
+          "minimum": 0
+        },
+        "turn_accel_rps2": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gimbal_acc_deg_s2_per_unit": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "drive_accel_mps2",
+        "turn_accel_rps2",
+        "gimbal_acc_deg_s2_per_unit"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

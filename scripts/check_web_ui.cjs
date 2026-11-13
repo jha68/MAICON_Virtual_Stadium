@@ -8,6 +8,8 @@ try{
  await page.goto('http://127.0.0.1:18080/');await page.fill('#password','test-only-browser-password-0123456789');await page.click('#login button');await page.waitForSelector('#connection.online');
  const initial=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
  if(initial.scenario_id!=='reference_stadium'||initial.boxes.length!==20)throw Error('Expected the reference stadium');
+ if(await page.locator('#team-policies select').count()!==6)throw Error('Missing individual team policies');
+ if(initial.llm_mode!=='mock')throw Error('Expected mock M1');
  await page.waitForFunction(()=>document.querySelectorAll('.asset-card img').length===13&&[...document.querySelectorAll('.asset-card img')].every(i=>i.complete&&i.naturalWidth>0));
  if(await page.locator('#receiver-status span').count()!==6)throw Error('Expected six facility receivers');
  await page.waitForFunction(()=>document.querySelector('#camera').naturalWidth===640,null,{timeout:30000});
@@ -31,8 +33,16 @@ try{
  const still=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
  if(paused.match_elapsed_ticks!==still.match_elapsed_ticks)throw Error('Paused clock advanced');
  await page.click('[data-action=resume]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 진행');
+ await page.click('#manual-fire');
+ await page.waitForFunction(()=>document.querySelector('#manual-message').textContent==='fired');
+ const manual=await (await context.request.get('http://127.0.0.1:18080/api/state')).json();
+ if(manual.robots['B-1'].ammo!==7||manual.manual_interventions!==1)throw Error('Manual fire or intervention audit failed');
+ await page.click('#manual-release');
+ await page.waitForFunction(()=>document.querySelector('#drone-image').naturalWidth>0,null,{timeout:15000});
+ await page.locator('.experiment-grid').screenshot({path:'artifacts/evidence/web-experiment-console.png'});
  await page.click('[data-action=finish]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='경기 종료',null,{timeout:45000});
  const result=await (await context.request.get('http://127.0.0.1:18080/api/result')).json();
+ if(result.operator_interventions!==1)throw Error('Missing intervention marker in result');
  page.once('dialog',d=>d.accept());await page.click('[data-action=reset]');await page.waitForFunction(()=>document.querySelector('#phase').textContent==='세팅 중');
  if(await page.locator('#change-password, #password-form, #logout').count())throw Error('Removed account controls remain');
  const change=await context.request.post('http://127.0.0.1:18080/auth/password',{headers:{'X-Maicon-Operator':'1'},data:{current_password:'test-only-browser-password-0123456789',new_password:'NewPass123'}});if(change.status()!==404)throw Error('Password change API remains');

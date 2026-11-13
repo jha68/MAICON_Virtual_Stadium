@@ -46,39 +46,7 @@ def fixture_interpret_order(text: str, slot: str) -> dict:
     return result
 
 
-class GimbalEstimate:
-    """Rate-model estimate from accepted commands, deliberately no truth feedback."""
-    def __init__(self):
-        self.pan = self.tilt = 0.
-        self.target_pan = self.target_tilt = 0.
-        self.speed = 90.
-        self.last_tick = 0
-        self.settled_tick = 0
-        self.certain = True
-
-    def update(self, tick: int):
-        dt = max(0, tick - self.last_tick) * .01
-        for name, unit in (("pan", .5), ("tilt", .15)):
-            current, target = getattr(self, name), getattr(self, "target_" + name)
-            maximum = self.speed * dt / unit
-            setattr(self, name, current + max(-maximum, min(maximum, target - current)))
-        self.last_tick = tick
-
-    def accepted(self, pan, tilt, speed, tick):
-        self.update(tick)
-        travel_s = max(abs(pan - self.pan) * .5, abs(tilt - self.tilt) * .15) / speed
-        self.target_pan, self.target_tilt, self.speed = pan, tilt, speed
-        self.settled_tick = tick + math.ceil((travel_s + .1) * 100)
-        self.certain = True
-
-    def cancel(self, tick):
-        self.update(tick)
-        self.target_pan, self.target_tilt = self.pan, self.tilt
-        self.certain = False
-        self.settled_tick = math.inf
-
-    def settled(self, captured_tick):
-        return self.certain and captured_tick >= self.settled_tick
+from maicon_sim.core.actuation import GimbalModel as GimbalEstimate
 
 
 class ParticipantPolicy:
@@ -91,13 +59,13 @@ class ParticipantPolicy:
         self.camp = "BLUE" if slot.startswith("B") else "RED"
         bounds = public_map.get("bounds", {})
         self.grid = OccupancyGrid(bounds.get("width_m", 6.12), bounds.get("height_m", 5.))
-        self.tracker, self.gimbal = ObjectTracker(), GimbalEstimate()
+        self.tracker, self.gimbal = ObjectTracker(), GimbalEstimate(calibration.get('actuation', {}).get('gimbal_acc_deg_s2_per_unit', 0.))
         from .combat import CombatPolicy
         from .threat import ThreatEstimator
         from .observations import ObservationHistory, GimbalHistory, SurfaceMapper
         self.combat = CombatPolicy(slot, public_map)
         self.threat = ThreatEstimator(self.camp)
-        self.history, self.gimbal_history = ObservationHistory(), GimbalHistory()
+        self.history, self.gimbal_history = ObservationHistory(), GimbalHistory(acceleration_gain=calibration.get('actuation', {}).get('gimbal_acc_deg_s2_per_unit', 0.))
         self.surface_mapper = SurfaceMapper(public_map, calibration, slot)
         self._grid_correction = (0., 0., 0.)
         self.start = nominal_pose(public_map, slot)
@@ -187,8 +155,8 @@ class ParticipantPolicy:
 
     def acknowledge_gimbal(self, command, response, tick):
         if response.get("message") == "ok":
-            self.gimbal.accepted(*command[:3], tick)
-            self.gimbal_history.command(*command[:3], tick)
+            self.gimbal.accepted(*command[:3], tick, acc=command[3])
+            self.gimbal_history.command(*command[:3], tick, acc=command[3])
         elif response.get("message") == "locked":
             self.gimbal.cancel(tick)
             self.gimbal_history.cancel(tick)
@@ -241,6 +209,11 @@ class ParticipantPolicy:
         reports = {}
         diagnostics = {"pose_source": "public_wall_registration_plus_local_odom", "rank_confidence": self.rank_confidence,
                        "llm_provider": self.llm_provider, "llm_mock": self.llm_mock, "oracle": False}
+        drone = observations.get('drone', {})
+        if drone:
+            diagnostics['drone'] = {k:v for k,v in drone.items() if k != 'visual'}
+            if self.policy == 'baseline' and drone.get('status') == 'available':
+                self.threat.observe(drone.get('visual'))
         if self.policy == "idle":
             return PolicyDecision(diagnostics=diagnostics)
         if phase == "reporting":
@@ -292,7 +265,7 @@ class ParticipantPolicy:
                 public_frame.setdefault("sequence", rgb.get("captured_tick", 0))
                 semantic = self._rgb_detector.process(public_frame)
                 self._last_rgb_sequence = sequence
-                diagnostics["perception"] = "RGB synthetic_template; no semantic oracle"
+                diagnostics["perception"] = 'RGB public_prestudy_image' if self.calibration.get('artwork_profile') == 'prestudy' else 'RGB synthetic_template'
         if self.policy == "baseline" and self._new("semantic", semantic):
             self.threat.observe(semantic)
             diagnostics.update(self.surface_mapper.observe(semantic, self.history, self.gimbal_history, self.tracker))

@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import io
 import json
+import os
 import threading
 from importlib.resources import files
 from pathlib import Path
@@ -18,6 +19,8 @@ from fastapi.responses import FileResponse, Response
 
 from maicon_sim.core.types import SLOTS
 from maicon_sim.sensors.gateway import SensorUnavailable
+
+POLICIES = ('idle', 'patrol', 'baseline', 'blocker', 'capture_runner')
 
 
 class DashboardManager:
@@ -31,6 +34,7 @@ class DashboardManager:
         self.saved = set()
         self.process_factory = process_factory
         self.save_lock = threading.Lock()
+        self.policies = {}
 
     def on_tick(self, engine):
         if engine.phase == 'finished' and (self.completed is None or self.completed[0] != engine.match_id):
@@ -57,7 +61,7 @@ class DashboardManager:
         finally:
             self.closing = False
 
-    async def command(self, action, policy='idle'):
+    async def command(self, action, policy='idle', policies=None):
         engine, service = self.service.engine, self.service
         async with self.operation:
             snap = await service.submit('snapshot')
@@ -69,7 +73,8 @@ class DashboardManager:
                 await service.submit('enter_ready')
                 config = deepcopy(engine.config)
                 for agent in config.scenario['agents']:
-                    agent['policy'] = policy
+                    agent['policy'] = (policies or {}).get(agent['slot'], policy)
+                self.policies = {a['slot']: a['policy'] for a in config.scenario['agents']}
                 factory = self.process_factory
                 if factory is None:
                     from maicon_sim.evaluation.realtime import ParticipantProcesses
@@ -152,7 +157,11 @@ def create_dashboard(manager, password):
         snap = await manager.service.submit('snapshot')
         config = manager.service.engine.config
         # This is evaluator truth behind operator auth, never a participant DTO.
-        snap.pop('reports', None)
+        snap['participant_policies'] = dict(manager.policies)
+        snap['llm_mode'] = 'mock' if os.environ.get('MAICON_LLM_PROVIDER', 'fixture') == 'fixture' else 'external'
+        snap['build_revision'] = os.environ.get('MAICON_BUILD_REVISION', 'local')
+        snap['profile_id'] = config.rules['profile_id']
+        snap['scenario_hash'] = config.hashes['scenario_hash']
         snap['arena'] = {key: deepcopy(config.arena[key]) for key in ('arena_id', 'bounds', 'sectors', 'bases')}
         snap['arena']['floor_url'] = '/api/arena-floor.png'
         snap['scenario_id'] = config.scenario['scenario_id']
@@ -192,12 +201,64 @@ def create_dashboard(manager, password):
         origin = request.headers.get('origin')
         if origin and urlsplit(origin).netloc.lower() != request.headers.get('host', '').lower():
             raise HTTPException(403, '다른 사이트의 조작 요청은 허용하지 않습니다.')
-        body = await manager.service.body(request, {'action', 'policy'})
-        if body.get('policy', 'idle') not in ('idle', 'patrol', 'baseline', 'blocker', 'capture_runner'):
+        body = await manager.service.body(request, {'action', 'policy', 'policies'})
+        if body.get('policy', 'idle') not in POLICIES:
             raise HTTPException(422, '알 수 없는 정책입니다.')
+        policies = body.get('policies', {})
+        if not isinstance(policies, dict) or any(s not in SLOTS or p not in POLICIES for s,p in policies.items()):
+            raise HTTPException(422, '팀별 정책을 확인하세요.')
         if not isinstance(body.get('action'), str):
             raise HTTPException(422, '조작을 지정하세요.')
-        return await manager.command(body['action'], body.get('policy', 'idle'))
+        return await manager.command(body['action'], body.get('policy', 'idle'), policies)
+
+    @app.post('/api/control/{slot}')
+    async def control(slot: str, request: Request):
+        if request.headers.get('x-maicon-operator') != '1':
+            raise HTTPException(403)
+        origin = request.headers.get('origin')
+        if origin and urlsplit(origin).netloc.lower() != request.headers.get('host', '').lower():
+            raise HTTPException(403)
+        if slot not in SLOTS:
+            raise HTTPException(404)
+        body = await manager.service.body(request, {'command', 'parameters', 'match_id'})
+        if body.get('match_id') != manager.service.engine.match_id:
+            raise HTTPException(409, '경기가 변경됐습니다.')
+        return await manager.service.submit('operator_control', slot,
+                    {'command':body.get('command'), 'parameters':body.get('parameters', {})})
+
+    @app.get('/api/participant/{slot}')
+    async def participant_status(slot: str):
+        if slot not in SLOTS:
+            raise HTTPException(404)
+        match = manager.service.engine.match_id
+        path = manager.root / 'episodes' / match / 'public' / slot / 'participant.jsonl'
+        def latest():
+            try:
+                with path.open('rb') as stream:
+                    stream.seek(0,2)
+                    stream.seek(max(0,stream.tell()-65536))
+                    lines = stream.read().splitlines()
+                for line in reversed(lines):
+                    try:
+                        value = json.loads(line)
+                    except ValueError:
+                        continue
+                    if value.get('match_id') == match:
+                        return value
+            except OSError:
+                pass
+            return {'slot':slot, 'match_id':match, 'diagnostics':{}}
+        return await asyncio.to_thread(latest)
+
+    @app.get('/api/drone/{slot}.jpg')
+    async def drone(slot: str):
+        if slot not in SLOTS:
+            raise HTTPException(404)
+        try:
+            blob, meta = await asyncio.to_thread(manager.service.gateway.get_drone, slot)
+        except SensorUnavailable as exc:
+            raise HTTPException(exc.status, exc.detail) from None
+        return Response(blob, media_type='image/jpeg', headers=meta)
 
     @app.get('/api/camera/{slot}.jpg')
     async def camera(slot: str, match_id: str | None = None):

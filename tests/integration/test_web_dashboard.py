@@ -126,6 +126,37 @@ def test_web_password_required():
     with pytest.raises(ValueError): create_dashboard(None, 'short')
 
 
+def test_team_policies_manual_fire_reports_and_drone_permissions(harness):
+    engine, gateway, manager, app, public, root = harness
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://dashboard', auth=('admin', PASSWORD)) as c:
+            h = {'X-Maicon-Operator':'1','Origin':'http://dashboard'}
+            assert (await c.post('/api/command', headers=h, json={'action':'ready','policy':'idle',
+                'policies':{'B-1':'baseline','R-1':'capture_runner'}})).status_code == 200
+            snap = (await c.get('/api/state')).json()
+            assert snap['participant_policies']['B-1'] == 'baseline'
+            assert snap['participant_policies']['R-1'] == 'capture_runner'
+            assert snap['participant_policies']['B-2'] == 'idle'
+            assert (await c.get('/api/drone/B-1.jpg')).status_code == 409
+            for slot in engine.robots: await manager.service.submit('ready', slot)
+            assert (await c.post('/api/command',headers=h,json={'action':'start'})).status_code == 200
+            body = {'match_id':engine.match_id,'command':'fire'}
+            assert (await c.post('/api/control/B-1',json=body)).status_code == 403
+            assert (await c.post('/api/control/B-1',headers={**h,'Origin':'https://unrelated.invalid'},json=body)).status_code == 403
+            assert (await c.post('/api/control/B-1',headers=h,json={**body,'match_id':'old'})).status_code == 409
+            assert (await c.post('/api/control/B-1',headers=h,json=body)).json()['message'] == 'fired'
+            assert engine.robots['B-1'].ammo == 7
+            assert (await c.post('/api/control/B-1',headers=h,json={**body,'command':'release'})).status_code == 200
+            assert (await c.get('/api/participant/B-1')).json()['match_id'] == engine.match_id
+            await manager.service.submit('m1','B-1',{'base':'RED_MAINTENANCE'})
+            state = (await c.get('/api/state')).json()
+            assert state['reports']['B-1']['m1']['base'] == 'RED_MAINTENANCE'
+            assert state['manual_interventions'] == 1 and state['llm_mode'] == 'mock'
+            await manager.service.submit('stop')
+            assert (await c.get('/api/result')).json()['operator_interventions'] == 1
+    asyncio.run(run())
+
+
 def test_operator_artwork_changes_when_supervisor_reconfigures(harness):
     engine, gateway, manager, app, public, root = harness
     async def run():

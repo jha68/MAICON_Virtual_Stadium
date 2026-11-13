@@ -151,6 +151,9 @@ class CombatPolicy:
             if detection.get("kind") == "facility" and suffix and target not in self.serviced_facilities:
                 probabilities = detection.get("class_probs", {})
                 if probabilities.get(suffix, probabilities.get(target, 0)) >= self.confidence and self._facility_is_enemy(detection, distance, pose, pan, calibration):
+                    if detection.get('destroyed_observation') and detection.get('destroyed_confidence',0) >= self.confidence:
+                        self.serviced_facilities.add(target)
+                        continue
                     facilities.append((target, detection, distance))
             elif detection.get("kind") == "ugv":
                 marker = detection.get("marker_readout", {})

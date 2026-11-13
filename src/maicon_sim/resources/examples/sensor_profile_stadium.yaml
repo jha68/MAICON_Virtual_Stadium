@@ -8,6 +8,7 @@ assumption_ids:
 - SIM-3D-IMU
 - SIM-GEOMETRY
 - SIM-NOISE
+- SIM-ACTUATION-UNCALIBRATED
 geometry:
   footprint_length_m: 0.23
   footprint_width_m: 0.25
@@ -158,3 +159,7 @@ noise_profiles:
     imu_gyro_sigma_rps: 0.002
     imu_accel_sigma_mps2: 0.02
     drone_delay_ms: 100
+actuation:
+  drive_accel_mps2: 0.8
+  turn_accel_rps2: 6.0
+  gimbal_acc_deg_s2_per_unit: 10.0

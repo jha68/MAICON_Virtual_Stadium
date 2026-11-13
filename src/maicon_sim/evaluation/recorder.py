@@ -184,6 +184,7 @@ class Recorder:
                     "noise_profile": self.config.scenario["noise_profile"],
                     "render_profile": self.config.sensors["render"],
                     "record_frames": self.record_frames, "event_count": self.event_count,
+                    "operator_interventions": result.get('operator_interventions', 0),
                     "files": {str(p.relative_to(self.root)): file_hash(p) for p in sorted(self.root.rglob("*")) if p.is_file() and p.name != "run_manifest.json"}}
         if extra:
             manifest.update(extra)

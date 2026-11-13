@@ -43,6 +43,7 @@ class TeamController:
         self.tasks = []
         self.report_workers = {}
         self.inference = None
+        self.drone_observer = None
         self.done = asyncio.Event()
         self.closed = False
         self.errors = []
@@ -96,6 +97,7 @@ class TeamController:
         self.decision = PolicyDecision()
         self._last_rgb_sequence = None
         self.report_workers = {kind: ReportWorker(self.port, kind).start() for kind in ("m1", "m3", "m6")}
+        self.drone_observer = None
         if identity.get("capabilities", {}).get("rgb") and self.policy_name == "baseline":
             def initialize_detector():
                 from maicon_sim.perception.combat import CombatVisionDetector
@@ -111,6 +113,8 @@ class TeamController:
                                                             brightness=.9, blur_sigma=.5, noise_sigma=2.)}
                 return detector.process(frame)
             self.inference = LatestInference(process)
+            from maicon_sim.perception.drone import DroneObserver
+            self.drone_observer = await asyncio.to_thread(DroneObserver, calibration)
         await self._acquire_required_observations()
         self._initializing_session = False
 
@@ -210,6 +214,8 @@ class TeamController:
             self._observe_sensor_progress(observations)
             missing = sorted(set(missing) | set(self._stale_sensors()))
             if not missing:
+                if self.drone_observer:
+                    observations['drone'] = self.drone_observer.observation(self.policy.observation_tick(observations))
                 self.observations = observations
                 self._sensors_ready = True
                 return
@@ -297,6 +303,22 @@ class TeamController:
             except Exception as error:
                 self._error("observations", error)
             await asyncio.sleep(.08)
+
+    async def _poll_drone(self):
+        while not self.closed and not self.done.is_set():
+            observer = self.drone_observer
+            if observer and not self._initializing_session and self.me.get('phase') == 'running' and hasattr(self.port, 'drone'):
+                generation = self._generation
+                try:
+                    blob, headers = await asyncio.wait_for(self.port.drone(), 1.5)
+                    if generation == self._generation:
+                        tick = self.policy.observation_tick(self.observations)
+                        await asyncio.to_thread(observer.process, blob, headers, tick)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as error:
+                    observer.unavailable(getattr(error, 'status', None))
+            await asyncio.sleep(1.)
 
     async def _await_mission(self, kind):
         while not self.closed and not self.done.is_set():
@@ -498,7 +520,7 @@ class TeamController:
     def start(self):
         self.tasks = [asyncio.create_task(coro) for coro in (
             self._poll_state(), self._ready(), self._poll_observations(), self._await_mission("order"),
-            self._await_mission("target"), self._interpret_orders(), self._rank_evidence(), self._heartbeat(), self._plan())]
+            self._await_mission("target"), self._interpret_orders(), self._rank_evidence(), self._heartbeat(), self._plan(), self._poll_drone())]
         return self
 
     async def run(self):

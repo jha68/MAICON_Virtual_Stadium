@@ -453,6 +453,10 @@
         "real_time_factor"
       ],
       "additionalProperties": false
+    },
+    "operator_interventions": {
+      "type": "integer",
+      "minimum": 1
     }
   },
   "required": [

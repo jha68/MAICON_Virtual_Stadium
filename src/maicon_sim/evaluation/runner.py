@@ -39,7 +39,7 @@ def public_observations(gateway, slot, recorder=None):
 
 
 def calibration(config):
-    return {"front_camera": copy.deepcopy(config.sensors["front_camera"]),
+    return {"capture_clock_epoch": config.scenario["epoch_kst"], "artwork_profile": "prestudy" if config.assets["manifest_id"] == "prestudy_reference_v1" else "synthetic", "actuation": config.sensors.get("actuation", {}), "front_camera": copy.deepcopy(config.sensors["front_camera"]),
             "gimbal_pivot_m": config.sensors["geometry"]["gimbal_pivot_m"],
             "camera_offset_gimbal_m": config.sensors["geometry"]["camera_offset_gimbal_m"],
             "laser_offset_camera_m": [a-b for a,b in zip(config.sensors["geometry"]["laser_offset_gimbal_m"], config.sensors["geometry"]["camera_offset_gimbal_m"])],
@@ -105,7 +105,8 @@ def make_result(engine, config, run_id, backend, clock, wall_s, gateway):
             "rule_profile_hash": config.hashes["rule_profile_hash"], "scenario_hash": config.hashes["scenario_hash"],
             "asset_manifest_hash": config.hashes["asset_manifest_hash"], "dependency_lock_hash": lock_hash(),
             "end_reason": reason, "final_match_ms": engine.match_elapsed_ticks * 10,
-            "final_report_ms": engine.reporting_elapsed_ticks * 10, "scores": scores, "metrics": metrics}
+            "final_report_ms": engine.reporting_elapsed_ticks * 10, "scores": scores, "metrics": metrics,
+            **({'operator_interventions': engine.manual_interventions} if engine.manual_interventions else {})}
 
 
 def run_episode(config, *, backend="2d", clock="accelerated", out=None, headless=True,

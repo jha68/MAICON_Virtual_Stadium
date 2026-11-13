@@ -32,7 +32,9 @@ class InProcessPort:
         return copy.deepcopy({k:arena[k] for k in ("arena_id","bounds","sectors","bases","nominal_starts")})
     async def calibration(self):
         sensor=self._engine.config.sensors
-        return copy.deepcopy({"front_camera":sensor["front_camera"],"gimbal_pivot_m":sensor["geometry"]["gimbal_pivot_m"],
+        return copy.deepcopy({"capture_clock_epoch":self._engine.config.scenario["epoch_kst"], "front_camera":sensor["front_camera"],"gimbal_pivot_m":sensor["geometry"]["gimbal_pivot_m"],
+                              "artwork_profile": 'prestudy' if self._engine.config.assets['manifest_id']=='prestudy_reference_v1' else 'synthetic',
+                              "actuation":sensor.get('actuation', {}),
                               "camera_offset_gimbal_m":sensor["geometry"]["camera_offset_gimbal_m"],"pan_deg_per_unit":.5,
                               "laser_offset_camera_m":[a-b for a,b in zip(sensor["geometry"]["laser_offset_gimbal_m"],sensor["geometry"]["camera_offset_gimbal_m"])],
                               "tilt_deg_per_unit":.15,"lidar":sensor["lidar"]})
@@ -48,4 +50,6 @@ class InProcessPort:
                 except Exception as error:
                     if getattr(error,"status",None) not in (409,503): raise
         return result
+    async def drone(self, camera=None):
+        return self._gateway.get_drone(self.slot, camera)
     async def close(self): pass

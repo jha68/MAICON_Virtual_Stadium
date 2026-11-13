@@ -4,6 +4,8 @@ Oracle ARM64 자동 배포와 HTTPS 웹 화면 접속은 [배포 안내](deploy/
 
 기본 웹 배포 경기장은 `reference_stadium`입니다. 첨부 도면의 1~7번 구역과 20개 박스 배치, 사전학습 PDF의 시설·전장객체·비인식 장애물 13종, 양 진영 시설 6개의 수광부와 타격 LED를 반영했습니다. 구성과 실행 방법은 [기준 경기장 안내](docs/REFERENCE_STADIUM.md)를 참고하세요.
 
+PDF 인식·팬틸트 가속도·거점 센서 경합·팀별 정책·수동 시험 콘솔의 동작과 검증 한계는 [대회 재현 구현](docs/STADIUM_FIDELITY.md)에 정리했습니다. M1은 mock을 유지하며 수동 개입은 경기 결과에 기록됩니다.
+
 공통 Python 코어를 사용하는 2D·3D 경기 시뮬레이터입니다. 2D는 의미 관측과 전략·통신을, 3D는 CPU PyBullet TinyRenderer의 RGB·가림·깊이와 영상 인식 경로를 시험합니다. ROS·GPU·외부 모델·LLM 키 없이 동봉 합성 자료로 실행할 수 있습니다.
 
 기준 자료는 `jha68/MAICON` main의 `7c414445fcf0302620b2c89f16ce2064f91ca753`입니다. **이 구현의 SIM 기본값은 최종 대회 규정이나 실물 측정값이 아닙니다.** 출처와 가정은 [경기 규칙](docs/implementation_plan/docs/01_COMPETITION_RULES.md), [참고자료 발췌](docs/implementation_plan/docs/10_SOURCE_EXCERPTS.md)에 나뉘어 있습니다. 구현 중 보완한 계약은 [결정 기록](docs/DECISIONS.md), 실제 시험 상태는 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)를 확인하세요.

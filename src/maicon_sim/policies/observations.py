@@ -94,45 +94,42 @@ class ObservationHistory:
 
 
 class GimbalHistory:
-    """Capture-time gimbal rate estimates from accepted public commands."""
-    def __init__(self, capacity=256):
+    """Capture-time actuator estimates from acknowledged commands only."""
+    def __init__(self, capacity=256, acceleration_gain=0.):
+        from maicon_sim.core.actuation import GimbalModel
         self.capacity = capacity
-        self.commands = [(0, 0., 0., 0., 0., 90., True)]
+        self.commands = [(0, GimbalModel(acceleration_gain))]
         self._lock = threading.RLock()
 
-    def _sample(self, tick):
-        with self._lock:
-            commands = [command for command in self.commands if command[0] <= tick]
-        if not commands:
+    def _model(self, tick):
+        candidates = [model for at, model in self.commands if at <= tick]
+        if not candidates:
             return None
-        at, pan, tilt, target_pan, target_tilt, speed, certain = commands[-1]
-        dt = (tick-at)*.01
-        values = []
-        for current, target, unit in ((pan, target_pan, .5), (tilt, target_tilt, .15)):
-            maximum = speed*dt/unit
-            values.append(current+max(-maximum, min(maximum, target-current)))
-        return tuple(values), certain
+        model = copy.deepcopy(candidates[-1])
+        model.update(tick)
+        return model
 
     def at(self, tick):
-        value = self._sample(tick)
-        return value[0] if value and value[1] else None
-
-    def command(self, pan, tilt, speed, tick):
         with self._lock:
-            if self.commands and tick < self.commands[-1][0]:
+            model = self._model(tick)
+            return (model.pan, model.tilt) if model and model.certain else None
+
+    def command(self, pan, tilt, speed, tick, acc=20.):
+        with self._lock:
+            if tick < self.commands[-1][0]:
                 return
-            current = self._sample(tick)
-            position = current[0] if current else (0., 0.)
-            self.commands.append((tick, *position, pan, tilt, speed, True))
+            model = self._model(tick)
+            model.accepted(pan, tilt, speed, tick, acc)
+            self.commands.append((tick, model))
             del self.commands[:-self.capacity]
 
     def cancel(self, tick):
         with self._lock:
-            if self.commands and tick < self.commands[-1][0]:
+            if tick < self.commands[-1][0]:
                 return
-            value = self._sample(tick)
-            position = value[0] if value else (0., 0.)
-            self.commands.append((tick, *position, *position, 90., False))
+            model = self._model(tick)
+            model.cancel(tick)
+            self.commands.append((tick, model))
             del self.commands[:-self.capacity]
 
 

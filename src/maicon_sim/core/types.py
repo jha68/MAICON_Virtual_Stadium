@@ -56,6 +56,10 @@ class RobotTruth:
     started: bool = False
     v: float = 0.0
     omega: float = 0.0
+    command_v: float = 0.0
+    command_omega: float = 0.0
+    pan_velocity: float = 0.0
+    tilt_velocity: float = 0.0
     pan: float = 0.0
     tilt: float = 0.0
     target_pan: float = 0.0

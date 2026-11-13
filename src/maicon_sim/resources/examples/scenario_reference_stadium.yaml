@@ -1,7 +1,7 @@
 schema_version: '1.0'
 scenario_id: reference_stadium
 purpose: logic
-rules_file: rules_prestudy.yaml
+rules_file: rules_stadium.yaml
 arena_file: arena_stadium.yaml
 assets_file: assets_prestudy.yaml
 seed: 20261107

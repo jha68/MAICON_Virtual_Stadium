@@ -66,6 +66,7 @@ jobs:
           context: .
           platforms: linux/arm64
           push: true
+          build-args: MAICON_BUILD_REVISION=${{ steps.revision.outputs.sha }}
           tags: ${{ steps.image.outputs.name }}:sha-${{ steps.revision.outputs.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

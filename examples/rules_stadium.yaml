@@ -1,0 +1,64 @@
+schema_version: '1.0'
+profile_id: prestudy_20261104_stadium_v2
+source_commit: 7c414445fcf0302620b2c89f16ce2064f91ca753
+assumption_ids:
+- SIM-PAUSE
+- SIM-TICK-ORDER
+- SIM-START
+- SIM-REPORT-ELIGIBILITY
+- SIM-M3-COUNT
+- SIM-LASER
+- SIM-CAPTURE
+- SIM-FREEZE
+- SIM-M6-SCORING
+- SIM-ALLIANCE
+- SIM-DRONE-GATE
+- SIM-PRACTICE
+- SIM-BATTERY
+- SIM-CAPTURE-TRANSPORT
+timing:
+  tick_ms: 10
+  match_ms: 300000
+  objective_publish_ms: 240000
+  report_ms: 30000
+robot:
+  hp_max: 4
+  ammo_initial: 8
+  max_linear_mps: 0.6
+  max_angular_rps: 3.0
+  watchdog_ms: 500
+  laser_on_ms: 5000
+  fire_period_ms: 10000
+  hit_dwell_ms: 2000
+  invulnerability_ms: 10000
+  hit_lock_ms: 10000
+policy:
+  pause_freezes_match: true
+  pause_freezes_effects: true
+  m3_count_unit: image_face
+  m5_capture: sensor_timestamp_first
+  m6_ties: max_over_tied_permutations
+  alliance_compare: m1_to_m6_before_bonus
+  start_detection: ready_admitted_auto_start
+  battery_model: fixed_100_with_faults
+sensors:
+  camera_hz: 10
+  camera_width_px: 640
+  camera_height_px: 480
+  camera_hfov_deg: 90.0
+  odom_hz: 20
+  imu_hz: 20
+  state_hz: 2
+  lidar_hz: 10
+  lidar_rays: 360
+  lidar_min_m: 0.05
+  lidar_max_m: 8.0
+  drone_intervals_ms:
+  - 1000
+  - 2000
+  - 5000
+capture:
+  timestamp_tolerance_ms: 10
+  default_latency_ms: 20
+  latency_ms_by_base: {}
+  sensor_offset_ms_by_base: {}

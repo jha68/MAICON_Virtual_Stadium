@@ -15,6 +15,9 @@ RUN --mount=type=secret,id=proxy_ca,required=false \
     && rm -rf /var/lib/apt/lists/*
 
 FROM build-base AS runtime
+ARG MAICON_BUILD_REVISION=local
+ENV MAICON_BUILD_REVISION=$MAICON_BUILD_REVISION
+LABEL org.opencontainers.image.revision=$MAICON_BUILD_REVISION
 WORKDIR /app
 COPY --chown=1000:1000 pyproject.toml uv.lock .python-version ./
 RUN --mount=type=secret,id=proxy_ca,required=false \

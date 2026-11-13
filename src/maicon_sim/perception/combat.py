@@ -17,6 +17,8 @@ class CombatVisionDetector:
         import cv2
         self.cv2 = cv2
         self.calibration = calibration or {}
+        from .reference_images import ReferenceImageDetector
+        self.reference_images = ReferenceImageDetector(self.calibration) if self.calibration.get("artwork_profile") == "prestudy" else None
         self.objects = SyntheticTemplateDetector(threshold=threshold)
         self.facilities = SyntheticTemplateDetector(threshold=threshold, min_area_px=144.)
         self.facilities.templates = {
@@ -194,7 +196,9 @@ class CombatVisionDetector:
     def detect(self,bgr):
         if bgr.dtype!=np.uint8 or bgr.ndim!=3 or bgr.shape[2]!=3:
             raise ValueError('CombatVisionDetector expects uint8 HxWx3 BGR pixels')
-        return self.objects.detect(bgr)+self._facility_cues(bgr)+self._robot_cues(bgr)
+        reference = self.reference_images.detect(bgr) if self.reference_images else []
+        synthetic = [] if self.reference_images else self.objects.detect(bgr)+self._facility_cues(bgr)
+        return reference+[d for d in synthetic if all(_iou(d['bbox_xyxy_px'],r['bbox_xyxy_px'])<.45 for r in reference)]+self._robot_cues(bgr)
 
     def process(self,frame):
         return {key:frame[key] for key in ('sequence','captured_tick','received_tick','camera_id','width_px','height_px') if key in frame} | {'detections':self.detect(frame['data'])}

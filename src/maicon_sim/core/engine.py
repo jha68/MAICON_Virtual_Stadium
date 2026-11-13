@@ -19,7 +19,7 @@ from .scoring import inventory_from_boxes, score_m1, score_m3, risk_numerator, s
 from .types import Pose2, RobotTruth, SLOTS, camp_for_slot, FACILITIES
 
 ROBOT_COMMANDS = {'cmd_vel', 'gimbal', 'fire', 'oled'}
-SUPERVISOR_COMMANDS = {'configure', 'enter_ready', 'start', 'pause', 'resume', 'finish', 'stop', 'reset', 'start_failure', 'fault'}
+SUPERVISOR_COMMANDS = {'configure', 'enter_ready', 'start', 'pause', 'resume', 'finish', 'stop', 'reset', 'start_failure', 'fault', 'operator_control'}
 
 
 class MatchEngine:
@@ -67,6 +67,10 @@ class MatchEngine:
         self.order_issued_at = None
         self.target_issued_at = None
         self.capture_camp = None
+        self.capture_pending = []
+        self.manual_until = {}
+        self.manual_interventions = 0
+        self._operator_dispatching = False
         self.end_reason = None
         self.frozen = None
         self.scores = None
@@ -194,6 +198,8 @@ class MatchEngine:
         if slot not in self.robots:
             raise EngineError(409, '이 경기에 편성되지 않은 팀입니다')
         robot = self.robots[slot]
+        if kind in ROBOT_COMMANDS and not self._operator_dispatching and self.manual_until.get(slot, 0) > self.sim_tick:
+            return {'accepted': False, 'message': 'locked', 'reason': 'operator_control'}
         if kind == 'process_lifecycle':
             keys(payload, ('event', 'generation', 'exit_code', 'pid'), ('event',))
             if payload['event'] not in {'started', 'exited', 'restarted', 'failed', 'restart_limit_reached', 'terminated'}:
@@ -243,7 +249,9 @@ class MatchEngine:
             v = finite_number(payload['linear_x_mps'], -.6, .6, ('linear_x_mps',))
             w = finite_number(payload['angular_z_rps'], -3., 3., ('angular_z_rps',))
             if self._drive_allowed(robot):
-                robot.v, robot.omega = v, w
+                robot.command_v, robot.command_omega = v, w
+                if not self.config.sensors.get('actuation', {}).get('drive_accel_mps2', 0):
+                    robot.v, robot.omega = v, w
                 robot.last_velocity_received_tick = self.sim_tick
             return {'accepted': True}
         if kind == 'gimbal':
@@ -269,6 +277,30 @@ class MatchEngine:
         raise EngineError(404, 'Unknown engine request')
 
     def _supervisor(self, kind, slot, payload):
+        if kind == 'operator_control':
+            keys(payload, ('command', 'parameters'), ('command',))
+            command = payload['command']
+            if slot not in self.robots or command not in ('cmd_vel', 'gimbal', 'fire', 'release'):
+                invalid('unknown operator command or slot')
+            if self.phase != 'running' or self.paused:
+                raise EngineError(409, 'manual control requires running')
+            robot = self.robots[slot]
+            if command == 'release':
+                self.manual_until.pop(slot, None)
+                robot.v = robot.omega = robot.command_v = robot.command_omega = 0.
+                robot.target_pan, robot.target_tilt = robot.pan, robot.tilt
+                robot.pan_velocity = robot.tilt_velocity = 0.
+                return {'accepted': True}
+            self._operator_dispatching = True
+            try:
+                value = self._request(command, slot, payload.get('parameters', {}))
+            finally:
+                self._operator_dispatching = False
+            if self.manual_until.get(slot, 0) <= self.sim_tick:
+                self.manual_interventions += 1
+                self.emit('operator_intervention', slot, {'command': command})
+            self.manual_until[slot] = self.sim_tick+50
+            return value
         if kind in {'reset', 'configure'}:
             if kind == 'configure' and self.phase not in {'idle', 'finished'}:
                 raise EngineError(409, 'configure requires idle or finished')
@@ -363,8 +395,10 @@ class MatchEngine:
         self.emit('phase_changed', payload={'phase': value})
 
     def _stop_actions(self):
+        self.manual_until.clear()
         for r in self.robots.values():
             r.v = r.omega = 0.
+            r.command_v = r.command_omega = r.pan_velocity = r.tilt_velocity = 0.
             r.target_pan, r.target_tilt = r.pan, r.tilt
             r.laser_until = self.robot_effect_ticks
         self.dwell.clear()
@@ -516,6 +550,10 @@ class MatchEngine:
                 for base in self.config.arena['bases']}
 
     def _capture_edges(self, blocked):
+        if self.config.rules['policy']['m5_capture'] == 'sensor_timestamp_first':
+            self._capture_sensor_events(blocked)
+            self.base_blocked = blocked
+            return
         if self.phase == 'running' and not self.paused and self.target_published:
             objectives = self.config.scenario['objectives_by_camp']
             for base in sorted(self.config.arena['bases'], key=lambda b: b['base_id']):
@@ -529,6 +567,47 @@ class MatchEngine:
                         self._enter_reporting()
                         break
         self.base_blocked = blocked
+
+    def _capture_sensor_events(self, blocked):
+        from .capture import crossing_fraction, event_nonce, select_capture
+        if self.phase != 'running' or self.paused or not self.target_published:
+            return
+        settings = self.config.rules.get('capture', {})
+        tolerance = settings.get('timestamp_tolerance_ms', 10.)
+        latency = settings.get('latency_ms_by_base', {})
+        offsets = settings.get('sensor_offset_ms_by_base', {})
+        default_latency = settings.get('default_latency_ms', 20.)
+        now = self.sim_tick*10.
+        for base in self.config.arena['bases']:
+            code = base['code']
+            if not blocked[code] or self.base_blocked.get(code, False):
+                continue
+            camps = [camp for camp, objective in self.config.scenario['objectives_by_camp'].items() if objective == code]
+            if not camps:
+                continue
+            fractions = [crossing_fraction(getattr(self, '_interval_poses', {}).get(s, r.pose), r.pose,
+                         base['trigger_segment_xy_m'], self.config.sensors['geometry']) for s, r in self.robots.items()]
+            fraction = min((f for f in fractions if f is not None), default=1.)
+            detected = now-10.+fraction*10.
+            event = {'base': code, 'camp': camps[0], 'crossed_ms': detected,
+                     'detected_ms': detected+offsets.get(code, 0.),
+                     'arrived_ms': detected+latency.get(code, default_latency)}
+            event['nonce'] = event_nonce(self.config.scenario['seed'], code, detected)
+            self.capture_pending.append(event)
+            self.emit('base_sensor_edge', payload=event)
+        if not self.capture_pending:
+            return
+        # Explicit SIM buffering horizon: allow all packets in the documented
+        # timestamp tolerance to arrive before adjudicating. Exact hardware
+        # buffering is not published, so it stays a profile assumption.
+        horizon = tolerance+max([default_latency, *latency.values()])+2*max([0., *map(abs, offsets.values())])
+        if now < min(e['crossed_ms'] for e in self.capture_pending)+horizon:
+            return
+        winner = select_capture([e for e in self.capture_pending if e['arrived_ms'] <= now], tolerance)
+        if winner:
+            self.capture_camp, self.end_reason = winner['camp'], 'capture'
+            self.emit('base_captured', payload={**winner, 'arbitration': 'sensor_timestamp_then_arrival'})
+            self._enter_reporting()
 
     def _scheduled(self):
         values = {'sim': self.sim_tick, 'match': self.match_elapsed_ticks, 'reporting': self.reporting_elapsed_ticks}
@@ -617,17 +696,29 @@ class MatchEngine:
         active = self.phase == 'running' and not self.paused
         effect_active = (active or self.mode == 'practice') and not self.paused
         contacts = set()
+        self._interval_poses = {s: r.pose for s, r in self.robots.items()}
+        dynamics = self.config.sensors.get('actuation', {})
+        from .actuation import approach, servo_step
         for r in self.robots.values():
             if not self._drive_allowed(r) or self.sim_tick - r.last_velocity_received_tick >= ticks(self.config.rules['robot']['watchdog_ms']):
                 r.v = r.omega = 0.
+                r.command_v = r.command_omega = 0.
+            elif dynamics.get('drive_accel_mps2', 0):
+                r.v = approach(r.v, r.command_v, dynamics['drive_accel_mps2']*.01)
+                r.omega = approach(r.omega, r.command_omega, dynamics.get('turn_accel_rps2', 6.)*.01)
             if not self._device_allowed(r):
                 r.target_pan, r.target_tilt = r.pan, r.tilt
+                r.pan_velocity = r.tilt_velocity = 0.
                 r.laser_until = effect_start
             else:
                 for attr, target, deg_per_unit in (('pan', r.target_pan, .5), ('tilt', r.target_tilt, .15)):
                     old = getattr(r, attr)
-                    step = r.gimbal_speed * .01 / deg_per_unit
-                    setattr(r, attr, old + max(-step, min(step, target - old)))
+                    position, velocity = servo_step(old*deg_per_unit, getattr(r, attr+'_velocity'),
+                        target*deg_per_unit, r.gimbal_speed,
+                        r.gimbal_acc*dynamics.get('gimbal_acc_deg_s2_per_unit', 0.), .01,
+                        limits=(-100*deg_per_unit, 100*deg_per_unit))
+                    setattr(r, attr, position/deg_per_unit)
+                    setattr(r, attr+'_velocity', velocity)
         if any(r.v or r.omega for r in self.robots.values()):
             from .planar_motion import move_robots
             poses = move_robots(self.robots, self.boxes, self.config.arena['bounds'], self.config.sensors['geometry'], dt=.01)
@@ -725,6 +816,8 @@ class MatchEngine:
     def snapshot(self):
         receiving = {self._receiver_owner(receiver) for _, receiver in self.dwell}
         return {'match_id': self.match_id, 'episode_index': self.episode_index, 'phase': self.phase,
+                'manual_slots': [s for s,t in self.manual_until.items() if t > self.sim_tick],
+                'manual_interventions': self.manual_interventions,
                 'paused': self.paused, 'match_command': self.cmd, 'sim_tick': self.sim_tick, 'match_elapsed_ticks': self.match_elapsed_ticks,
                 'reporting_elapsed_ticks': self.reporting_elapsed_ticks, 'robot_effect_ticks': self.robot_effect_ticks,
                 'robots': {s: asdict(r) for s, r in self.robots.items()}, 'boxes': deepcopy(self.boxes),
@@ -737,8 +830,11 @@ class MatchEngine:
     def result(self):
         if self.phase != 'finished':
             raise EngineError(409, 'match has not finished')
-        return {'scores': deepcopy(self.scores), 'end_reason': self.end_reason,
-                'final_match_ms': self.match_elapsed_ticks * 10, 'final_report_ms': self.reporting_elapsed_ticks * 10}
+        result = {'scores': deepcopy(self.scores), 'end_reason': self.end_reason,
+                  'final_match_ms': self.match_elapsed_ticks * 10, 'final_report_ms': self.reporting_elapsed_ticks * 10}
+        if self.manual_interventions:
+            result['operator_interventions'] = self.manual_interventions
+        return result
 
     def export_state(self):
         """JSON serializable checkpoint of core state; no locks/process handles."""
@@ -746,7 +842,8 @@ class MatchEngine:
                   'match_id', 'run_id', 'episode_index', 'session_namespace', 'reports', 'submitted_m6', 'destroyed', 'target_published',
                   'order_published', 'order_issued_at', 'target_issued_at', 'capture_camp', 'end_reason', 'frozen', 'scores',
                   'executed_events', 'dynamic_events', 'command_scripts', 'transport_faults', 'base_blocked',
-                  'inventory', 'report_rejections', 'collision_events', 'queue_peak', '_ingress_seq', '_event_seq')
+                  'inventory', 'report_rejections', 'collision_events', 'queue_peak', '_ingress_seq', '_event_seq', 'capture_pending',
+                  'manual_until', 'manual_interventions')
         state = {k: deepcopy(getattr(self, k)) for k in fields}
         for k in ('submitted_m6', 'destroyed', 'executed_events'):
             state[k] = sorted(state[k])
