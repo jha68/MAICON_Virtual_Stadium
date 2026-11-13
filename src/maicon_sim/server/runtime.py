@@ -99,7 +99,7 @@ class EngineRuntime:
                 # simulated time. HTTP participants need wall time to observe
                 # a newly published objective and refresh their actuator TTLs.
                 # Keep every physics tick and the cumulative lag evidence above.
-                pace_deadline = max(pace_deadline, after-.05)
+                pace_deadline = max(pace_deadline, after-.2)
                 self._stop.wait(max(0, pace_deadline-time.monotonic()))
         except BaseException as error:
             self.failure = error
