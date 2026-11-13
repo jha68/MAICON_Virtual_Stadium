@@ -58,6 +58,9 @@ jobs:
       - name: Browser operator workflow with six real participant processes
         env:
           SDL_AUDIODRIVER: dummy
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
         run: |
           printf '%s\n' 'test-only-browser-password-0123456789' > "$RUNNER_TEMP/maicon-web-password"
           chmod 600 "$RUNNER_TEMP/maicon-web-password"
@@ -65,7 +68,14 @@ jobs:
           MAICON_WEB_PASSWORD_FILE="$RUNNER_TEMP/maicon-web-password" .venv/bin/maicon-sim serve --example reference_stadium --backend 3d --public-port 18000 --admin-port 18001 --web-port 18080 --out artifacts/web-ci-server > artifacts/web-ci-server.log 2>&1 &
           server_pid=$!
           trap 'kill -TERM "$server_pid" 2>/dev/null || true; wait "$server_pid" || true' EXIT
-          NODE_PATH="$RUNNER_TEMP/maicon-browser/node_modules" node scripts/check_web_ui.cjs
+          if ! NODE_PATH="$RUNNER_TEMP/maicon-browser/node_modules" node scripts/check_web_ui.cjs; then
+            echo '::error::Disposable six-team desktop operator workflow failed'
+            exit 1
+          fi
+          if ! .venv/bin/python scripts/check_baseline_drone.py --password-file "$RUNNER_TEMP/maicon-web-password"; then
+            echo '::error::Disposable six-baseline fresh drone integration failed'
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

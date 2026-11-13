@@ -74,3 +74,35 @@
 ```
 
 브라우저 시험은 별도 로컬3D 서버에만 `scripts/check_web_ui.cjs`를 사용한다. 스크립트의 가짜 시험 비밀번호와 포트18000/18001/18080을 맞춘다. **무거운 렌더링 시험과 브라우저6팀 시험을 같은 CPU에서 동시에 실행하지 않는다.** 첫 브라우저 실행은 다른 렌더 시험과 자원을 공유해 출발 대기 시간 초과가 났다.
+
+## 2026-11-13 새 환경에서 이어서 확인/구현한 사항
+
+이 절은 위의 이전 인수인계보다 최신이다. 사용자에게 이미 허용한 네트워크·비밀번호·배포 설정을 다시 요구하지 않는다.
+
+- 선택된 새 실행환경은 게시 revision1이 적용된 running 상태다. `observations_current=true`, 네트워크 `enforced`, `api.github.com`·공개 도메인 허용 및 `MAICON_RELAY_CREDENTIALS_JSON=ready`를 확인했다. 두 대상에 새 HTTPS 연결이 성공했다. 인증 값은 기록하지 않는다.
+- 원격 feature HEAD `54a5dc0`의 CI [43368048253](https://github.com/jha68/MAICON_Virtual_Stadium/actions/runs/43368048253)는 성공했다. core-contracts, 전체 integration/render, wheel 격리 설치 및 6개 실제 참가 프로세스 Chromium 시험이 성공했고 slow longpoll은 push의 기본 조건에 따라 제외됐다.
+- 기존 운영 비밀번호/작업자 토큰으로 private 파일을 준비하고 서버·작업자를 시작했다. 전환 직전 Oracle은 `smoke_six-0004`, `finished`였다. 진행 중 경기를 초기화하지 않고 Codex로 전환했다.
+- 공개 `/login`의 `X-Maicon-Compute=codex-cloud`, 공개/로컬 `/api/state`의 동일한 match/revision, `reference_stadium`, 박스20·시설6·이미지13·M1 mock을 확인했다. Chromium 데스크톱에서 비밀번호만으로 로그인, 이미지13종 로드, 실제 WebGL 지도 및 6대 RGB JPEG를 확인했다. 공개 검사는 로그인 외 경기 명령을 보내지 않는다.
+- 사용자가 CA 영구 신뢰 등록을 명시적으로 요청했다. 제공된 환경 CA는 Chromium NSS 저장소의 trusted CA와 동일함을 확인했고, 등록 후 저장소를 열 수 있는 실행 권한으로 Chromium의 직접 HTTPS 접속이 성공했다. 인증서 오류 무시나 네트워크 우회는 사용하지 않는다. 기본 filesystem sandbox는 홈의 NSS DB 쓰기를 제한하므로 브라우저 실행 권한 문제와 TLS 문제를 구별한다.
+- 공개 경기 `reference_stadium-0001`이 운영 중인 것을 관측하여 재시작하지 않았고, 자연 종료와 저장된 결과를 확인했다. 기존 run 폴더를 삭제하지 않는다. 이후 서버를 갱신할 때도 waiting/finished를 다시 확인한다.
+- 후속 구현: 보정된 공개 드론 JPEG의 상자 묶음/익명 기체 검출·XY 추정, 임시 회피 영역 기반 A* 재계획, 관측 노후화/중단 시 LiDAR 복귀, 상대 위치를 향한 팬틸트 탐색, 전방 RGB 근접 상대/자기 HP 감소에 반응하는 보수적 후퇴를 추가했다. LiDAR로 확인된 통행 가능 셀은 불확실한 드론 윗면/높이 추정보다 우선한다. 드론만으로 발사하지 않는다. 상세 한계·모델은 `STADIUM_FIDELITY.md`의 후속 절에 있다.
+- Oracle 배포는 준비 전과 컨테이너 정지 직전에 기존 Oracle 앱 자체의 상태를 인증해 확인한다. ready/running/reporting/알 수 없는 상태/조회 실패이면 기존 컨테이너를 정지하지 않고 보류한다. 비밀번호 파일, Caddy→18090 중계 경로, immutable image/rollback을 유지한다.
+
+6개 실제 baseline 프로세스의 로컬 연결 시험에서 초기 센서 캐시 교체 후 최신 드론 관측이 정책에 합류되지 않는 누락을 발견해 수정했다. 계획 계산 시마다 독립 드론 수신기의 최신 상태를 합류하며, cache 교체/노후화 단위 검사와 6개 실제 프로세스 시험을 CI에 추가했다. `scripts/check_baseline_drone.py`는 운영 비밀번호를 거부하고 알려진 시험 비밀번호의 loopback 서버에만 동작한다. 로컬 6팀 모두 공개 드론 항법 관측을 사용하고 종료·보고 완료까지 확인했다.
+
+최종 6팀 CI(98c034f)는 전체 회귀·패키징은 성공했으나 브라우저/드론 단계에서 실패했다. 2코어 로컬 재현에서 드론 프레임이 3~5초 지연되는 CPU 포화가 확인됐다. 참가 프로세스의 OpenCV/BLAS 스레드를 1개로 제한하고 완전히 같은 새 RGB 픽셀의 이미지 전용 추론 결과를 재사용하도록 개선했다. 원래 capture tick/sequence는 유지하며, 센서 캐시 자체를 새 관측으로 바꾸지 않는다. 신선도 기준을 느슨하게 하지 않는다. 로그 다운로드의 results-receiver 호스트는 현재 네트워크 허용 범위 밖이므로 같은 설정을 반복 요구하지 않고 로컬 재현과 GitHub API 검사 결과를 이용했다. CI 실패 단계는 이제 안전한 고정 문자열 annotation으로도 남긴다. 최적화 후 렌더 시험과 겹치지 않는 2코어 로컬 trial에서 데스크톱 6팀 조작과 6개 baseline의 최신 드론 항법 수신·경기 종료까지 통과했다. `disposable-2cpu-isolated-*.log`에 근거가 있다.
+
+새 증거는 ignored `artifacts`에 저장한다. `drone-tactics.xml`, `stadium-followup-targeted.xml`, `stadium-resumed-full.xml`, `public-stadium-evidence.json`, `evidence/public-reference-*.png`를 확인한다. 전체 검사는 실행 완료와 실제 결과를 확인한 뒤에만 통과로 보고한다. 최종 코드 CI는 이 feature 브랜치의 최신 SHA에 해당하는 실행을 조회한다.
+
+공개 사이트 읽기 전용 재검증:
+
+```bash
+NODE_PATH=/workspace/maicon-browser/node_modules CHROMIUM_BIN=/usr/bin/chromium \
+  node scripts/check_public_stadium.cjs
+```
+
+이 명령은 비밀번호를 기본 private 파일에서 읽는다. 필요하면 `MAICON_PUBLIC_PASSWORD_FILE`로 파일 경로만 지정한다. Chromium은 환경 프록시와 영구 CA를 사용하며, TLS 검증을 끄지 않는다. NSS 접근이 제한되는 sandbox에서는 승인된 실행 권한으로 동일 명령을 실행한다.
+
+### 여전히 완료되지 않은 실물 항목
+
+실제 카메라/출력물/조명 일반화, 공식 `rclpy` 메시지·서비스·QoS 및 최종 SDK 통합, 실제 바퀴 슬립·전력/배터리 소모, 레이저 확산·수광 감도/각도 응답은 장비·공식 타입·측정자료가 없어 완료로 표시하지 않는다. 드론 차체 중심으로 발사하거나 관측되지 않은 상대 HP/탄약/방향을 추정하지 않는다. H-01~H-07은 `HARDWARE_VALIDATION.md`의 not_run을 유지한다. M1은 계속 mock이고 모바일 대응은 범위 밖이다.

@@ -104,6 +104,8 @@ class TeamController:
         self.drone_observer = None
         if identity.get("capabilities", {}).get("rgb") and self.policy_name == "baseline":
             def initialize_detector():
+                import cv2
+                cv2.setNumThreads(1) # Six isolated processes share the host CPU budget.
                 from maicon_sim.perception.combat import CombatVisionDetector
                 return CombatVisionDetector(calibration)
             detector = await asyncio.to_thread(initialize_detector)
@@ -463,7 +465,13 @@ class TeamController:
         sensors_were_fresh = self._check_motion_sensors()
         vision_generation = self._vision_generation
         vision_was_fresh = self._check_vision_sensors()
-        decision = await asyncio.to_thread(self.policy.compute, dict(self.observations), dict(self.me), dict(self.order), dict(self.target))
+        observations = dict(self.observations)
+        if self.drone_observer:
+            # The sensor poll replaces its cache every cycle. Join the independent
+            # drone worker here, at planning time, so neither an initial waiting
+            # snapshot nor a failed feed can remain fresh indefinitely.
+            observations['drone'] = self.drone_observer.observation(self.policy.observation_tick(observations))
+        decision = await asyncio.to_thread(self.policy.compute, observations, dict(self.me), dict(self.order), dict(self.target))
         if generation != self._generation:
             return
         requested_fire = decision.fire

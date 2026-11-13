@@ -6,6 +6,9 @@ The detector declines to provide an aim point or LED state when not resolved.
 """
 from __future__ import annotations
 
+import copy
+import hashlib
+
 import numpy as np
 
 from maicon_sim.backends.bullet.asset_builder import synthetic_image
@@ -16,6 +19,8 @@ class CombatVisionDetector:
     def __init__(self, calibration=None, threshold=.75, *, robot_only=False):
         import cv2
         self.cv2 = cv2
+        self._last_pixels = None
+        self._last_detections = None
         self.calibration = calibration or {}
         self.robot_only = robot_only
         if robot_only:
@@ -206,4 +211,12 @@ class CombatVisionDetector:
         return reference+[d for d in synthetic if all(_iou(d['bbox_xyxy_px'],r['bbox_xyxy_px'])<.45 for r in reference)]+self._robot_cues(bgr)
 
     def process(self,frame):
-        return {key:frame[key] for key in ('sequence','captured_tick','received_tick','camera_id','width_px','height_px') if key in frame} | {'detections':self.detect(frame['data'])}
+        # Identical *newly captured* pixels have identical image-only evidence.
+        # Reuse one result, but preserve this input's original timing/sequence.
+        # Never manufacture fresh capture metadata for a cached sensor packet.
+        pixels = np.ascontiguousarray(frame['data'])
+        key = (pixels.shape, pixels.dtype.str, hashlib.sha256(pixels).digest())
+        if key != self._last_pixels:
+            self._last_detections = self.detect(pixels)
+            self._last_pixels = key
+        return {key:frame[key] for key in ('sequence','captured_tick','received_tick','camera_id','width_px','height_px') if key in frame} | {'detections':copy.deepcopy(self._last_detections)}

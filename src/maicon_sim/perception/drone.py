@@ -6,11 +6,10 @@ import numpy as np
 
 class DroneObserver:
     def __init__(self, calibration, detector=None):
-        from .combat import CombatVisionDetector
-        # The overhead consumer keeps only UGV identity cues. Running all
-        # printed-panel SIFT matches here discards the result while competing
-        # with six drive controllers and the camera renderer for CPU.
-        self.detector = detector or CombatVisionDetector(calibration, robot_only=True)
+        from .overhead import OverheadPixelDetector, OverheadProjection
+        camera = calibration.get('drone_camera')
+        self.projection = OverheadProjection(camera) if camera else None
+        self.detector = detector or (OverheadPixelDetector(camera) if camera else None)
         self.epoch = calibration.get('capture_clock_epoch')
         self.last_timestamp = None
         self.latest = None
@@ -45,18 +44,30 @@ class DroneObserver:
         if bgr is None or bgr.shape[0]*bgr.shape[1] > 4096*4096:
             raise ValueError('invalid drone JPEG')
         # Front-camera range and LED layout are not valid overhead. The built-in
-        # model transfers identity only; an overhead-specific model may supply
-        # calibrated LED evidence. Never infer invisible bands/LEDs from truth.
-        detections = []
-        for item in self.detector.detect(bgr):
+        # model extracts anonymous navigation hazards; a custom overhead model
+        # may supply observed identity/LED evidence. Never infer these from truth.
+        detections, obstacles, robots = [], [], []
+        dimensions_match = self.projection is not None and bgr.shape[:2] == (self.projection.height, self.projection.width)
+        for item in self.detector.detect(bgr) if self.detector else []:
+            if dimensions_match and item.get('confidence', 0) >= .75:
+                if item.get('kind') == 'obstacle' and item.get('surface_polygon_px') and item.get('projection_plane_z_m') == .4:
+                    polygon = self.projection.intersect(item['surface_polygon_px'], .4)
+                    if polygon is not None:
+                        obstacles.append({'polygon_xy_m': polygon.tolist(), 'uncertainty_m': .06})
+                if item.get('kind') == 'ugv' and item.get('view_model') == 'overhead' and item.get('navigation_point_px') and item.get('projection_plane_z_m') == .13:
+                    point = self.projection.intersect([item['navigation_point_px']], .13)
+                    if point is not None:
+                        robots.append({'position_xy_m': point[0].tolist(), 'camp': item.get('camp_observation'), 'uncertainty_m': .18})
             if item.get('kind') == 'ugv':
                 cue = {k:v for k,v in item.items() if k in (
                     'kind', 'bbox_xyxy_px', 'marker_readout', 'confidence')}
-                if item.get('view_model') == 'overhead':
+                if item.get('view_model') == 'overhead' and 'visual_state' in item:
                     cue['visual_state'] = item.get('visual_state', {})
                 detections.append(cue)
         self.latest = {'camera_id':'drone/main', 'captured_tick':tick, 'received_tick':received_tick,
-                       'sequence':tick, 'detections':detections}
+                       'sequence':tick, 'detections':detections,
+                       'navigation': {'obstacles': obstacles, 'robots': robots,
+                                      'source': 'calibrated_overhead_pixels', 'model': 'SIM-OVERHEAD-PRIORS'}}
         self.last_timestamp, self.status = timestamp, 'available'
 
     def observation(self, tick):

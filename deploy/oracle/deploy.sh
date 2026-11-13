@@ -26,6 +26,22 @@ fi
 docker run --rm --network none --user "$runtime_uid:$runtime_gid" \
     --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
     -c 'import maicon_sim.config.loader; import pathlib,tempfile; d=tempfile.TemporaryDirectory(dir="/data/runs"); pathlib.Path(d.name,"probe").write_text("ok"); d.cleanup()'
+verify_idle_match() {
+    if [[ -z "$web_domain" ]] || ! docker container inspect maicon-sim >/dev/null 2>&1; then
+        return 0
+    fi
+    # Check the fallback itself, not the domain (which may be serving Codex).
+    # Failed authentication/unknown state must never be interpreted as idle.
+    phase=$(docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib,json; p=pathlib.Path("/data/web.password").read_text().strip(); h={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}; r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers=h); print(json.load(urllib.request.urlopen(r,timeout=5))["phase"])') || {
+        echo 'Cannot verify existing match state; deployment deferred.' >&2
+        exit 4
+    }
+    if [[ "$phase" != waiting && "$phase" != finished ]]; then
+        echo 'Existing match is active or unknown; deployment deferred without stopping it.' >&2
+        exit 4
+    fi
+}
+verify_idle_match
 web_args=()
 participant_env=()
 if [[ -f "$data_dir/participant.env" ]]; then
@@ -50,6 +66,7 @@ if [[ -n "$web_domain" ]]; then
 fi
 old=false
 if docker container inspect maicon-sim >/dev/null 2>&1; then
+    verify_idle_match # Image/proxy preparation can take time; check again before stopping.
     docker rm -f maicon-sim-previous >/dev/null 2>&1 || true
     docker stop --time 45 maicon-sim >/dev/null
     if ! docker rename maicon-sim maicon-sim-previous; then
@@ -84,7 +101,23 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
         'http://127.0.0.1:8000/sim/session?mission_code=SIMB0001' \
         | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["capabilities"]["rgb"] and d["slot"]=="B-1"' 2>/dev/null; then
         if [[ -n "$web_domain" ]]; then
-            if ! docker exec maicon-sim /app/.venv/bin/python -c 'import urllib.request,base64,pathlib; p=pathlib.Path("/data/web.password").read_text().strip(); h={"Authorization":"Basic "+base64.b64encode(("admin:"+p).encode()).decode()}; r=urllib.request.Request("http://127.0.0.1:8080/api/state",headers=h); assert urllib.request.urlopen(r,timeout=5).status==200; page=urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8080/",headers=h),timeout=5).read().decode(); assert not any(marker in page for marker in ("id=\"change-password\"","id=\"password-form\"","id=\"logout\""))'; then
+            if ! web_health=$(docker exec -i maicon-sim /app/.venv/bin/python - <<'PYHEALTH'
+import base64, json, os, pathlib, urllib.request
+password = pathlib.Path('/data/web.password').read_text().strip()
+headers = {'Authorization': 'Basic '+base64.b64encode(('admin:'+password).encode()).decode()}
+def get(path):
+    return urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8080'+path, headers=headers), timeout=5)
+state = json.load(get('/api/state'))
+assert state['scenario_id'] == 'reference_stadium'
+assert len(state['boxes']) == 20 and len(state['facility_signals']) == 6 and len(state['visual_assets']) == 13
+assert state['llm_mode'] == 'mock'
+assert state['build_revision'] == os.environ['MAICON_BUILD_REVISION'] and len(state['build_revision']) == 40
+page = get('/').read().decode()
+assert not any(marker in page for marker in ('id="change-password"', 'id="password-form"', 'id="logout"'))
+print(json.dumps({key: state[key] for key in ('scenario_id', 'build_revision', 'llm_mode')} |
+                 {'boxes': 20, 'receivers': 6, 'images': 13}))
+PYHEALTH
+            ); then
                 sleep "$health_interval"
                 continue
             fi
@@ -98,7 +131,9 @@ for ((attempt=0; attempt<health_attempts; attempt++)); do
                     --mount type=volume,src=maicon-caddy-config,dst=/config caddy:2.10.2 >/dev/null
             fi
             echo "Operator URL: https://$web_domain (TLS issuance requires DNS and inbound TCP 80/443)."
-            echo 'Password-only login. Read the password only on the VM: cat ~/maicon-data/web.password'
+            printf '%s\n' "$web_health" > "$data_dir/deployed-health.json"
+            printf '%s\n' "$web_health"
+            echo 'Password-only login. Existing password file preserved.'
         fi
         trap - ERR
         printf '%s\n' "$image" > "$data_dir/deployed-image.txt"
