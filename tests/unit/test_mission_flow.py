@@ -50,6 +50,7 @@ def test_each_robot_surveys_all_opposing_sectors_and_center(config, slot):
     expected = {'CM', *[f"{'R' if slot.startswith('B') else 'B'}-S{i}" for i in (1, 2, 3)]}
     assert set(survey.required) == expected
     pose, tick = (*survey.departure, 0.), 0
+    assert {name for name, _ in survey.vantages[:4]} == expected
     reached = set()
     # Perfect navigation fixture: verify route scheduling, not physical reachability.
     for _ in range(8):
@@ -98,3 +99,17 @@ def test_agent_cli_rejects_removed_modes(option, value):
     with pytest.raises(SystemExit) as error:
         parser().parse_args(['agent', '--slot', 'B-1', '--server', 'http://localhost:8000', option, value])
     assert error.value.code == 2
+
+
+def test_unreachable_goal_retries_are_bounded_but_new_goal_is_immediate(config):
+    policy = ParticipantPolicy(config.public_map_prior(), {}, 'B-1')
+    calls = []
+    policy.grid.astar = lambda *args: calls.append(args) or []
+    pose = nominal_pose(config.public_map_prior(), 'B-1')
+    for tick in range(50):
+        assert policy._navigate(pose, tick, (3., 2.), False) == (0., 0.)
+    assert len(calls) == 1
+    policy._navigate(pose, 50, (3., 2.), False)
+    assert len(calls) == 2
+    policy._navigate(pose, 51, (3., 3.), False)
+    assert len(calls) == 3

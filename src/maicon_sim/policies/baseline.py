@@ -183,7 +183,7 @@ class ParticipantPolicy:
                     forbidden.update((x, y) for x in range(a[0], b[0] + 1) for y in range(a[1], b[1] + 1))
             # A robot initially inside its own strip must be allowed to leave it.
             forbidden.discard(start)
-        if goal != self.goal or tick - self.last_plan_tick >= 50 or not self.path or any(c in forbidden for c in self.path):
+        if goal != self.goal or tick - self.last_plan_tick >= 50 or any(c in forbidden for c in self.path):
             self.path = self.grid.astar(start, endpoint, forbidden)
             self.goal, self.last_plan_tick = goal, tick
         while self.path and math.dist(pose[:2], self.grid.center(self.path[0])) < .08:

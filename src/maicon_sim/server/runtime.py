@@ -52,6 +52,7 @@ class EngineRuntime:
     def _run(self):
         self.started_at = time.monotonic()
         deadline = self.started_at
+        pace_deadline = deadline
         lag_since = None
         try:
             if self.gateway is not None:
@@ -59,7 +60,7 @@ class EngineRuntime:
             while not self._stop.is_set():
                 if self.debug_paused.is_set() and not self._single_step.is_set():
                     self._stop.wait(.01)
-                    deadline = time.monotonic()
+                    deadline = pace_deadline = time.monotonic()
                     continue
                 self._single_step.clear()
                 before = time.monotonic()
@@ -83,6 +84,7 @@ class EngineRuntime:
                 if len(self.tick_times) > 100000:
                     del self.tick_times[:50000]
                 deadline += .01
+                pace_deadline += .01
                 lag = max(0.0, after-deadline)
                 self.max_lag_s = max(lag, self.max_lag_s)
                 if lag > .5:
@@ -93,7 +95,12 @@ class EngineRuntime:
                         self.overloaded = True
                 else:
                     lag_since = None
-                self._stop.wait(max(0, deadline-time.monotonic()))
+                # Do not repay seconds of overload as an unbounded burst of
+                # simulated time. HTTP participants need wall time to observe
+                # a newly published objective and refresh their actuator TTLs.
+                # Keep every physics tick and the cumulative lag evidence above.
+                pace_deadline = max(pace_deadline, after-.05)
+                self._stop.wait(max(0, pace_deadline-time.monotonic()))
         except BaseException as error:
             self.failure = error
             self._stop.set()

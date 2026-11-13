@@ -15,7 +15,7 @@ class MissionSurvey:
         self.required = sorted(self.sectors)
         row = int(slot[-1])-1
         order = [f'{prefix}S{(row+i)%3+1}' for i in range(3)] + ['CM']
-        self.vantages = []
+        by_sector = []
         for name in order:
             if name not in self.sectors:
                 continue
@@ -26,7 +26,9 @@ class MissionSurvey:
             points = [(x0+dx, y0+dy), (x1-dx, y1-dy)]
             if not self.blue:
                 points.reverse()
-            self.vantages.extend((name, p) for p in points)
+            by_sector.append((name, points))
+        # Visit every sector before spending time on its second viewing angle.
+        self.vantages = [(name, points[view]) for view in (0, 1) for name, points in by_sector]
         self.index, self.visited = 0, set()
         self.active_sector, self.target = None, None
         self.target_since = 0
