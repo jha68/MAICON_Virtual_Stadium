@@ -18,7 +18,7 @@ const fs=require('fs');
   const local=await localResponse.json();
   if(r.headers()['x-maicon-compute']!=='codex-cloud'||state.match_id!==local.match_id||state.build_revision!==local.build_revision)throw Error('Public build differs from local');
   if(state.arena.base_panels?.length!==6)throw Error('Missing M5 panels');
-  if(state.scenario_id!=='reference_stadium'||state.boxes.length!==20||Object.keys(state.visual_assets).length!==16||Object.keys(state.facility_signals).length!==6||state.llm_mode!=='mock')throw Error('Unexpected reference map');
+  if(state.scenario_id!=='reference_stadium'||state.boxes.length!==20||Object.keys(state.visual_assets).length!==16||Object.keys(state.facility_signals).length!==6||state.m1_mode!=='direct_order'||state.m6_mode!=='mock')throw Error('Unexpected reference map');
   await page.waitForFunction(()=>document.querySelectorAll('.asset-card img').length===16&&[...document.querySelectorAll('.asset-card img')].every(i=>i.complete&&i.naturalWidth>0),null,{timeout:60000});
   await page.waitForFunction(()=>document.querySelector('#camera').naturalWidth===640,null,{timeout:60000});
   fs.mkdirSync('artifacts/evidence',{recursive:true});
@@ -31,7 +31,7 @@ const fs=require('fs');
   const cameras=[];for(const slot of ['B-1','B-2','B-3','R-1','R-2','R-3']){const image=await context.request.get(base+'/api/camera/'+slot+'.jpg');if(image.status()!==200)throw Error('Camera unavailable '+slot);cameras.push({slot,status:image.status(),bytes:(await image.body()).length});}
   if(await page.locator('#change-password,#password-form,#logout').count())throw Error('Removed controls restored');
   if(errors.length||bad.length)throw Error('Browser errors');
-  fs.writeFileSync('artifacts/public-stadium-evidence.json',JSON.stringify({status:'passed',url:base,compute:r.headers()['x-maicon-compute'],match_id:state.match_id,phase:state.phase,revision:state.build_revision,scenario_id:state.scenario_id,boxes:20,images:16,basePanels:6,receivers:6,llm_mode:state.llm_mode,passwordPreserved:true,tlsVerification:true,operatorCommandsSent:0,webgl,cameras,browserErrors:errors,serverErrors:bad},null,2));
+  fs.writeFileSync('artifacts/public-stadium-evidence.json',JSON.stringify({status:'passed',url:base,compute:r.headers()['x-maicon-compute'],match_id:state.match_id,phase:state.phase,revision:state.build_revision,scenario_id:state.scenario_id,boxes:20,images:16,basePanels:6,receivers:6,m1_mode:state.m1_mode,m6_mode:state.m6_mode,passwordPreserved:true,tlsVerification:true,operatorCommandsSent:0,webgl,cameras,browserErrors:errors,serverErrors:bad},null,2));
   console.log('Public desktop check passed: same password, build, match, map, 16 textures, 6 receivers, WebGL and all 6 RGB cameras. No match commands sent.');
  }finally{await browser.close();}
 })().catch(e=>{console.error('Public desktop check failed: '+e.name);process.exit(1)});

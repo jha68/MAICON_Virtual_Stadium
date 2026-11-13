@@ -30,7 +30,7 @@ def command(args,*,cwd=None,env=None,timeout=180):
 @pytest.fixture(scope="module")
 def wheel_install(tmp_path_factory):
     root=tmp_path_factory.mktemp("distribution")/"checkout with spaces"
-    shutil.copytree(ROOT,root,ignore=shutil.ignore_patterns(".git",".venv",".cache","artifacts","__pycache__",".pytest_cache"))
+    shutil.copytree(ROOT,root,ignore=shutil.ignore_patterns(".git",".venv",".cache","artifacts","work","__pycache__",".pytest_cache"))
     env=SafeEnv(os.environ)
     env.setdefault("UV_CACHE_DIR",str(root.parent/"uv-cache"))
     env.setdefault("UV_PYTHON_INSTALL_DIR",str(root.parent/"uv-python"))
@@ -71,15 +71,16 @@ print(json.dumps({'scenario':cfg.scenario['scenario_id'],'core_only':True,'packa
 """
     result=command([python,"-c",code],cwd=outside,env=env)
     assert json.loads(result.stdout)["core_only"]
-    result=command([python,"-m","maicon_sim","run","--example","smoke_six","--backend","2d","--clock","accelerated","--headless","--out",outside/"full smoke"],cwd=outside,env=env)
+    result=command([python,"-m","maicon_sim","run","--example","smoke_six","--backend","2d","--clock","accelerated","--headless","--out",outside/"full smoke"],cwd=outside,env=env,timeout=900)
     score=json.loads((outside/"full smoke/result.json").read_text())
-    assert {v["total"] for v in score["scores"].values()}=={20}
+    assert len(score["scores"]) == 6 and score["final_match_ms"] == 300000
+    assert all(v["m1"] == 0 and v["m6"] in (0, 5, 10, 15) for v in score["scores"].values())
 
 
 def test_PACK_005_008_complete_cli_workflow_in_spaced_paths(wheel_install):
     root,python,outside,env=wheel_install
     # Explicitly shortened clock fixture keeps the CLI plumbing check bounded;
-    # PACK-002 above separately executes the unmodified 330-second sample.
+    # PACK-002 above separately executes the unmodified full mission sample.
     data=yaml.safe_load((root/"examples/rules_prestudy.yaml").read_text())
     data["timing"].update(match_ms=1000,objective_publish_ms=800,report_ms=300)
     (root/"examples/rules_prestudy.yaml").write_text(yaml.safe_dump(data,sort_keys=False))
@@ -135,7 +136,7 @@ with BulletBackend(cfg) as backend:
 cfg.rules['timing'].update(match_ms=100,objective_publish_ms=80,report_ms=100)
 cfg.hashes['rule_profile_hash']=canonical_hash(cfg.rules)
 result,root=run_episode(cfg,backend='3d',out=pathlib.Path('/app/artifacts/offline-gallery'))
-assert {v['total'] for v in result['scores'].values()}=={20}
+assert len(result['scores']) == 6 and all(v['m1'] == 0 for v in result['scores'].values())
 print(json.dumps({'ubuntu':'22.04','python':platform.python_version(),'offline':True,'headless_rgb':True}))
 """
     result=command(docker+["run","--rm","--network","none","--entrypoint","/app/.venv/bin/python",tag,"-c",code],env=env,timeout=180)

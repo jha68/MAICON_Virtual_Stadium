@@ -50,7 +50,7 @@ def test_old_inflight_frames_during_reset_cannot_block_new_tick_zero():
 
     async def run():
         port = Port()
-        controller = TeamController(port, "B-1", "idle")
+        controller = TeamController(port, "B-1", "mission")
         controller._generation = 5
         controller.session_identity = {"match_id": "old-match"}
         poll = asyncio.create_task(controller._poll_observations())

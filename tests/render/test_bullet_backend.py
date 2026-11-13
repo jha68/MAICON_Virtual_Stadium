@@ -271,7 +271,7 @@ def test_T3D18_restart_same_scene_new_session_discards_frames(config):
         from maicon_sim.policies.controller import TeamController
         from maicon_sim.sdk.in_process_port import InProcessPort
         async def restart_participant():
-            controller=TeamController(InProcessPort(engine,'B-1',gateway),'B-1','idle')
+            controller=TeamController(InProcessPort(engine,'B-1',gateway),'B-1','mission')
             await controller.initialize()
             assert controller.session_identity['match_id']==engine.match_id
             await controller.close()

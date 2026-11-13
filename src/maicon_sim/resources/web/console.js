@@ -1,12 +1,9 @@
 const $=id=>document.getElementById(id);
 const slots=['B-1','B-2','B-3','R-1','R-2','R-3'];
-const names={patrol:'순찰',baseline:'자율 임무',idle:'대기',blocker:'통로 방어',capture_runner:'거점 이동'};
 
 export class ExperimentConsole {
   constructor(state,selected){
     this.state=state;this.selected=selected;this.chain=Promise.resolve();this.held=null;this.activeSlot=null;this.droneURL=null;
-    for(const slot of slots){const label=document.createElement('label');label.textContent=slot;const input=document.createElement('select');input.dataset.slot=slot;input.setAttribute('aria-label',slot+' 정책');for(const [key,name] of Object.entries(names)){const option=document.createElement('option');option.value=key;option.textContent=name;input.append(option);}label.append(input);$('team-policies').append(label);}
-    $('policy').addEventListener('change',()=>{for(const input of $('team-policies').querySelectorAll('select'))input.value=$('policy').value;});
     for(const button of document.querySelectorAll('[data-drive]')){
       button.onpointerdown=event=>{event.preventDefault();if(button.disabled)return;button.setPointerCapture(event.pointerId);this.release();this.activeSlot=selected();this.held=button;button.classList.add('held');const [v,w]=button.dataset.drive.split(',').map(Number);this.drive(v,w);this.timer=setInterval(()=>this.drive(v,w),100);};
       button.onpointerup=button.onpointercancel=()=>this.release();
@@ -18,7 +15,6 @@ export class ExperimentConsole {
     for(const axis of ['pan','tilt'])$('manual-'+axis).oninput=()=>{$(axis+'-value').textContent=$('manual-'+axis).value;clearTimeout(this.aimTimer);this.aimTimer=setTimeout(()=>this.send('gimbal',{pan:Number($('manual-pan').value),tilt:Number($('manual-tilt').value),speed:60,acc:20}),90);};
     this.pollEvidence();
   }
-  policies(){return Object.fromEntries([...$('team-policies').querySelectorAll('select')].map(input=>[input.dataset.slot,input.value]));}
   send(command,parameters={},slot=this.selected()){
     const match=this.state()?.match_id;
     this.chain=this.chain.catch(()=>{}).then(async()=>{
@@ -36,12 +32,12 @@ export class ExperimentConsole {
     const enabled=state.phase==='running'&&!state.paused;
     for(const control of document.querySelectorAll('.drive-pad button,#manual-pan,#manual-tilt'))control.disabled=!enabled;
     if(!enabled)this.release();
-    for(const input of $('team-policies').querySelectorAll('select'))input.disabled=state.phase!=='waiting';
-    $('build-info').textContent=`${state.scenario_id} · ${state.profile_id} · revision ${state.build_revision.slice(0,12)} · M1 ${state.llm_mode}`;
+    $('build-info').textContent=`${state.scenario_id} · ${state.profile_id} · revision ${state.build_revision.slice(0,12)} · M1 직접 하달 · M6 MOCK`;
     $('manual-state').textContent=state.manual_slots?.includes(slot)?'수동 제어 중':'자동 정책';
     $('run-kind').textContent=state.manual_interventions?'수동 개입 포함':'자율 실행';
     $('report-title').textContent=slot+' · 보고·관측';
-    for(const mission of ['m1','m3','m6'])$('report-'+mission).textContent=state.reports?.[slot]?.[mission]?JSON.stringify(state.reports[slot][mission],null,2):'아직 제출 없음';
+    $('report-m1').textContent=state.mission_orders?.[slot]?JSON.stringify(state.mission_orders[slot],null,2):'경기 시작 시 하달됩니다';
+    for(const mission of ['m3','m6'])$('report-'+mission).textContent=state.reports?.[slot]?.[mission]?JSON.stringify(state.reports[slot][mission],null,2):'아직 제출 없음';
   }
   async pollEvidence(){
     const slot=this.selected(),match=this.state()?.match_id;

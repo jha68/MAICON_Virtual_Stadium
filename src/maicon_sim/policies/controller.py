@@ -14,17 +14,13 @@ from .inference import LatestInference
 
 
 class TeamController:
-    def __init__(self, port, slot: str, policy: str = "baseline", *, output=None, llm=None, llm_options=None, llm_timeout_s=5., allow_fixture_fallback=False, required_sensor_timeout_s=5., sensor_timeout_s=.5, camera_calibration=None, vision_stress_seed=None):
+    def __init__(self, port, slot: str, policy: str = "mission", *, output=None, llm=None, llm_options=None, llm_timeout_s=5., allow_fixture_fallback=False, required_sensor_timeout_s=5., sensor_timeout_s=.5, camera_calibration=None, vision_stress_seed=None):
         self.port, self.slot, self.policy_name = port, slot, policy
         self.output = Path(output) if output else None
         self.policy = None
-        self._configured_llm = llm
-        self.llm_options = dict(llm_options or {})
         self.camera_calibration = camera_calibration
         self.vision_stress_seed = vision_stress_seed
-        self.llm = llm
-        self.llm_timeout_s = llm_timeout_s
-        self.allow_fixture_fallback = allow_fixture_fallback
+        self.llm = None  # Legacy injection arguments are intentionally unused.
         self.required_sensor_timeout_s = required_sensor_timeout_s
         if not math.isfinite(sensor_timeout_s) or sensor_timeout_s <= 0:
             raise ValueError("sensor_timeout_s must be positive and finite")
@@ -91,18 +87,14 @@ class TeamController:
             self.inference = None
         self.slot = identity["slot"]
         self.policy = ParticipantPolicy(public_map, calibration, self.slot, self.policy_name)
-        self.policy.use_inline_fixture = False
-        from maicon_sim.sdk.llm import build_llm
-        self.llm = self._configured_llm or build_llm(identity.get("camp", self.policy.camp), **self.llm_options)
-        self.policy.llm_provider = getattr(self.llm, "model_name", type(self.llm).__name__)
-        self.policy.llm_mock = bool(getattr(self.llm, "mock", False))
+        self.llm = None  # M1 direct assignment; M6 mock, with no external provider.
         self.session_identity = identity
         self.observations, self.order, self.target = {}, {}, {}
         self.decision = PolicyDecision()
         self._last_rgb_sequence = None
-        self.report_workers = {kind: ReportWorker(self.port, kind).start() for kind in ("m1", "m3", "m6")}
+        self.report_workers = {kind: ReportWorker(self.port, kind).start() for kind in ("m3", "m6")}
         self.drone_observer = None
-        if identity.get("capabilities", {}).get("rgb") and self.policy_name == "baseline":
+        if identity.get("capabilities", {}).get("rgb"):
             def initialize_detector():
                 import cv2
                 cv2.setNumThreads(1) # Six isolated processes share the host CPU budget.
@@ -139,14 +131,14 @@ class TeamController:
         match = observations.get("match")
         if not isinstance(match, dict) or match.get("mode") not in ("practice", "mission") or match.get("cmd") not in ("idle", "standby", "start", "resume", "pause", "report", "stop"):
             missing.append("match")
-        if self.policy_name == "baseline" and self.session_identity.get("capabilities", {}).get("rgb"):
+        if self.session_identity.get("capabilities", {}).get("rgb"):
             rgb = observations.get("rgb")
             pixels = rgb.get("data") if isinstance(rgb, dict) else None
             intrinsics = self.policy.calibration.get("front_camera", {})
             expected = (intrinsics.get("height_px", 480), intrinsics.get("width_px", 640), 3)
             if pixels is None or getattr(pixels, "shape", None) != expected or str(getattr(pixels, "dtype", "")) != "uint8":
                 missing.append("rgb")
-        elif self.policy_name == "baseline" and self.session_identity.get("capabilities", {}).get("semantic"):
+        elif self.session_identity.get("capabilities", {}).get("semantic"):
             semantic = observations.get("semantic")
             if not isinstance(semantic, dict) or not isinstance(semantic.get("detections"), list):
                 missing.append("semantic")
@@ -158,11 +150,10 @@ class TeamController:
         base = self.sensor_timeout_s
         result = {"state": 3 * base, "match": 3 * base, "odom": base, "scan": base}
         capabilities = self.session_identity.get("capabilities", {})
-        if self.policy_name == "baseline":
-            if capabilities.get("rgb"):
-                result["rgb"] = 2 * base
-            elif capabilities.get("semantic"):
-                result["semantic"] = 2 * base
+        if capabilities.get("rgb"):
+            result["rgb"] = 2 * base
+        elif capabilities.get("semantic"):
+            result["semantic"] = 2 * base
         return result
 
     @staticmethod
@@ -356,86 +347,6 @@ class TeamController:
                 self._error(kind, error)
                 await asyncio.sleep(.2)
 
-    @staticmethod
-    def _interpretation_schema():
-        # LLMs receive the report shape, never authentication or hidden answers.
-        schema = json.loads(resources.files("maicon_sim.resources").joinpath("schemas/m1.normalized.schema.json").read_text())
-        schema["properties"].pop("mission_code", None)
-        schema["required"] = []
-        return schema
-
-    @staticmethod
-    def _validate_interpretation(value):
-        from jsonschema import Draft202012Validator
-        schema = TeamController._interpretation_schema()
-        if not isinstance(value, dict):
-            raise ValueError("LLM interpretation must be a JSON object")
-        normalized = dict(value)
-        for name in ("target", "base"):
-            if isinstance(normalized.get(name), str):
-                normalized[name] = normalized[name].upper()
-        if isinstance(normalized.get("search_sectors"), list):
-            normalized["search_sectors"] = [v.upper() if isinstance(v, str) else v for v in normalized["search_sectors"]]
-            if len(set(normalized["search_sectors"])) != len(normalized["search_sectors"]):
-                raise ValueError("LLM interpretation contains duplicate sectors")
-        if not Draft202012Validator(schema).is_valid(normalized):
-            raise ValueError("LLM interpretation violates public report schema")
-        return normalized
-
-    async def _interpret_orders(self):
-        handled = None
-        while not self.closed and not self.done.is_set():
-            token = (self._generation, self.order.get("order", {}).get("tactical_command"))
-            if self.policy_name != "baseline" or not self.order.get("accepted") or token == handled:
-                await asyncio.sleep(.05)
-                continue
-            generation, text = token
-            handled = token
-            self.llm_calls += 1
-            try:
-                value = await asyncio.wait_for(self.llm.parse_order(text, allowed_schema=self._interpretation_schema(), deadline=time.monotonic() + self.llm_timeout_s), self.llm_timeout_s)
-                value = await asyncio.to_thread(self._validate_interpretation, value)
-                if generation == self._generation:
-                    self.policy.m1_interpretation = value
-                    self.llm_completed += 1
-            except asyncio.CancelledError:
-                raise
-            except Exception as error:
-                self._error("llm_interpretation", error)
-                if self.allow_fixture_fallback and generation == self._generation:
-                    from .baseline import fixture_interpret_order
-                    self.policy.m1_interpretation = fixture_interpret_order(text, self.slot)
-            await asyncio.sleep(.05)
-
-    async def _rank_evidence(self):
-        while not self.closed and not self.done.is_set():
-            if self.policy_name == "baseline" and self.me.get("phase") == "running":
-                generation = self._generation
-                try:
-                    tick = self.policy.observation_tick(self.observations)
-                    evidence = self.policy.threat.summary(tick)
-                    evidence["self_slot"] = self.slot
-                    allowed = set(evidence["opposing_slots"])
-                    ranking = (self.policy.threat.ranking(tick) if getattr(self.llm, "mock", False) else
-                               await asyncio.wait_for(self.llm.rank_threat(evidence, deadline=time.monotonic() + self.llm_timeout_s), self.llm_timeout_s))
-                    if not isinstance(ranking, (list, tuple)) or len(ranking) != 3 or any(not isinstance(s, str) for s in ranking):
-                        raise ValueError("LLM ranking must contain three opposing slots")
-                    ranking = [s.upper() for s in ranking]
-                    if set(ranking) != allowed:
-                        raise ValueError("LLM ranking must contain three unique opposing slots")
-                    if generation == self._generation:
-                        self.policy.ranking_override = ranking
-                        self.policy.rank_confidence = ("uncertain: visual evidence ranking; fixture LLM selected" if getattr(self.llm, "mock", False)
-                                                       else "uncertain: provider ranking from public visual evidence")
-                except asyncio.CancelledError:
-                    raise
-                except Exception as error:
-                    self._error("llm_ranking", error)
-                    if generation == self._generation:
-                        self.policy.ranking_override = None
-                        self.policy.rank_confidence = "uncertain: evidence-only ranking; provider call failed"
-            await asyncio.sleep(2.)
-
     async def _heartbeat(self):
         next_at = time.monotonic()
         while not self.closed and not self.done.is_set():
@@ -553,7 +464,7 @@ class TeamController:
     def start(self):
         self.tasks = [asyncio.create_task(coro) for coro in (
             self._poll_state(), self._ready(), self._poll_observations(), self._await_mission("order"),
-            self._await_mission("target"), self._interpret_orders(), self._rank_evidence(), self._heartbeat(), self._plan(), self._poll_drone())]
+            self._await_mission("target"), self._heartbeat(), self._plan(), self._poll_drone())]
         return self
 
     async def run(self):
@@ -590,7 +501,7 @@ class TeamController:
                        "inference_dropped": self.inference.dropped if self.inference else 0,
                        "inference_metrics": self.inference.stats() if self.inference else None,
                        "oracle": False, "llm_calls": self.llm_calls, "llm_completed": self.llm_completed,
-                       "llm_mock": bool(getattr(self.llm, "mock", False)), "fixture_fallback_allowed": self.allow_fixture_fallback}
+                       "m1_mode": "direct_order", "m6_mode": "mock"}
             (self.output / "participant_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
         await self.port.close()
 

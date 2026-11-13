@@ -111,11 +111,11 @@ state = json.load(get('/api/state'))
 assert state['scenario_id'] == 'reference_stadium'
 assert len(state['boxes']) == 20 and len(state['facility_signals']) == 6 and len(state['visual_assets']) == 16
 assert len(state['arena']['base_panels']) == 6
-assert state['llm_mode'] == 'mock'
+assert state['m1_mode'] == 'direct_order' and state['m6_mode'] == 'mock'
 assert state['build_revision'] == os.environ['MAICON_BUILD_REVISION'] and len(state['build_revision']) == 40
 page = get('/').read().decode()
 assert not any(marker in page for marker in ('id="change-password"', 'id="password-form"', 'id="logout"'))
-print(json.dumps({key: state[key] for key in ('scenario_id', 'build_revision', 'llm_mode')} |
+print(json.dumps({key: state[key] for key in ('scenario_id', 'build_revision', 'm1_mode', 'm6_mode')} |
                  {'boxes': 20, 'receivers': 6, 'images': 16, 'base_panels': 6}))
 PYHEALTH
             ); then

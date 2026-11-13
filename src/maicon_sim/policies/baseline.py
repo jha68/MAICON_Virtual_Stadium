@@ -1,7 +1,7 @@
 """Small public-sensor baseline, not an oracle or a competition-ready strategy.
 
-All positions are estimates composed from a nominal public start and local odometry.
-The Korean fixture interpreter is a replaceable integration stub, not LLM evidence.
+Mission orders are delivered as structured assignments. Navigation uses public
+odometry, LiDAR wall registration and camera observations; no evaluator poses.
 """
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ import math
 import re
 
 from .planning import FREE, OCCUPIED, UNKNOWN, OccupancyGrid, follow_waypoint, inside_polygon, wrap
-from .scripted import WaypointPolicy, base_goal, nominal_pose
+from .scripted import base_goal, nominal_pose
+from .mission import MissionSurvey
 from .tracking import ObjectTracker
 
 
@@ -52,8 +53,8 @@ from maicon_sim.core.actuation import GimbalModel as GimbalEstimate
 class ParticipantPolicy:
     """Synchronous public-only policy usable by accelerated and HTTP runners."""
 
-    def __init__(self, public_map: dict, calibration: dict, slot: str, policy: str = "baseline"):
-        if policy not in ("idle", "baseline", "patrol", "blocker", "capture_runner"):
+    def __init__(self, public_map: dict, calibration: dict, slot: str, policy: str = "mission"):
+        if policy != "mission":
             raise ValueError(f"unknown participant policy {policy!r}")
         self.public_map, self.calibration, self.slot, self.policy = public_map, calibration, slot, policy
         self.camp = "BLUE" if slot.startswith("B") else "RED"
@@ -61,17 +62,17 @@ class ParticipantPolicy:
         self.grid = OccupancyGrid(bounds.get("width_m", 6.12), bounds.get("height_m", 5.))
         self.tracker, self.gimbal = ObjectTracker(), GimbalEstimate(calibration.get('actuation', {}).get('gimbal_acc_deg_s2_per_unit', 0.))
         from .combat import CombatPolicy
-        from .threat import ThreatEstimator
+        from .recovery import MotionRecovery
         from .observations import ObservationHistory, GimbalHistory, SurfaceMapper
         from .tactics import TacticalNavigator
         self.tactics = TacticalNavigator(self.camp)
         self.combat = CombatPolicy(slot, public_map)
-        self.threat = ThreatEstimator(self.camp)
+        self.recovery = MotionRecovery()
         self.history, self.gimbal_history = ObservationHistory(), GimbalHistory(acceleration_gain=calibration.get('actuation', {}).get('gimbal_acc_deg_s2_per_unit', 0.))
         self.surface_mapper = SurfaceMapper(public_map, calibration, slot)
         self._grid_correction = (0., 0., 0.)
         self.start = nominal_pose(public_map, slot)
-        self.waypoints = WaypointPolicy(public_map, slot, policy)
+        self.survey = MissionSurvey(public_map, slot)
         self.last_sequence = {}
         self.last_reports = {}
         self.last_report_tick = {}
@@ -79,20 +80,15 @@ class ParticipantPolicy:
         self.goal = None
         self.path = []
         self.last_plan_tick = -1000
-        self.last_frontier_tick = -1000
         self.last_gimbal_tick = -1000
         self.scan_index = 0
         self.last_phase = None
         self.target_objective = None
-        self.rank_confidence = "low: deterministic fallback; no opponent state observed"
+        self.rank_confidence = "mock: fixed opponent slot order; no risk inference"
         self.marker_evidence = {}
         self._rgb_detector = None
         self._last_rgb_sequence = None
-        self.m1_interpretation = None
-        self.use_inline_fixture = True
         self.ranking_override = None
-        self.llm_provider = "fixture_text_stub"
-        self.llm_mock = True
         self.last_diagnostics = {}
 
     def reset(self, public_map: dict | None = None, calibration: dict | None = None):
@@ -210,17 +206,13 @@ class ParticipantPolicy:
         self.gimbal.update(tick)
         reports = {}
         diagnostics = {"pose_source": "public_wall_registration_plus_local_odom", "rank_confidence": self.rank_confidence,
-                       "llm_provider": self.llm_provider, "llm_mock": self.llm_mock, "oracle": False}
+                       "m1_mode": "direct_order", "m6_mode": "mock", "oracle": False}
         drone = observations.get('drone', {})
         if drone:
             diagnostics['drone'] = {k:v for k,v in drone.items() if k != 'visual'}
-            if self.policy == 'baseline' and drone.get('status') == 'available':
-                self.threat.observe(drone.get('visual'))
-        if self.policy == "idle":
-            return PolicyDecision(diagnostics=diagnostics)
         if phase == "reporting":
             if not self.sent_m6:
-                reports["m6"] = {"ranking": list(self.ranking_override or self.threat.ranking(tick))}
+                reports["m6"] = {"ranking": [f"{'R' if self.camp == 'BLUE' else 'B'}-{i}" for i in (1, 2, 3)]}
             return PolicyDecision(reports=reports, diagnostics=diagnostics)
         if phase != "running" or cmd == "pause":
             if self.last_phase == "running":
@@ -228,15 +220,11 @@ class ParticipantPolicy:
             self.last_phase = phase
             return PolicyDecision(diagnostics=diagnostics)
         self.last_phase = phase
-        if self.policy == "baseline" and order and order.get("accepted"):
-            value = self.m1_interpretation or (fixture_interpret_order(order.get("order", {}).get("tactical_command", ""), self.slot) if self.use_inline_fixture else {})
-            candidate = self._report("m1", value, tick)
-            if candidate:
-                reports["m1"] = candidate
+        assignment = order.get("order", {}) if order and order.get("accepted") else {}
+        diagnostics["assignment"] = {k: assignment.get(k) for k in ("target", "search_sectors", "base")}
         scan = observations.get("scan", {})
         raw_scan_pose = self.history.pose_at(scan.get("captured_tick", tick), self.start)
-        if self.policy == "baseline":
-            self.surface_mapper.correct_pose(raw_scan_pose, scan)
+        self.surface_mapper.correct_pose(raw_scan_pose, scan)
         correction = self.surface_mapper.localizer.correction
         if math.dist(correction[:2], self._grid_correction[:2]) > .02 or abs(wrap(correction[2]-self._grid_correction[2])) > .01:
             bounds = self.public_map.get("bounds", {})
@@ -253,7 +241,7 @@ class ParticipantPolicy:
                 self.grid.update_scan(scan_pose, scan)
         semantic = observations.get("semantic", {})
         rgb = observations.get("rgb")
-        if self.policy == "baseline" and not semantic and isinstance(rgb, dict) and "data" in rgb:
+        if not semantic and isinstance(rgb, dict) and "data" in rgb:
             sequence = rgb.get("sequence", rgb.get("captured_tick"))
             if sequence != self._last_rgb_sequence:
                 if self._rgb_detector is None:
@@ -268,8 +256,7 @@ class ParticipantPolicy:
                 semantic = self._rgb_detector.process(public_frame)
                 self._last_rgb_sequence = sequence
                 diagnostics["perception"] = 'RGB public_prestudy_image' if self.calibration.get('artwork_profile') == 'prestudy' else 'RGB synthetic_template'
-        if self.policy == "baseline" and self._new("semantic", semantic):
-            self.threat.observe(semantic)
+        if self._new("semantic", semantic):
             diagnostics.update(self.surface_mapper.observe(semantic, self.history, self.gimbal_history, self.tracker))
             for detection in semantic.get("detections", []):
                 marker = detection.get("marker_readout", {})
@@ -284,28 +271,26 @@ class ParticipantPolicy:
         if objective != self.target_objective:
             self.path = []
             self.target_objective = objective
-        if objective:
-            goal = base_goal(self.public_map, objective)
-        elif self.policy in ("patrol", "blocker", "capture_runner"):
-            goal = self.waypoints.goal(pose, tick, target)
-        else:
-            if tick - self.last_frontier_tick >= 200 or self.goal is None or math.dist(pose[:2], self.goal) < .1:
-                prefix = "R-" if self.camp == "BLUE" else "B-"
-                sectors = [s for s in self.public_map.get("sectors", []) if s["sector_id"].startswith(prefix) or s["sector_id"] == "CM"]
-                self.goal = self.grid.frontier(pose, sectors)
-                self.last_frontier_tick = tick
-            goal = self.goal
         hazards, opponents = set(), []
-        if self.policy == 'baseline':
-            frame = drone.get('visual') or {}
-            captured = frame.get('captured_tick')
-            own_at_capture = self.history.pose_at(captured, self.start) if type(captured) is int else None
-            own_at_capture = self.surface_mapper.localizer.apply(own_at_capture) if own_at_capture else None
-            hazards, opponents, nav_tick = self.tactics.navigation(drone, tick, own_at_capture, self.grid)
-            diagnostics['navigation'] = {'source': 'lidar_and_public_drone' if nav_tick is not None else 'lidar',
-                                         'drone_capture_tick': nav_tick, 'hazard_cells': len(hazards),
-                                         'anonymous_opponents': len(opponents)}
+        frame = drone.get('visual') or {}
+        captured = frame.get('captured_tick')
+        own_at_capture = self.history.pose_at(captured, self.start) if type(captured) is int else None
+        own_at_capture = self.surface_mapper.localizer.apply(own_at_capture) if own_at_capture else None
+        hazards, opponents, nav_tick = self.tactics.navigation(drone, tick, own_at_capture, self.grid)
+        diagnostics['navigation'] = {'source': 'lidar_and_public_drone' if nav_tick is not None else 'lidar',
+                                     'drone_capture_tick': nav_tick, 'hazard_cells': len(hazards),
+                                     'anonymous_opponents': len(opponents)}
+        goal = base_goal(self.public_map, objective) if objective else self.survey.goal(pose, tick, self.grid, hazards)
+        diagnostics["missions"] = {"stage": "M5" if objective else "M2_M3_M4", "m2_target": assignment.get("target"),
+                                   "m3_required_sectors": self.survey.required, "m3_visited_sectors": sorted(self.survey.visited),
+                                   "m3_active_sector": self.survey.active_sector, "m5_objective": objective,
+                                   "m1": "direct_assignment_no_submission"}
         velocity = self._navigate(pose, tick, goal, bool(objective), hazards)
+        if not objective and self.survey.sweeping:
+            velocity = (0., 1.)
+        cell = self.grid.cell(*pose[:2])
+        diagnostics['navigation'].update(goal_xy_m=goal, pose_xy_m=pose[:2], path_cells=len(self.path),
+                                         start_blocked=not self.grid.valid(cell) or bool(self.grid.inflated()[cell[1], cell[0]]))
         # Immediate front clearance check is independent of slow A*/inference.
         ranges = scan.get("ranges_m", [])
         if velocity[0] > 0 and ranges:
@@ -317,7 +302,7 @@ class ParticipantPolicy:
                 self.path = []
                 diagnostics["motion_blocked"] = "front scan clearance"
         gimbal = None
-        if self.policy == "baseline" and tick - self.last_gimbal_tick >= 200:
+        if tick - self.last_gimbal_tick >= 200:
             pan = (-40., 0., 40., 0.)[self.scan_index % 4]
             self.scan_index += 1
             self.last_gimbal_tick = tick
@@ -325,38 +310,42 @@ class ParticipantPolicy:
         diagnostics["tracks"] = len(self.tracker.tracks)
         diagnostics["coverage"] = dict(self.tracker.coverage)
         fire = False
-        if self.policy == "baseline":
-            interpretation = self.m1_interpretation or (fixture_interpret_order(order.get("order", {}).get("tactical_command", ""), self.slot) if order and self.use_inline_fixture else {})
-            combat_observations = {**observations, "semantic": semantic}
-            capture_tick = semantic.get("captured_tick")
-            capture_angles = self.gimbal_history.at(capture_tick) if type(capture_tick) is int else None
-            capture_pose = self.history.pose_at(capture_tick, self.start) if type(capture_tick) is int else None
-            capture_pose = self.surface_mapper.localizer.apply(capture_pose) if capture_pose else None
-            action = self.combat.update(combat_observations, self.calibration, observations.get("state"),
-                                        interpretation.get("target"), phase=phase, cmd=cmd,
-                                        objective=objective, gimbal={"pan": self.gimbal.pan, "tilt": self.gimbal.tilt},
-                                        pose=capture_pose, capture_gimbal=capture_angles)
-            diagnostics["combat"] = {"state": action.state, **action.diagnostics}
-            if action.hold:
-                velocity = (0., 0.)
-                gimbal = action.gimbal
-            elif action.gimbal is not None:
-                gimbal = action.gimbal
-            fire = action.fire
-            if action.state in ('search', 'stale') and tick-self.last_gimbal_tick >= 100:
-                cue = self.tactics.cue_gimbal(pose, opponents)
-                if cue is not None:
-                    gimbal = cue
-                    self.last_gimbal_tick = tick
-                    diagnostics['drone_search_cue'] = True
-            escape = self.tactics.evade(pose, observations, semantic, tick, self.grid, hazards, opponents)
-            if escape is not None:
-                # Cancel an undispatched fire intent before suppressing it. Keep
-                # sent/unknown-shot accounting intact; never retry a lost ACK.
-                if fire:
-                    self.combat.discard_unsent_fire(tick)
-                self.combat.cancel(tick)
-                velocity, fire = escape, False
-                self.path = []
-                diagnostics['evasion'] = 'observed_threat_retreat' if escape[0] else 'observed_threat_blocked'
+        combat_observations = {**observations, "semantic": semantic}
+        capture_tick = semantic.get("captured_tick")
+        capture_angles = self.gimbal_history.at(capture_tick) if type(capture_tick) is int else None
+        capture_pose = self.history.pose_at(capture_tick, self.start) if type(capture_tick) is int else None
+        capture_pose = self.surface_mapper.localizer.apply(capture_pose) if capture_pose else None
+        action = self.combat.update(combat_observations, self.calibration, observations.get("state"),
+                                    assignment.get("target"), phase=phase, cmd=cmd,
+                                    objective=objective, gimbal={"pan": self.gimbal.pan, "tilt": self.gimbal.tilt},
+                                    pose=capture_pose, capture_gimbal=capture_angles)
+        diagnostics["combat"] = {"state": action.state, **action.diagnostics}
+        if action.hold:
+            velocity = (0., 0.)
+            gimbal = action.gimbal
+        elif action.gimbal is not None:
+            gimbal = action.gimbal
+        fire = action.fire
+        if action.state in ('search', 'stale') and tick-self.last_gimbal_tick >= 100:
+            cue = self.tactics.cue_gimbal(pose, opponents)
+            if cue is not None:
+                gimbal = cue
+                self.last_gimbal_tick = tick
+                diagnostics['drone_search_cue'] = True
+        escape = self.tactics.evade(pose, observations, semantic, tick, self.grid, hazards, opponents)
+        if escape is not None:
+            # Cancel an undispatched fire intent before suppressing it. Keep
+            # sent/unknown-shot accounting intact; never retry a lost ACK.
+            if fire:
+                self.combat.discard_unsent_fire(tick)
+            self.combat.cancel(tick)
+            velocity, fire = escape, False
+            self.path = []
+            diagnostics['evasion'] = 'observed_threat_retreat' if escape[0] else 'observed_threat_blocked'
+        recovery = self.recovery.command(pose, goal, scan, tick,
+                                         holding=action.hold or (not objective and self.survey.sweeping) or escape is not None)
+        if recovery is not None:
+            velocity = recovery
+            self.path = []
+            diagnostics['recovery'] = 'fresh_scan_reverse'
         return PolicyDecision(velocity, gimbal, reports, diagnostics, fire)

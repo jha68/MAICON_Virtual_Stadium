@@ -32,7 +32,6 @@ def profile_render(connection, config, assets, headless):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--policy', choices=['idle', 'patrol', 'baseline'], required=True)
     parser.add_argument('--out', required=True)
     parser.add_argument('--seconds', type=float, default=20)
     parser.add_argument('--no-profile', action='store_true')
@@ -72,7 +71,7 @@ def main():
         with runtime, LocalServers(public, admin) as servers:
             manager.public_url = servers.public_url
             async def exercise():
-                await manager.command('ready', args.policy)
+                await manager.command('ready')
                 end = time.monotonic()+90
                 while not all(r.ready for r in engine.robots.values()):
                     if runtime.failure: raise runtime.failure
@@ -88,7 +87,7 @@ def main():
                 elapsed=time.monotonic()-start
                 from maicon_sim.evaluation.metrics import machine
                 data.update(environment=machine(), scenario_seed=config.scenario['seed'],
-                            policy=args.policy, cpu_affinity=cpus, profiled=not args.no_profile, wall_s=elapsed,
+                            policy='mission', cpu_affinity=cpus, profiled=not args.no_profile, wall_s=elapsed,
                             simulated_s=(engine.match_elapsed_ticks-initial_tick)/100,
                             real_time_factor=(engine.match_elapsed_ticks-initial_tick)/100/elapsed,
                             frame_drops=gateway.dropped-initial_drops,
