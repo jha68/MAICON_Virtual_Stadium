@@ -66,6 +66,7 @@ jobs:
           server_pid=$!
           trap 'kill -TERM "$server_pid" 2>/dev/null || true; wait "$server_pid" || true' EXIT
           NODE_PATH="$RUNNER_TEMP/maicon-browser/node_modules" node scripts/check_web_ui.cjs
+          .venv/bin/python scripts/check_baseline_drone.py --password-file "$RUNNER_TEMP/maicon-web-password"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -443,7 +443,13 @@ class TeamController:
         generation = self._generation
         motion_generation = self._motion_generation
         sensors_were_fresh = self._check_motion_sensors()
-        decision = await asyncio.to_thread(self.policy.compute, dict(self.observations), dict(self.me), dict(self.order), dict(self.target))
+        observations = dict(self.observations)
+        if self.drone_observer:
+            # The sensor poll replaces its cache every cycle. Join the independent
+            # drone worker here, at planning time, so neither an initial waiting
+            # snapshot nor a failed feed can remain fresh indefinitely.
+            observations['drone'] = self.drone_observer.observation(self.policy.observation_tick(observations))
+        decision = await asyncio.to_thread(self.policy.compute, observations, dict(self.me), dict(self.order), dict(self.target))
         if generation != self._generation:
             return
         requested_fire = decision.fire

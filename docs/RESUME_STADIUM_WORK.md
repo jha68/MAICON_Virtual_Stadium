@@ -88,6 +88,8 @@
 - 후속 구현: 보정된 공개 드론 JPEG의 상자 묶음/익명 기체 검출·XY 추정, 임시 회피 영역 기반 A* 재계획, 관측 노후화/중단 시 LiDAR 복귀, 상대 위치를 향한 팬틸트 탐색, 전방 RGB 근접 상대/자기 HP 감소에 반응하는 보수적 후퇴를 추가했다. LiDAR로 확인된 통행 가능 셀은 불확실한 드론 윗면/높이 추정보다 우선한다. 드론만으로 발사하지 않는다. 상세 한계·모델은 `STADIUM_FIDELITY.md`의 후속 절에 있다.
 - Oracle 배포는 준비 전과 컨테이너 정지 직전에 기존 Oracle 앱 자체의 상태를 인증해 확인한다. ready/running/reporting/알 수 없는 상태/조회 실패이면 기존 컨테이너를 정지하지 않고 보류한다. 비밀번호 파일, Caddy→18090 중계 경로, immutable image/rollback을 유지한다.
 
+6개 실제 baseline 프로세스의 로컬 연결 시험에서 초기 센서 캐시 교체 후 최신 드론 관측이 정책에 합류되지 않는 누락을 발견해 수정했다. 계획 계산 시마다 독립 드론 수신기의 최신 상태를 합류하며, cache 교체/노후화 단위 검사와 6개 실제 프로세스 시험을 CI에 추가했다. `scripts/check_baseline_drone.py`는 운영 비밀번호를 거부하고 알려진 시험 비밀번호의 loopback 서버에만 동작한다. 로컬 6팀 모두 공개 드론 항법 관측을 사용하고 종료·보고 완료까지 확인했다.
+
 새 증거는 ignored `artifacts`에 저장한다. `drone-tactics.xml`, `stadium-followup-targeted.xml`, `stadium-resumed-full.xml`, `public-stadium-evidence.json`, `evidence/public-reference-*.png`를 확인한다. 전체 검사는 실행 완료와 실제 결과를 확인한 뒤에만 통과로 보고한다. 최종 코드 CI는 이 feature 브랜치의 최신 SHA에 해당하는 실행을 조회한다.
 
 공개 사이트 읽기 전용 재검증:

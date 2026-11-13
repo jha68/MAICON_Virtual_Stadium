@@ -129,3 +129,30 @@ def test_policy_uses_drone_for_navigation_and_search_never_for_direct_fire():
     assert policy.compute({**obs, 'match': {'cmd': 'pause'}}, {'phase': 'running'}).velocity == (0., 0.)
     obs['drone']['status'] = 'unavailable'
     assert policy.compute(obs, {'phase': 'running'}).diagnostics['navigation']['source'] == 'lidar'
+
+
+@pytest.mark.asyncio
+async def test_controller_joins_latest_drone_worker_after_each_sensor_cache_replacement():
+    from types import SimpleNamespace
+    from maicon_sim.policies.baseline import PolicyDecision
+    from maicon_sim.policies.controller import TeamController
+
+    seen = []
+    class Policy:
+        observation_tick = staticmethod(ParticipantPolicy.observation_tick)
+        def compute(self, observations, *args):
+            seen.append(observations['drone'])
+            return PolicyDecision()
+    class Observer:
+        def observation(self, tick):
+            return {'status': 'available' if tick <= 100 else 'stale', 'checked_tick': tick}
+    controller = TeamController(None, 'B-1')
+    controller.policy = Policy()
+    controller.drone_observer = Observer()
+    controller._check_motion_sensors = lambda: True
+    controller.report_workers = {'m6': SimpleNamespace(acknowledged_revision=None)}
+    for tick in (100, 401):
+        controller.observations = {'odom': {'captured_tick': tick}}
+        await controller._compute_step()
+        assert 'drone' not in controller.observations
+    assert seen == [{'status': 'available', 'checked_tick': 100}, {'status': 'stale', 'checked_tick': 401}]
