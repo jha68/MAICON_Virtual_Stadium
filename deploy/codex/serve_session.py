@@ -20,6 +20,8 @@ def main():
     if len(password.read_text().strip()) < 10:
         raise ValueError('Invalid operator password file')
     os.sched_setaffinity(0, sorted(os.sched_getaffinity(0))[:4])
+    for name in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'):
+        os.environ[name] = '1'
     os.environ['MAICON_WEB_PASSWORD_FILE'] = str(password)
     os.environ['MAICON_LLM_PROVIDER'] = 'fixture'
     os.environ.pop('MAICON_RELAY_CREDENTIALS_JSON', None)

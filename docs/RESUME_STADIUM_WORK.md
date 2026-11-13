@@ -90,6 +90,8 @@
 
 6개 실제 baseline 프로세스의 로컬 연결 시험에서 초기 센서 캐시 교체 후 최신 드론 관측이 정책에 합류되지 않는 누락을 발견해 수정했다. 계획 계산 시마다 독립 드론 수신기의 최신 상태를 합류하며, cache 교체/노후화 단위 검사와 6개 실제 프로세스 시험을 CI에 추가했다. `scripts/check_baseline_drone.py`는 운영 비밀번호를 거부하고 알려진 시험 비밀번호의 loopback 서버에만 동작한다. 로컬 6팀 모두 공개 드론 항법 관측을 사용하고 종료·보고 완료까지 확인했다.
 
+최종 6팀 CI(98c034f)는 전체 회귀·패키징은 성공했으나 브라우저/드론 단계에서 실패했다. 2코어 로컬 재현에서 드론 프레임이 3~5초 지연되는 CPU 포화가 확인됐다. 참가 프로세스의 OpenCV/BLAS 스레드를 1개로 제한하고 완전히 같은 새 RGB 픽셀의 이미지 전용 추론 결과를 재사용하도록 개선했다. 원래 capture tick/sequence는 유지하며, 센서 캐시 자체를 새 관측으로 바꾸지 않는다. 신선도 기준을 느슨하게 하지 않는다. 로그 다운로드의 results-receiver 호스트는 현재 네트워크 허용 범위 밖이므로 같은 설정을 반복 요구하지 않고 로컬 재현과 GitHub API 검사 결과를 이용했다. CI 실패 단계는 이제 안전한 고정 문자열 annotation으로도 남긴다. 최적화 후 렌더 시험과 겹치지 않는 2코어 로컬 trial에서 데스크톱 6팀 조작과 6개 baseline의 최신 드론 항법 수신·경기 종료까지 통과했다. `disposable-2cpu-isolated-*.log`에 근거가 있다.
+
 새 증거는 ignored `artifacts`에 저장한다. `drone-tactics.xml`, `stadium-followup-targeted.xml`, `stadium-resumed-full.xml`, `public-stadium-evidence.json`, `evidence/public-reference-*.png`를 확인한다. 전체 검사는 실행 완료와 실제 결과를 확인한 뒤에만 통과로 보고한다. 최종 코드 CI는 이 feature 브랜치의 최신 SHA에 해당하는 실행을 조회한다.
 
 공개 사이트 읽기 전용 재검증:

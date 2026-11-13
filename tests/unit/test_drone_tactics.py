@@ -156,3 +156,25 @@ async def test_controller_joins_latest_drone_worker_after_each_sensor_cache_repl
         await controller._compute_step()
         assert 'drone' not in controller.observations
     assert seen == [{'status': 'available', 'checked_tick': 100}, {'status': 'stale', 'checked_tick': 401}]
+
+
+def test_repeated_pixels_save_inference_without_retiming_cached_sensor_packets():
+    from maicon_sim.perception.combat import CombatVisionDetector
+    detector = CombatVisionDetector()
+    calls = []
+    def detect(pixels):
+        calls.append(1)
+        return [{'kind': 'ugv', 'confidence': .8}]
+    detector.detect = detect
+    pixels = np.zeros((48, 64, 3), np.uint8)
+    first = detector.process({'data': pixels, 'sequence': 1, 'captured_tick': 10})
+    first['detections'][0]['confidence'] = 0.
+    second = detector.process({'data': pixels, 'sequence': 2, 'captured_tick': 20})
+    assert len(calls) == 1 and second['captured_tick'] == 20 and second['sequence'] == 2
+    assert second['detections'][0]['confidence'] == .8
+    duplicate = detector.process({'data': pixels, 'sequence': 1, 'captured_tick': 10})
+    assert duplicate['captured_tick'] == 10 and duplicate['sequence'] == 1
+    changed = pixels.copy()
+    changed[0, 0, 0] = 1
+    detector.process({'data': changed, 'sequence': 3, 'captured_tick': 30})
+    assert len(calls) == 2

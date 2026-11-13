@@ -100,6 +100,8 @@ class TeamController:
         self.drone_observer = None
         if identity.get("capabilities", {}).get("rgb") and self.policy_name == "baseline":
             def initialize_detector():
+                import cv2
+                cv2.setNumThreads(1) # Six isolated processes share the host CPU budget.
                 from maicon_sim.perception.combat import CombatVisionDetector
                 return CombatVisionDetector(calibration)
             detector = await asyncio.to_thread(initialize_detector)

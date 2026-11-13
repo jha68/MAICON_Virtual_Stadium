@@ -97,6 +97,7 @@ class ParticipantProcesses:
             self.logs[slot] = (directory / "process.log").open("ab")
         # Do not inherit admin tokens, truth paths, provider credentials or parent cwd.
         env = {"PATH": os.environ.get("PATH", ""), "LANG": "C.UTF-8", "PYTHONUNBUFFERED": "1",
+               "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1",
                "MAICON_SIM_MISSION_CODE": agent["mission_code"]}
         from maicon_sim.sdk.llm import llm_environment
         provider_env = llm_environment()
