@@ -36,7 +36,12 @@ if [[ -n "$web_domain" ]]; then
         --mount "type=bind,src=$data_dir,dst=/data" --entrypoint /app/.venv/bin/python "$image" \
         -c 'import os,secrets,pathlib; p=pathlib.Path("/data/web.password"); f=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600) if not p.exists() else None; f is not None and os.write(f,("".join(secrets.choice("abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789") for _ in range(10))+"\n").encode()); f is not None and os.close(f); assert len(p.read_text().strip())>=10; p.chmod(0o600)'
     mkdir -p "$data_dir/proxy"
-    printf '%s {\n  reverse_proxy 127.0.0.1:8080\n}\n' "$web_domain" > "$data_dir/proxy/Caddyfile.next"
+    web_upstream=127.0.0.1:8080
+    if [[ -f "$data_dir/codex-bridge/enabled" ]] && \
+       [[ "$(docker inspect --format '{{.State.Running}}' maicon-codex-relay 2>/dev/null || true)" == true ]]; then
+        web_upstream=127.0.0.1:18090
+    fi
+    printf '%s {\n  reverse_proxy %s\n}\n' "$web_domain" "$web_upstream" > "$data_dir/proxy/Caddyfile.next"
     docker pull caddy:2.10.2
     docker run --rm --network none --mount "type=bind,src=$data_dir/proxy,dst=/etc/caddy,readonly" \
         --entrypoint caddy caddy:2.10.2 validate --config /etc/caddy/Caddyfile.next --adapter caddyfile

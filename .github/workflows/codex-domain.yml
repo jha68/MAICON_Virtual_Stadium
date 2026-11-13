@@ -1,0 +1,76 @@
+name: codex-domain-gateway
+on:
+  push:
+    branches: [deploy/codex-cloud-20261112]
+    paths:
+      - .github/workflows/codex-domain.yml
+      - deploy/codex/**
+      - src/maicon_sim/server/cloud_relay.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oracle-production
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          python-version: '3.10'
+      - name: Validate relay before staging
+        run: |
+          uv sync --frozen --extra dev
+          uv run --no-sync pytest -q tests/integration/test_cloud_relay.py tests/integration/test_codex_gateway_install.py tests/integration/test_oracle_deploy.py
+          uv run --no-sync python -m py_compile src/maicon_sim/server/cloud_relay.py deploy/codex/*.py
+      - name: Install existing pinned SSH identity
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          OCI_SSH_KNOWN_HOSTS: ${{ secrets.OCI_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$OCI_HOST" && test -n "$OCI_SSH_KEY" && test -n "$OCI_SSH_KNOWN_HOSTS"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$OCI_SSH_KEY" > "$HOME/.ssh/codex_gateway"
+          printf '%s\n' "$OCI_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/codex_gateway" "$HOME/.ssh/known_hosts"
+      - name: Stage gateway with authenticated Oracle fallback
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+        run: |
+          [[ "$OCI_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          ssh_options=(-i "$HOME/.ssh/codex_gateway" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20)
+          remote_dir=".maicon-codex-gateway-$GITHUB_RUN_ID"
+          ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "install -d -m 700 '$remote_dir'"
+          scp -q "${ssh_options[@]}" src/maicon_sim/server/cloud_relay.py deploy/codex/install_gateway.py deploy/codex/session-cert.pem deploy/codex/session.json "ubuntu@$OCI_HOST:$remote_dir/"
+          ssh "${ssh_options[@]}" "ubuntu@$OCI_HOST" "python3 '$remote_dir/install_gateway.py'"
+          mkdir -p artifacts
+          scp -q "${ssh_options[@]}" "ubuntu@$OCI_HOST:$remote_dir/bootstrap.cms" artifacts/codex-bootstrap.cms
+          scp -q "${ssh_options[@]}" "ubuntu@$OCI_HOST:$remote_dir/setup-status.json" artifacts/codex-setup-status.json
+      - name: Save only encrypted bootstrap and public health status
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, shutil
+          settings=json.loads(pathlib.Path('deploy/codex/session.json').read_text())
+          status=json.loads(pathlib.Path('artifacts/codex-setup-status.json').read_text())
+          assert status['oracle_fallback_healthy'] and not status['password_changed']
+          root=pathlib.Path('deploy/codex/bootstrap'); root.mkdir(exist_ok=True)
+          shutil.copyfile('artifacts/codex-bootstrap.cms', root/(settings['session_id']+'.cms'))
+          shutil.copyfile('artifacts/codex-setup-status.json', root/'setup-status.json')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- deploy/codex/bootstrap/
+          git commit -m 'Record encrypted Codex bootstrap and gateway readiness [skip ci]'
+          git push origin "HEAD:$GITHUB_REF_NAME"
+      - name: Remove runner identity
+        if: always()
+        run: rm -f "$HOME/.ssh/codex_gateway"
